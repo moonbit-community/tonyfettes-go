@@ -190,7 +190,7 @@ Main entry point for parsing Mach-O files from raw bytes.
 
 Alias for `parse_file` for convenience.
 
-#### `open_file(path: String) -> ParseResult[File]`
+#### `open_file(path: Bytes) -> ParseResult[File]`
 
 Placeholder for file system access (not implemented).
 
@@ -200,28 +200,28 @@ Placeholder for file system access (not implemented).
 
 - `is_64bit(file: File) -> Bool` - Check if file is 64-bit
 - `is_32bit(file: File) -> Bool` - Check if file is 32-bit
-- `get_architecture(file: File) -> String` - Get architecture name
-- `get_file_type(file: File) -> String` - Get file type name
-- `get_file_summary(file: File) -> String` - Get basic file info
+- `get_architecture(file: File) -> Bytes` - Get architecture name
+- `get_file_type(file: File) -> Bytes` - Get file type name
+- `get_file_summary(file: File) -> Bytes` - Get basic file info
 
 #### Flag Analysis
 
 - `has_flag(file: File, flag: UInt) -> Bool` - Check if flag is set
-- `get_flags_description(file: File) -> Array[String]` - Get flag names
+- `get_flags_description(file: File) -> Array[Bytes]` - Get flag names
 
 #### Content Analysis
 
-- `get_imported_symbols(file: File) -> Array[String]` - Get imported symbols
-- `get_imported_libraries(file: File) -> Array[String]` - Get library dependencies
-- `find_segment(file: File, name: String) -> Segment?` - Find segment by name
-- `find_section(file: File, name: String) -> Section?` - Find section by name
+- `get_imported_symbols(file: File) -> Array[Bytes]` - Get imported symbols
+- `get_imported_libraries(file: File) -> Array[Bytes]` - Get library dependencies
+- `find_segment(file: File, name: Bytes) -> Segment?` - Find segment by name
+- `find_section(file: File, name: Bytes) -> Section?` - Find section by name
 
 ### Binary Utilities
 
-#### String Processing
+#### Bytes Processing
 
-- `cstring(data: Bytes) -> String` - Extract null-terminated string
-- `cstring_from_fixed_int_array(data: FixedArray[Int]) -> String` - Convert fixed array to string
+- `cstring(data: Bytes) -> Bytes` - Extract null-terminated string
+- `cstring_from_fixed_int_array(data: FixedArray[Int]) -> Bytes` - Convert fixed array to string
 
 #### Binary Reading
 
@@ -265,8 +265,8 @@ enum ParseResult[T] {
 `FormatError` provides detailed error information:
 
 - `offset: Int64` - Byte offset where error occurred
-- `message: String` - Human-readable error message
-- `value: String?` - Optional problematic value
+- `message: Bytes` - Human-readable error message
+- `value: Bytes?` - Optional problematic value
 
 ## Security Considerations
 

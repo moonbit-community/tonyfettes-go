@@ -17,11 +17,7 @@ pub fn parse_symbols(
     return Err({
       offset: 0L,
       message: "Symbol table data too small",
-      value: Some(
-        "Expected " +
-        (nsyms.reinterpret_as_int() * symbol_size).to_string() +
-        " bytes",
-      ),
+      value: None,
     })
   }
   for i = 0; i < nsyms.reinterpret_as_int(); i = i + 1 {
@@ -56,16 +52,16 @@ fn parse_single_symbol(
   }
 
   // Extract symbol name from string table
-  let name = if name_index.reinterpret_as_int() < strtab.length() {
+  let name : Bytes = if name_index.reinterpret_as_int() < strtab.length() {
     let name_data = read_bytes(
       strtab,
       name_index.reinterpret_as_int(),
       strtab.length() - name_index.reinterpret_as_int(),
     )
-    let raw_name = cstring(name_data)
+    let raw_name = name_data
     // Remove leading underscore if present (Go compatibility)
-    if raw_name.length() > 0 && raw_name[0] == '_' && raw_name.contains(".") {
-      raw_name.substring(start=1)
+    if raw_name.length() > 0 && raw_name[0] == '_' && raw_name.contains('.') {
+      [..raw_name[1:]]
     } else {
       raw_name
     }
@@ -88,7 +84,7 @@ pub fn parse_dynamic_symbol_indices(
     return Err({
       offset: 0L,
       message: "Dynamic symbol indices data too small",
-      value: Some("Expected " + expected_size.to_string() + " bytes"),
+      value: None,
     })
   }
   for i = 0; i < nindirectsyms.reinterpret_as_int(); i = i + 1 {
@@ -100,7 +96,7 @@ pub fn parse_dynamic_symbol_indices(
 
 ///|
 /// Extract imported symbols from the symbol table
-pub fn get_imported_symbols(file : File) -> Array[String] {
+pub fn get_imported_symbols(file : File) -> Array[Bytes] {
   let imported = Array::new()
   match (file.symtab, file.dysymtab) {
     (Some(st), Some(dt)) => {
@@ -127,7 +123,7 @@ pub fn get_imported_symbols(file : File) -> Array[String] {
 
 ///|
 /// Extract imported libraries from the load commands
-pub fn get_imported_libraries(file : File) -> Array[String] {
+pub fn get_imported_libraries(file : File) -> Array[Bytes] {
   let libraries = Array::new()
   for load_cmd in file.loads {
     match load_cmd {
@@ -140,7 +136,7 @@ pub fn get_imported_libraries(file : File) -> Array[String] {
 
 ///|
 /// Find a specific segment by name
-pub fn find_segment(file : File, name : String) -> Segment? {
+pub fn find_segment(file : File, name : Bytes) -> Segment? {
   for load_cmd in file.loads {
     match load_cmd {
       LoadCommand::Segment(segment) =>
@@ -155,7 +151,7 @@ pub fn find_segment(file : File, name : String) -> Segment? {
 
 ///|
 /// Find a specific section by name
-pub fn find_section(file : File, name : String) -> Section? {
+pub fn find_section(file : File, name : Bytes) -> Section? {
   for section in file.sections {
     if section.header.name == name {
       return Some(section)
@@ -166,7 +162,7 @@ pub fn find_section(file : File, name : String) -> Section? {
 
 ///|
 /// Get all section names in the file
-pub fn get_section_names(file : File) -> Array[String] {
+pub fn get_section_names(file : File) -> Array[Bytes] {
   let names = Array::new()
   for section in file.sections {
     names.push(section.header.name)
@@ -176,7 +172,7 @@ pub fn get_section_names(file : File) -> Array[String] {
 
 ///|
 /// Get all segment names in the file
-pub fn get_segment_names(file : File) -> Array[String] {
+pub fn get_segment_names(file : File) -> Array[Bytes] {
   let names = Array::new()
   for load_cmd in file.loads {
     match load_cmd {

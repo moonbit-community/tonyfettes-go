@@ -4,13 +4,13 @@ package "moonbit/macho"
 // Values
 fn copy_to_fixed_array(Bytes, Int, Int) -> FixedArray[Int]
 
-fn count_load_commands_by_type(File) -> Array[(String, Int)]
+fn count_load_commands_by_type(File) -> Array[(Bytes, Int)]
 
-fn cstring(Bytes) -> String
+fn cstring(Bytes) -> Bytes
 
-fn cstring_from_fixed_array(FixedArray[Byte]) -> String
+fn cstring_from_fixed_array(FixedArray[Byte]) -> Bytes
 
-fn cstring_from_fixed_int_array(FixedArray[Int]) -> String
+fn cstring_from_fixed_int_array(FixedArray[Int]) -> Bytes
 
 fn determine_byte_order(UInt) -> ByteOrder?
 
@@ -18,9 +18,9 @@ let file_header_size_32 : Int
 
 let file_header_size_64 : Int
 
-fn find_section(File, String) -> Section?
+fn find_section(File, Bytes) -> Section?
 
-fn find_segment(File, String) -> Segment?
+fn find_segment(File, Bytes) -> Segment?
 
 let flag_all_mods_bound : UInt
 
@@ -74,25 +74,25 @@ let flag_two_level : UInt
 
 let flag_weak_defines : UInt
 
-fn get_architecture(File) -> String
+fn get_architecture(File) -> Bytes
 
-fn get_detailed_info(File) -> String
+fn get_detailed_info(File) -> Bytes
 
-fn get_file_summary(File) -> String
+fn get_file_summary(File) -> Bytes
 
-fn get_file_type(File) -> String
+fn get_file_type(File) -> Bytes
 
-fn get_flags_description(File) -> Array[String]
+fn get_flags_description(File) -> Array[Bytes]
 
-fn get_imported_libraries(File) -> Array[String]
+fn get_imported_libraries(File) -> Array[Bytes]
 
-fn get_imported_symbols(File) -> Array[String]
+fn get_imported_symbols(File) -> Array[Bytes]
 
-fn get_load_command_type(LoadCommand) -> String
+fn get_load_command_type(LoadCommand) -> Bytes
 
-fn get_section_names(File) -> Array[String]
+fn get_section_names(File) -> Array[Bytes]
 
-fn get_segment_names(File) -> Array[String]
+fn get_segment_names(File) -> Array[Bytes]
 
 fn has_flag(File, UInt) -> Bool
 
@@ -110,7 +110,7 @@ let magic_fat : UInt
 
 fn new_file(Bytes) -> ParseResult[File]
 
-fn open_file(String) -> ParseResult[File]
+fn open_file(Bytes) -> ParseResult[File]
 
 fn parse_dylib_cmd(Bytes, ByteOrder) -> ParseResult[Dylib]
 
@@ -162,7 +162,7 @@ impl Show for Cpu
 
 pub struct Dylib {
   load_bytes : LoadBytes
-  name : String
+  name : Bytes
   time : UInt
   current_version : UInt
   compat_version : UInt
@@ -255,10 +255,10 @@ impl Show for FileHeader
 
 pub struct FormatError {
   offset : Int64
-  message : String
-  value : String?
+  message : Bytes
+  value : Bytes?
 }
-fn FormatError::to_string(Self) -> String
+fn FormatError::to_string(Self) -> Bytes
 impl Eq for FormatError
 impl Show for FormatError
 
@@ -336,7 +336,7 @@ impl Show for Reloc
 
 pub struct Rpath {
   load_bytes : LoadBytes
-  path : String
+  path : Bytes
 }
 impl Eq for Rpath
 impl Show for Rpath
@@ -391,8 +391,8 @@ impl Eq for Section64
 impl Show for Section64
 
 pub struct SectionHeader {
-  name : String
-  seg : String
+  name : Bytes
+  seg : Bytes
   addr : UInt64
   size : UInt64
   offset : UInt
@@ -447,7 +447,7 @@ impl Show for Segment64
 pub struct SegmentHeader {
   cmd : LoadCmd
   len : UInt
-  name : String
+  name : Bytes
   addr : UInt64
   memsz : UInt64
   offset : UInt64
@@ -461,7 +461,7 @@ impl Eq for SegmentHeader
 impl Show for SegmentHeader
 
 pub struct Symbol {
-  name : String
+  name : Bytes
   type_ : Int
   sect : Int
   desc : Int

@@ -3,37 +3,6 @@
 ///| These provide low-level binary data reading and parsing capabilities
 
 ///|
-/// Extract a null-terminated C string from bytes
-pub fn cstring(data : Bytes) -> String {
-  let mut i = 0
-  let len = data.length()
-  while i < len && data[i] != 0 {
-    i = i + 1
-  }
-  // Convert bytes to string up to null terminator
-  let mut result = ""
-  for j = 0; j < i; j = j + 1 {
-    result = result + data[j].to_int().to_char().to_string()
-  }
-  result
-}
-
-///|
-/// Extract a null-terminated C string from a fixed array of bytes (for section/segment names)
-pub fn cstring_from_fixed_array(data : FixedArray[Byte]) -> String {
-  let mut result = ""
-  let len = data.length()
-  for i = 0; i < len; i = i + 1 {
-    let byte = data[i]
-    if byte == 0 {
-      break
-    }
-    result = result + byte.to_int().to_char().to_string()
-  }
-  result
-}
-
-///|
 /// Read a UInt from bytes at offset with given byte order
 pub fn read_uint(data : Bytes, offset : Int, byte_order : ByteOrder) -> UInt {
   if offset + 4 > data.length() {
@@ -101,21 +70,6 @@ pub fn copy_to_fixed_array(
 }
 
 ///|
-/// Extract C string from fixed Int array (for compatibility)
-pub fn cstring_from_fixed_int_array(data : FixedArray[Int]) -> String {
-  let mut result = ""
-  let len = data.length()
-  for i = 0; i < len; i = i + 1 {
-    let byte = data[i]
-    if byte == 0 {
-      break
-    }
-    result = result + byte.to_char().to_string()
-  }
-  result
-}
-
-///|
 /// Determine byte order from magic number
 pub fn determine_byte_order(magic : UInt) -> ByteOrder? {
   if magic == magic_32 || magic == magic_64 {
@@ -135,4 +89,13 @@ pub fn is_valid_magic(magic : UInt) -> Bool {
   magic == 0xfacefeed_U ||
   magic == 0xcffaedfe_U ||
   magic == magic_fat
+}
+
+///|
+fn Bytes::contains(self : Bytes, byte : Byte) -> Bool {
+  loop self[:] {
+    [b, ..] if b == byte => true
+    [_, .. rest] => continue rest
+    [] => false
+  }
 }

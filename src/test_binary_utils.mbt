@@ -1,29 +1,4 @@
 ///|
-/// Test cases for binary utility functions
-test "cstring extraction" {
-  let data = "hello\u{00}world".to_bytes()
-  assert_eq(cstring(data), "hello")
-  let empty = "\u{00}".to_bytes()
-  assert_eq(cstring(empty), "")
-  let no_null = "hello".to_bytes()
-  assert_eq(cstring(no_null), "hello")
-}
-
-///|
-test "cstring from fixed int array" {
-  let arr = FixedArray::make(8, 0)
-  arr[0] = 'h'.to_int()
-  arr[1] = 'e'.to_int()
-  arr[2] = 'l'.to_int()
-  arr[3] = 'l'.to_int()
-  arr[4] = 'o'.to_int()
-  arr[5] = 0 // null terminator
-  arr[6] = 'x'.to_int() // should be ignored
-  arr[7] = 'y'.to_int() // should be ignored
-  assert_eq(cstring_from_fixed_int_array(arr), "hello")
-}
-
-///|
 test "read_uint little endian" {
   let data = "\u{01}\u{02}\u{03}\u{04}".to_bytes()
   let result = read_uint(data, 0, Little)

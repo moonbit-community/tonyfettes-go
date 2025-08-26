@@ -68,7 +68,7 @@ impl Load for LoadBytes with raw(self) {
 pub struct SegmentHeader {
   cmd : LoadCmd // Command type
   len : UInt // Command length
-  name : String // Segment name
+  name : Bytes // Segment name
   addr : UInt64 // Virtual memory address
   memsz : UInt64 // Virtual memory size
   offset : UInt64 // File offset
@@ -95,8 +95,8 @@ impl Load for Segment with raw(self) {
 ///|
 /// SectionHeader contains the metadata for a section.
 pub struct SectionHeader {
-  name : String // Section name
-  seg : String // Segment name
+  name : Bytes // Section name
+  seg : Bytes // Segment name
   addr : UInt64 // Memory address
   size : UInt64 // Size in bytes
   offset : UInt // File offset
@@ -130,7 +130,7 @@ pub struct Section {
 /// A Dylib represents a Mach-O load dynamic library command.
 pub struct Dylib {
   load_bytes : LoadBytes
-  name : String
+  name : Bytes
   time : UInt
   current_version : UInt
   compat_version : UInt
@@ -144,7 +144,7 @@ impl Load for Dylib with raw(self) {
 ///|
 /// A Symbol is a Mach-O 32-bit or 64-bit symbol table entry.
 pub struct Symbol {
-  name : String
+  name : Bytes
   type_ : Int
   sect : Int
   desc : Int
@@ -158,7 +158,7 @@ pub struct Symtab {
   symoff : UInt // File offset to symbol table
   nsyms : UInt // Number of symbols
   stroff : UInt // File offset to string table
-  strsize : UInt // String table size
+  strsize : UInt // Bytes table size
   syms : Array[Symbol] // Symbols
 } derive(Eq, Show)
 
@@ -201,7 +201,7 @@ impl Load for Dysymtab with raw(self) {
 /// A Rpath represents a Mach-O rpath command.
 pub struct Rpath {
   load_bytes : LoadBytes
-  path : String
+  path : Bytes
 } derive(Eq, Show)
 
 ///|
@@ -237,19 +237,9 @@ pub struct File {
 /// FormatError is returned when the data does not have the correct format for a Mach-O file.
 pub struct FormatError {
   offset : Int64
-  message : String
-  value : String?
+  message : Bytes
+  value : Bytes?
 } derive(Eq, Show)
-
-///|
-pub fn FormatError::to_string(self : FormatError) -> String {
-  let base_msg = "Mach-O format error: " + self.message
-  let msg = match self.value {
-    Some(val) => base_msg + " '" + val + "'"
-    None => base_msg
-  }
-  msg + " at offset " + self.offset.to_string()
-}
 
 ///|
 /// Raw data structures for binary parsing
@@ -296,7 +286,7 @@ pub struct SymtabCmd {
   symoff : UInt // File offset to symbol table
   nsyms : UInt // Number of symbols
   stroff : UInt // File offset to string table
-  strsize : UInt // String table size
+  strsize : UInt // Bytes table size
 } derive(Eq, Show)
 
 ///|
@@ -379,7 +369,7 @@ pub struct Section64 {
 ///|
 /// 32-bit symbol table entry
 pub struct Nlist32 {
-  name : UInt // String table index
+  name : UInt // Bytes table index
   type_ : Byte // Symbol type
   sect : Byte // Section number
   desc : UInt // Symbol description
@@ -389,7 +379,7 @@ pub struct Nlist32 {
 ///|
 /// 64-bit symbol table entry
 pub struct Nlist64 {
-  name : UInt // String table index
+  name : UInt // Bytes table index
   type_ : Byte // Symbol type
   sect : Byte // Section number
   desc : UInt // Symbol description

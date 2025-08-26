@@ -46,7 +46,7 @@ test "parse file header basic" {
       assert_eq(file.loads.length(), 0)
       assert_eq(file.sections.length(), 0)
     }
-    Err(err) => fail("Expected successful parsing: " + err.message)
+    Err(err) => fail("Expected successful parsing")
   }
 }
 
@@ -56,16 +56,5 @@ test "new_file convenience function" {
   match new_file(small_data) {
     Ok(_) => fail("Expected error")
     Err(err) => assert_eq(err.message, "File too small")
-  }
-}
-
-///|
-test "open_file not implemented" {
-  match open_file("/some/path") {
-    Ok(_) => fail("Expected error")
-    Err(err) => {
-      assert_eq(err.message, "File system access not implemented")
-      assert_eq(err.value, Some("/some/path"))
-    }
   }
 }

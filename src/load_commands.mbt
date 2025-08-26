@@ -19,8 +19,7 @@ pub fn parse_segment_32(
   let len = read_uint(data, 4, byte_order)
 
   // Extract name (16 bytes starting at offset 8)
-  let name_bytes = copy_to_fixed_array(data, 8, 16)
-  let name = cstring_from_fixed_int_array(name_bytes)
+  let name : Bytes = [..data[8:24]]
   let addr = read_uint(data, 24, byte_order).to_uint64()
   let memsz = read_uint(data, 28, byte_order).to_uint64()
   let offset = read_uint(data, 32, byte_order).to_uint64()
@@ -80,9 +79,7 @@ pub fn parse_segment_64(
   let cmd = LoadCmd::from_uint(read_uint(data, 0, byte_order))
   let len = read_uint(data, 4, byte_order)
 
-  // Extract name (16 bytes starting at offset 8)
-  let name_bytes = copy_to_fixed_array(data, 8, 16)
-  let name = cstring_from_fixed_int_array(name_bytes)
+  let name : Bytes = [..data[8:24]]
   let addr = read_uint64(data, 24, byte_order)
   let memsz = read_uint64(data, 32, byte_order)
   let offset = read_uint64(data, 40, byte_order)
@@ -137,12 +134,8 @@ fn parse_section_32(
   }
 
   // Extract section name (16 bytes at offset 0)
-  let name_bytes = copy_to_fixed_array(data, 0, 16)
-  let name = cstring_from_fixed_int_array(name_bytes)
-
-  // Extract segment name (16 bytes at offset 16)
-  let seg_bytes = copy_to_fixed_array(data, 16, 16)
-  let seg = cstring_from_fixed_int_array(seg_bytes)
+  let name : Bytes = [..data[0:16]]
+  let seg : Bytes = [..data[16:32]]
   let addr = read_uint(data, 32, byte_order).to_uint64()
   let size = read_uint(data, 36, byte_order).to_uint64()
   let offset = read_uint(data, 40, byte_order)
@@ -179,12 +172,10 @@ fn parse_section_64(
   }
 
   // Extract section name (16 bytes at offset 0)
-  let name_bytes = copy_to_fixed_array(data, 0, 16)
-  let name = cstring_from_fixed_int_array(name_bytes)
+  let name : Bytes = [..data[0:16]]
 
   // Extract segment name (16 bytes at offset 16)
-  let seg_bytes = copy_to_fixed_array(data, 16, 16)
-  let seg = cstring_from_fixed_int_array(seg_bytes)
+  let seg : Bytes = [..data[16:32]]
   let addr = read_uint64(data, 32, byte_order)
   let size = read_uint64(data, 40, byte_order)
   let offset = read_uint(data, 48, byte_order)
@@ -305,7 +296,7 @@ pub fn parse_dylib_cmd(
     return Err({
       offset: 8L,
       message: "Invalid name offset in dylib command",
-      value: Some(name_offset.to_string()),
+      value: None,
     })
   }
   let name_data = read_bytes(
@@ -313,7 +304,7 @@ pub fn parse_dylib_cmd(
     name_offset.reinterpret_as_int(),
     data.length() - name_offset.reinterpret_as_int(),
   )
-  let name = cstring(name_data)
+  let name = name_data
   Ok({ load_bytes: { data, }, name, time, current_version, compat_version })
 }
 
@@ -331,7 +322,7 @@ pub fn parse_rpath_cmd(
     return Err({
       offset: 8L,
       message: "Invalid path offset in rpath command",
-      value: Some(path_offset.to_string()),
+      value: None,
     })
   }
   let path_data = read_bytes(
@@ -339,6 +330,6 @@ pub fn parse_rpath_cmd(
     path_offset.reinterpret_as_int(),
     data.length() - path_offset.reinterpret_as_int(),
   )
-  let path = cstring(path_data)
+  let path = path_data
   Ok({ load_bytes: { data, }, path })
 }

@@ -3,19 +3,6 @@
 ///| Provides convenience methods for common operations
 
 ///|
-/// Join array of strings with separator
-fn join_strings(arr : Array[String], sep : String) -> String {
-  if arr.length() == 0 {
-    return ""
-  }
-  let mut result = arr[0]
-  for i = 1; i < arr.length(); i = i + 1 {
-    result = result + sep + arr[i]
-  }
-  result
-}
-
-///|
 /// Check if the file is a 64-bit Mach-O file
 pub fn is_64bit(file : File) -> Bool {
   file.header.magic == magic_64
@@ -83,8 +70,8 @@ pub fn has_flag(file : File, flag : UInt) -> Bool {
 
 ///|
 /// Get human-readable flag descriptions
-pub fn get_flags_description(file : File) -> Array[String] {
-  let flags = Array::new()
+pub fn get_flags_description(file : File) -> Array[Bytes] {
+  let flags : Array[Bytes] = []
   if has_flag(file, flag_no_undefs) {
     flags.push("NO_UNDEFS")
   }
@@ -168,7 +155,7 @@ pub fn get_flags_description(file : File) -> Array[String] {
 
 ///|
 /// Get load command type as string
-pub fn get_load_command_type(cmd : LoadCommand) -> String {
+pub fn get_load_command_type(cmd : LoadCommand) -> Bytes {
   match cmd {
     LoadBytes(_) => "LoadBytes"
     Segment(segment) =>
@@ -187,8 +174,8 @@ pub fn get_load_command_type(cmd : LoadCommand) -> String {
 
 ///|
 /// Count load commands by type
-pub fn count_load_commands_by_type(file : File) -> Array[(String, Int)] {
-  let counts = Array::new()
+pub fn count_load_commands_by_type(file : File) -> Array[(Bytes, Int)] {
+  let counts : Array[(Bytes, Int)] = []
   let mut segment_count = 0
   let mut dylib_count = 0
   let mut symtab_count = 0
@@ -229,43 +216,4 @@ pub fn count_load_commands_by_type(file : File) -> Array[(String, Int)] {
     counts.push(("OTHER", other_count))
   }
   counts
-}
-
-///|
-/// Get detailed file information as a formatted string
-pub fn get_detailed_info(file : File) -> String {
-  let mut info = get_file_summary(file) + "\n\n"
-  info = info + "Header Information:\n"
-  info = info + "  Magic: 0x" + file.header.magic.to_string() + "\n"
-  info = info + "  CPU Type: " + get_architecture(file) + "\n"
-  info = info + "  CPU Subtype: " + file.header.sub_cpu.to_string() + "\n"
-  info = info + "  File Type: " + get_file_type(file) + "\n"
-  info = info + "  Flags: " + file.header.flags.to_string() + "\n"
-  let flag_desc = get_flags_description(file)
-  if flag_desc.length() > 0 {
-    info = info + "  Flag Details: " + join_strings(flag_desc, ", ") + "\n"
-  }
-  info = info + "\nLoad Commands:\n"
-  let cmd_counts = count_load_commands_by_type(file)
-  for i = 0; i < cmd_counts.length(); i = i + 1 {
-    let cmd_type = cmd_counts[i].0
-    let count = cmd_counts[i].1
-    info = info + "  " + cmd_type + ": " + count.to_string() + "\n"
-  }
-  if file.sections.length() > 0 {
-    info = info + "\nSections:\n"
-    for section in file.sections {
-      info = info +
-        "  " +
-        section.header.seg +
-        "," +
-        section.header.name +
-        " (addr: 0x" +
-        section.header.addr.to_string() +
-        ", size: " +
-        section.header.size.to_string() +
-        ")\n"
-    }
-  }
-  info
 }

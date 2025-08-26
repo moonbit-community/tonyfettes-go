@@ -21,11 +21,7 @@ pub fn parse_file(data : Bytes) -> ParseResult[File] {
   let byte_order = match determine_byte_order(magic) {
     Some(order) => order
     None =>
-      return Err({
-        offset: 0L,
-        message: "Invalid magic number",
-        value: Some(magic.to_string()),
-      })
+      return Err({ offset: 0L, message: "Invalid magic number", value: None })
   }
 
   // Correct magic number based on detected byte order
@@ -119,7 +115,7 @@ fn parse_load_commands(
       return Err({
         offset: offset.to_int64(),
         message: "Invalid command size",
-        value: Some(siz.to_string()),
+        value: None,
       })
     }
     let cmddat = read_bytes(data, offset, siz.reinterpret_as_int())
@@ -183,18 +179,6 @@ fn parse_load_commands(
 }
 
 /// Convenience functions for creating File instances
-
-///|
-/// Create a File from a file path (stub - would need file system access)
-pub fn open_file(path : String) -> ParseResult[File] {
-  // This would require file system access which may not be available
-  // For now, return an error
-  Err({
-    offset: 0L,
-    message: "File system access not implemented",
-    value: Some(path),
-  })
-}
 
 ///|
 /// Create a File directly from bytes

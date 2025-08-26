@@ -142,13 +142,3 @@ test "get_load_command_type" {
   let load_bytes = LoadCommand::LoadBytes({ data: Bytes::new(0) })
   assert_eq(get_load_command_type(load_bytes), "LoadBytes")
 }
-
-///|
-test "join_strings helper" {
-  let strings = ["hello", "world", "test"]
-  assert_eq(join_strings(strings, ", "), "hello, world, test")
-  let empty : Array[String] = []
-  assert_eq(join_strings(empty, ","), "")
-  let single = ["only"]
-  assert_eq(join_strings(single, ","), "only")
-}
