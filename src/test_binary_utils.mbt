@@ -1,0 +1,69 @@
+///|
+/// Test cases for binary utility functions
+test "cstring extraction" {
+  let data = "hello\u{00}world".to_bytes()
+  assert_eq(cstring(data), "hello")
+  let empty = "\u{00}".to_bytes()
+  assert_eq(cstring(empty), "")
+  let no_null = "hello".to_bytes()
+  assert_eq(cstring(no_null), "hello")
+}
+
+///|
+test "cstring from fixed int array" {
+  let arr = FixedArray::make(8, 0)
+  arr[0] = 'h'.to_int()
+  arr[1] = 'e'.to_int()
+  arr[2] = 'l'.to_int()
+  arr[3] = 'l'.to_int()
+  arr[4] = 'o'.to_int()
+  arr[5] = 0 // null terminator
+  arr[6] = 'x'.to_int() // should be ignored
+  arr[7] = 'y'.to_int() // should be ignored
+  assert_eq(cstring_from_fixed_int_array(arr), "hello")
+}
+
+///|
+test "read_uint little endian" {
+  let data = "\u{01}\u{02}\u{03}\u{04}".to_bytes()
+  let result = read_uint(data, 0, Little)
+  assert_eq(result, 67305985_U) // 0x04030201
+}
+
+///|
+test "read_uint big endian" {
+  let data = "\u{01}\u{02}\u{03}\u{04}".to_bytes()
+  let result = read_uint(data, 0, Big)
+  assert_eq(result, 16909060_U) // 0x01020304
+}
+
+///|
+test "copy_to_fixed_array" {
+  let data = "hello world".to_bytes()
+  let arr = copy_to_fixed_array(data, 6, 5) // "world"
+  assert_eq(arr.length(), 5)
+  assert_eq(arr[0], 119) // 'w'
+  assert_eq(arr[1], 111) // 'o'
+  assert_eq(arr[2], 114) // 'r'
+  assert_eq(arr[3], 108) // 'l'
+  assert_eq(arr[4], 100) // 'd'
+}
+
+///|
+test "determine_byte_order" {
+  assert_eq(determine_byte_order(magic_32), Some(Little))
+  assert_eq(determine_byte_order(magic_64), Some(Little))
+  assert_eq(determine_byte_order(0xfacefeed_U), Some(Big))
+  assert_eq(determine_byte_order(0xcffaedfe_U), Some(Big))
+  assert_eq(determine_byte_order(0x12345678_U), None)
+}
+
+///|
+test "is_valid_magic" {
+  assert_true(is_valid_magic(magic_32))
+  assert_true(is_valid_magic(magic_64))
+  assert_true(is_valid_magic(magic_fat))
+  assert_true(is_valid_magic(0xfacefeed_U))
+  assert_true(is_valid_magic(0xcffaedfe_U))
+  assert_false(is_valid_magic(0x12345678_U))
+}

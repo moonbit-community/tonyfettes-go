@@ -1,0 +1,10 @@
+{
+  "name": "moonbit/macho",
+  "version": "0.1.0",
+  "readme": "README.md",
+  "repository": "https://github.com/moonbit/macho",
+  "license": "Apache-2.0",
+  "keywords": ["macho", "mach-o", "binary", "parser", "loader"],
+  "description": "A MoonBit library for parsing Mach-O binary files - ported from Go's debug/macho package",
+  "source": "src"
+}

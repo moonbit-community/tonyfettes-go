@@ -1,0 +1,521 @@
+// Generated using `moon info`, DON'T EDIT IT
+package "moonbit/macho"
+
+// Values
+fn copy_to_fixed_array(Bytes, Int, Int) -> FixedArray[Int]
+
+fn count_load_commands_by_type(File) -> Array[(String, Int)]
+
+fn cstring(Bytes) -> String
+
+fn cstring_from_fixed_array(FixedArray[Byte]) -> String
+
+fn cstring_from_fixed_int_array(FixedArray[Int]) -> String
+
+fn determine_byte_order(UInt) -> ByteOrder?
+
+let file_header_size_32 : Int
+
+let file_header_size_64 : Int
+
+fn find_section(File, String) -> Section?
+
+fn find_segment(File, String) -> Segment?
+
+let flag_all_mods_bound : UInt
+
+let flag_allow_stack_execution : UInt
+
+let flag_app_extension_safe : UInt
+
+let flag_bind_at_load : UInt
+
+let flag_binds_to_weak : UInt
+
+let flag_canonical : UInt
+
+let flag_dead_strippable_dylib : UInt
+
+let flag_dyld_link : UInt
+
+let flag_force_flat : UInt
+
+let flag_has_tlv_descriptors : UInt
+
+let flag_incr_link : UInt
+
+let flag_lazy_init : UInt
+
+let flag_no_fix_prebinding : UInt
+
+let flag_no_heap_execution : UInt
+
+let flag_no_multi_defs : UInt
+
+let flag_no_reexported_dylibs : UInt
+
+let flag_no_undefs : UInt
+
+let flag_pie : UInt
+
+let flag_prebindable : UInt
+
+let flag_prebound : UInt
+
+let flag_root_safe : UInt
+
+let flag_setuid_safe : UInt
+
+let flag_split_segs : UInt
+
+let flag_subsections_via_symbols : UInt
+
+let flag_two_level : UInt
+
+let flag_weak_defines : UInt
+
+fn get_architecture(File) -> String
+
+fn get_detailed_info(File) -> String
+
+fn get_file_summary(File) -> String
+
+fn get_file_type(File) -> String
+
+fn get_flags_description(File) -> Array[String]
+
+fn get_imported_libraries(File) -> Array[String]
+
+fn get_imported_symbols(File) -> Array[String]
+
+fn get_load_command_type(LoadCommand) -> String
+
+fn get_section_names(File) -> Array[String]
+
+fn get_segment_names(File) -> Array[String]
+
+fn has_flag(File, UInt) -> Bool
+
+fn is_32bit(File) -> Bool
+
+fn is_64bit(File) -> Bool
+
+fn is_valid_magic(UInt) -> Bool
+
+let magic_32 : UInt
+
+let magic_64 : UInt
+
+let magic_fat : UInt
+
+fn new_file(Bytes) -> ParseResult[File]
+
+fn open_file(String) -> ParseResult[File]
+
+fn parse_dylib_cmd(Bytes, ByteOrder) -> ParseResult[Dylib]
+
+fn parse_dynamic_symbol_indices(Bytes, UInt, ByteOrder) -> ParseResult[Array[UInt]]
+
+fn parse_dysymtab_cmd(Bytes, ByteOrder) -> ParseResult[Dysymtab]
+
+fn parse_file(Bytes) -> ParseResult[File]
+
+fn parse_rpath_cmd(Bytes, ByteOrder) -> ParseResult[Rpath]
+
+fn parse_segment_32(Bytes, ByteOrder) -> ParseResult[(Segment, Array[Section])]
+
+fn parse_segment_64(Bytes, ByteOrder) -> ParseResult[(Segment, Array[Section])]
+
+fn parse_symbols(Bytes, Bytes, UInt, Bool, ByteOrder) -> ParseResult[Array[Symbol]]
+
+fn parse_symtab_cmd(Bytes, ByteOrder) -> ParseResult[Symtab]
+
+fn read_bytes(Bytes, Int, Int) -> Bytes
+
+fn read_uint(Bytes, Int, ByteOrder) -> UInt
+
+fn read_uint64(Bytes, Int, ByteOrder) -> UInt64
+
+// Errors
+
+// Types and methods
+pub enum ByteOrder {
+  Little
+  Big
+}
+impl Eq for ByteOrder
+impl Show for ByteOrder
+
+pub enum Cpu {
+  I386
+  Amd64
+  Arm
+  Arm64
+  Ppc
+  Ppc64
+  Unknown(UInt)
+}
+fn Cpu::from_uint(UInt) -> Self
+fn Cpu::to_uint(Self) -> UInt
+impl Eq for Cpu
+impl Show for Cpu
+
+pub struct Dylib {
+  load_bytes : LoadBytes
+  name : String
+  time : UInt
+  current_version : UInt
+  compat_version : UInt
+}
+impl Eq for Dylib
+impl Show for Dylib
+
+pub struct DylibCmd {
+  cmd : UInt
+  len : UInt
+  name : UInt
+  time : UInt
+  current_version : UInt
+  compat_version : UInt
+}
+impl Eq for DylibCmd
+impl Show for DylibCmd
+
+pub struct Dysymtab {
+  load_bytes : LoadBytes
+  ilocalsym : UInt
+  nlocalsym : UInt
+  iextdefsym : UInt
+  nextdefsym : UInt
+  iundefsym : UInt
+  nundefsym : UInt
+  tocoffset : UInt
+  ntoc : UInt
+  modtaboff : UInt
+  nmodtab : UInt
+  extrefsymoff : UInt
+  nextrefsyms : UInt
+  indirectsymoff : UInt
+  nindirectsyms : UInt
+  extreloff : UInt
+  nextrel : UInt
+  locreloff : UInt
+  nlocrel : UInt
+  indirect_syms : Array[UInt]
+}
+impl Eq for Dysymtab
+impl Show for Dysymtab
+
+pub struct DysymtabCmd {
+  cmd : UInt
+  len : UInt
+  ilocalsym : UInt
+  nlocalsym : UInt
+  iextdefsym : UInt
+  nextdefsym : UInt
+  iundefsym : UInt
+  nundefsym : UInt
+  tocoffset : UInt
+  ntoc : UInt
+  modtaboff : UInt
+  nmodtab : UInt
+  extrefsymoff : UInt
+  nextrefsyms : UInt
+  indirectsymoff : UInt
+  nindirectsyms : UInt
+  extreloff : UInt
+  nextrel : UInt
+  locreloff : UInt
+  nlocrel : UInt
+}
+impl Eq for DysymtabCmd
+impl Show for DysymtabCmd
+
+pub struct File {
+  header : FileHeader
+  byte_order : ByteOrder
+  loads : Array[LoadCommand]
+  sections : Array[Section]
+  symtab : Symtab?
+  dysymtab : Dysymtab?
+}
+impl Show for File
+
+pub struct FileHeader {
+  magic : UInt
+  cpu : Cpu
+  sub_cpu : UInt
+  type_ : Type
+  ncmd : UInt
+  cmdsz : UInt
+  flags : UInt
+}
+impl Eq for FileHeader
+impl Show for FileHeader
+
+pub struct FormatError {
+  offset : Int64
+  message : String
+  value : String?
+}
+fn FormatError::to_string(Self) -> String
+impl Eq for FormatError
+impl Show for FormatError
+
+pub struct LoadBytes {
+  data : Bytes
+}
+impl Eq for LoadBytes
+impl Show for LoadBytes
+
+pub enum LoadCmd {
+  Segment
+  Symtab
+  Thread
+  UnixThread
+  Dysymtab
+  Dylib
+  Dylinker
+  Segment64
+  Rpath
+  Unknown(UInt)
+}
+fn LoadCmd::from_uint(UInt) -> Self
+fn LoadCmd::to_uint(Self) -> UInt
+impl Eq for LoadCmd
+impl Show for LoadCmd
+
+pub enum LoadCommand {
+  LoadBytes(LoadBytes)
+  Segment(Segment)
+  Dylib(Dylib)
+  Symtab(Symtab)
+  Dysymtab(Dysymtab)
+  Rpath(Rpath)
+  Thread(Thread)
+}
+impl Show for LoadCommand
+
+pub struct Nlist32 {
+  name : UInt
+  type_ : Byte
+  sect : Byte
+  desc : UInt
+  value : UInt
+}
+impl Eq for Nlist32
+impl Show for Nlist32
+
+pub struct Nlist64 {
+  name : UInt
+  type_ : Byte
+  sect : Byte
+  desc : UInt
+  value : UInt64
+}
+impl Eq for Nlist64
+impl Show for Nlist64
+
+pub enum ParseResult[T] {
+  Ok(T)
+  Err(FormatError)
+}
+impl[T : Show] Show for ParseResult[T]
+
+pub struct Reloc {
+  addr : UInt
+  value : UInt
+  type_ : Int
+  len : Int
+  pcrel : Bool
+  is_extern : Bool
+  scattered : Bool
+}
+impl Eq for Reloc
+impl Show for Reloc
+
+pub struct Rpath {
+  load_bytes : LoadBytes
+  path : String
+}
+impl Eq for Rpath
+impl Show for Rpath
+
+pub struct RpathCmd {
+  cmd : UInt
+  len : UInt
+  path : UInt
+}
+impl Eq for RpathCmd
+impl Show for RpathCmd
+
+pub struct Section {
+  header : SectionHeader
+  relocs : Array[Reloc]
+  data : Bytes?
+}
+impl Eq for Section
+impl Show for Section
+
+pub struct Section32 {
+  name : FixedArray[Byte]
+  seg : FixedArray[Byte]
+  addr : UInt
+  size : UInt
+  offset : UInt
+  align : UInt
+  reloff : UInt
+  nreloc : UInt
+  flags : UInt
+  reserve1 : UInt
+  reserve2 : UInt
+}
+impl Eq for Section32
+impl Show for Section32
+
+pub struct Section64 {
+  name : FixedArray[Byte]
+  seg : FixedArray[Byte]
+  addr : UInt64
+  size : UInt64
+  offset : UInt
+  align : UInt
+  reloff : UInt
+  nreloc : UInt
+  flags : UInt
+  reserve1 : UInt
+  reserve2 : UInt
+  reserve3 : UInt
+}
+impl Eq for Section64
+impl Show for Section64
+
+pub struct SectionHeader {
+  name : String
+  seg : String
+  addr : UInt64
+  size : UInt64
+  offset : UInt
+  align : UInt
+  reloff : UInt
+  nreloc : UInt
+  flags : UInt
+}
+impl Eq for SectionHeader
+impl Show for SectionHeader
+
+pub struct Segment {
+  load_bytes : LoadBytes
+  header : SegmentHeader
+  data : Bytes?
+}
+impl Eq for Segment
+impl Show for Segment
+
+pub struct Segment32 {
+  cmd : UInt
+  len : UInt
+  name : FixedArray[Byte]
+  addr : UInt
+  memsz : UInt
+  offset : UInt
+  filesz : UInt
+  maxprot : UInt
+  prot : UInt
+  nsect : UInt
+  flag : UInt
+}
+impl Eq for Segment32
+impl Show for Segment32
+
+pub struct Segment64 {
+  cmd : UInt
+  len : UInt
+  name : FixedArray[Byte]
+  addr : UInt64
+  memsz : UInt64
+  offset : UInt64
+  filesz : UInt64
+  maxprot : UInt
+  prot : UInt
+  nsect : UInt
+  flag : UInt
+}
+impl Eq for Segment64
+impl Show for Segment64
+
+pub struct SegmentHeader {
+  cmd : LoadCmd
+  len : UInt
+  name : String
+  addr : UInt64
+  memsz : UInt64
+  offset : UInt64
+  filesz : UInt64
+  maxprot : UInt
+  prot : UInt
+  nsect : UInt
+  flag : UInt
+}
+impl Eq for SegmentHeader
+impl Show for SegmentHeader
+
+pub struct Symbol {
+  name : String
+  type_ : Int
+  sect : Int
+  desc : Int
+  value : UInt64
+}
+impl Eq for Symbol
+impl Show for Symbol
+
+pub struct Symtab {
+  load_bytes : LoadBytes
+  symoff : UInt
+  nsyms : UInt
+  stroff : UInt
+  strsize : UInt
+  syms : Array[Symbol]
+}
+impl Eq for Symtab
+impl Show for Symtab
+
+pub struct SymtabCmd {
+  cmd : UInt
+  len : UInt
+  symoff : UInt
+  nsyms : UInt
+  stroff : UInt
+  strsize : UInt
+}
+impl Eq for SymtabCmd
+impl Show for SymtabCmd
+
+pub struct Thread {
+  load_bytes : LoadBytes
+  type_ : UInt
+  data : Array[UInt]
+}
+impl Eq for Thread
+impl Show for Thread
+
+pub enum Type {
+  Object
+  Exec
+  Dylib
+  Bundle
+  Unknown(UInt)
+}
+fn Type::from_uint(UInt) -> Self
+fn Type::to_uint(Self) -> UInt
+impl Eq for Type
+impl Show for Type
+
+// Type aliases
+
+// Traits
+pub trait Load {
+  raw(Self) -> Bytes
+}
+
