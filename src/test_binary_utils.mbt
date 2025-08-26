@@ -42,3 +42,37 @@ test "is_valid_magic" {
   assert_true(is_valid_magic(0xcffaedfe_U))
   assert_false(is_valid_magic(0x12345678_U))
 }
+
+///|
+test "read_uint buffer overflow" {
+  let data = "12".to_bytes() // Only 2 bytes
+  try {
+    let _ = read_uint(data, 0, Little) // Needs 4 bytes
+    fail("Expected buffer overflow error")
+  } catch {
+    BufferOverflowError::ReadOverflow(offset~, length~, buffer_size~, operation~) => {
+      assert_eq(offset, 0)
+      assert_eq(length, 4)
+      assert_eq(buffer_size, 2)
+      assert_eq(operation, "read_uint")
+    }
+    _ => fail("Expected ReadOverflow error")
+  }
+}
+
+///|
+test "read_bytes buffer overflow" {
+  let data = "hello".to_bytes() // Only 5 bytes
+  try {
+    let _ = read_bytes(data, 0, 10) // Try to read 10 bytes
+    fail("Expected buffer overflow error")
+  } catch {
+    BufferOverflowError::ReadOverflow(offset~, length~, buffer_size~, operation~) => {
+      assert_eq(offset, 0)
+      assert_eq(length, 10)
+      assert_eq(buffer_size, 5)
+      assert_eq(operation, "read_bytes")
+    }
+    _ => fail("Expected ReadOverflow error")
+  }
+}
