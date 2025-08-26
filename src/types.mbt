@@ -235,11 +235,43 @@ pub struct File {
 
 ///|
 /// FormatError is returned when the data does not have the correct format for a Mach-O file.
-pub struct FormatError {
-  offset : Int64
-  message : Bytes
-  value : Bytes?
-} derive(Eq, Show)
+suberror FormatError {
+  InvalidMagic(magic~ : UInt)
+  FileTooSmall(actual_size~ : Int, required_size~ : Int)
+  InvalidHeader(offset~ : Int64, message~ : String)
+  CommandDataOverflow(offset~ : Int64, size~ : UInt, file_size~ : Int)
+}
+
+///|
+/// ParseError is returned when parsing fails due to invalid data structure
+suberror ParseError {
+  InvalidCommandSize(offset~ : Int, size~ : UInt)
+  SegmentTooSmall(offset~ : Int64, command_type~ : String)
+  SectionDataOverflow(offset~ : Int64, section_type~ : String)
+  MissingData(offset~ : Int64, expected~ : String)
+}
+
+///|
+/// BufferOverflowError is returned when reading beyond buffer boundaries
+suberror BufferOverflowError {
+  ReadOverflow(offset~ : Int, length~ : Int, buffer_size~ : Int, operation~ : String)
+}
+
+///|
+/// InvalidDataError is returned when data contains invalid values
+suberror InvalidDataError {
+  InvalidOffset(offset~ : Int, max_offset~ : Int, context~ : String)
+  InvalidIndex(index~ : Int, max_index~ : Int, context~ : String)
+  MalformedString(offset~ : Int, context~ : String)
+}
+
+///|
+/// CommandError is returned when load command parsing fails
+suberror CommandError {
+  UnknownCommand(command~ : UInt, offset~ : Int)
+  InvalidCommandLength(command~ : UInt, length~ : UInt, offset~ : Int)
+  MissingCommandData(command~ : UInt, offset~ : Int, message~ : String)
+}
 
 ///|
 /// Raw data structures for binary parsing

@@ -10,24 +10,21 @@ pub fn parse_symbols(
   nsyms : UInt,
   is_64bit : Bool,
   byte_order : ByteOrder,
-) -> ParseResult[Array[Symbol]] {
+) -> Array[Symbol] raise {
   let symbols = Array::new()
   let symbol_size = if is_64bit { 16 } else { 12 }
   if symdata.length() < nsyms.reinterpret_as_int() * symbol_size {
-    return Err({
-      offset: 0L,
-      message: "Symbol table data too small",
-      value: None,
-    })
+    raise ParseError::MissingData(
+      offset=0L,
+      expected="Symbol table data (" + (nsyms.reinterpret_as_int() * symbol_size).to_string() + " bytes)"
+    )
   }
   for i = 0; i < nsyms.reinterpret_as_int(); i = i + 1 {
     let offset = i * symbol_size
-    match parse_single_symbol(symdata, strtab, offset, is_64bit, byte_order) {
-      Ok(symbol) => symbols.push(symbol)
-      Err(err) => return Err(err)
-    }
+    let symbol = parse_single_symbol(symdata, strtab, offset, is_64bit, byte_order)
+    symbols.push(symbol)
   }
-  Ok(symbols)
+  symbols
 }
 
 ///|
@@ -38,7 +35,7 @@ fn parse_single_symbol(
   offset : Int,
   is_64bit : Bool,
   byte_order : ByteOrder,
-) -> ParseResult[Symbol] {
+) -> Symbol raise {
   let name_index = read_uint(symdata, offset, byte_order)
   let type_ = symdata[offset + 4].to_int()
   let sect = symdata[offset + 5].to_int()
@@ -68,7 +65,7 @@ fn parse_single_symbol(
   } else {
     "<invalid>"
   }
-  Ok({ name, type_, sect, desc, value })
+  { name, type_, sect, desc, value }
 }
 
 ///|
@@ -77,21 +74,20 @@ pub fn parse_dynamic_symbol_indices(
   data : Bytes,
   nindirectsyms : UInt,
   byte_order : ByteOrder,
-) -> ParseResult[Array[UInt]] {
+) -> Array[UInt] raise {
   let indices = Array::new()
   let expected_size = nindirectsyms.reinterpret_as_int() * 4
   if data.length() < expected_size {
-    return Err({
-      offset: 0L,
-      message: "Dynamic symbol indices data too small",
-      value: None,
-    })
+    raise ParseError::MissingData(
+      offset=0L,
+      expected="Dynamic symbol indices data (" + expected_size.to_string() + " bytes)"
+    )
   }
   for i = 0; i < nindirectsyms.reinterpret_as_int(); i = i + 1 {
     let index = read_uint(data, i * 4, byte_order)
     indices.push(index)
   }
-  Ok(indices)
+  indices
 }
 
 ///|

@@ -4,9 +4,14 @@
 
 ///|
 /// Read a UInt from bytes at offset with given byte order
-pub fn read_uint(data : Bytes, offset : Int, byte_order : ByteOrder) -> UInt {
+pub fn read_uint(data : Bytes, offset : Int, byte_order : ByteOrder) -> UInt raise {
   if offset + 4 > data.length() {
-    abort("Buffer overflow reading UInt")
+    raise BufferOverflowError::ReadOverflow(
+      offset~,
+      length=4,
+      buffer_size=data.length(),
+      operation="read_uint"
+    )
   }
   match byte_order {
     Little =>
@@ -28,9 +33,14 @@ pub fn read_uint64(
   data : Bytes,
   offset : Int,
   byte_order : ByteOrder,
-) -> UInt64 {
+) -> UInt64 raise {
   if offset + 8 > data.length() {
-    abort("Buffer overflow reading UInt64")
+    raise BufferOverflowError::ReadOverflow(
+      offset~,
+      length=8,
+      buffer_size=data.length(),
+      operation="read_uint64"
+    )
   }
   let low = read_uint(data, offset, byte_order).to_uint64()
   let high = read_uint(data, offset + 4, byte_order).to_uint64()
@@ -42,9 +52,14 @@ pub fn read_uint64(
 
 ///|
 /// Create new bytes as a subset of another byte array - simulate a slice
-pub fn read_bytes(data : Bytes, offset : Int, length : Int) -> Bytes {
+pub fn read_bytes(data : Bytes, offset : Int, length : Int) -> Bytes raise {
   if offset + length > data.length() {
-    abort("Buffer overflow reading bytes")
+    raise BufferOverflowError::ReadOverflow(
+      offset~,
+      length~,
+      buffer_size=data.length(),
+      operation="read_bytes"
+    )
   }
   // Create a bytes array from the slice by converting to string and back
   // This is not the most efficient but works with available APIs
@@ -61,9 +76,17 @@ pub fn copy_to_fixed_array(
   data : Bytes,
   offset : Int,
   size : Int,
-) -> FixedArray[Int] {
+) -> FixedArray[Int] raise {
+  if offset + size > data.length() {
+    raise BufferOverflowError::ReadOverflow(
+      offset~,
+      length=size,
+      buffer_size=data.length(),
+      operation="copy_to_fixed_array"
+    )
+  }
   let result = FixedArray::make(size, 0)
-  for i = 0; i < size && offset + i < data.length(); i = i + 1 {
+  for i = 0; i < size; i = i + 1 {
     result[i] = data[offset + i].to_int()
   }
   result
