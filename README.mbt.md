@@ -27,7 +27,7 @@ test "parsing a mach-o file" {
                      "\u{00}\u{00}\u{00}\u{00}" +  // cmdsz (0)
                      "\u{00}\u{00}\u{00}\u{00}"    // flags (0)
 
-  let data = header_bytes.to_bytes()
+  let data = header_bytes
 
   match @lib.parse_file(data) {
     Ok(file) => {
@@ -112,12 +112,12 @@ test "working with mach-o constants" {
 ```moonbit
 test "binary parsing utilities" {
   // C-string extraction
-  let data = "hello\u{00}world".to_bytes()
+  let data = "hello\u{00}world"
   let str = @lib.cstring(data)
   inspect(str, content="hello")
 
   // Reading integers with byte order
-  let int_data = "\u{01}\u{02}\u{03}\u{04}".to_bytes()
+  let int_data = "\u{01}\u{02}\u{03}\u{04}"
   let little_endian = @lib.read_uint(int_data, 0, @lib.Little)
   let big_endian = @lib.read_uint(int_data, 0, @lib.Big)
 

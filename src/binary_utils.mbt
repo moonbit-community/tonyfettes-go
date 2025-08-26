@@ -4,13 +4,17 @@
 
 ///|
 /// Read a UInt from bytes at offset with given byte order
-pub fn read_uint(data : Bytes, offset : Int, byte_order : ByteOrder) -> UInt raise {
+pub fn read_uint(
+  data : Bytes,
+  offset : Int,
+  byte_order : ByteOrder,
+) -> UInt raise {
   if offset + 4 > data.length() {
     raise BufferOverflowError::ReadOverflow(
       offset~,
       length=4,
       buffer_size=data.length(),
-      operation="read_uint"
+      operation="read_uint",
     )
   }
   match byte_order {
@@ -39,7 +43,7 @@ pub fn read_uint64(
       offset~,
       length=8,
       buffer_size=data.length(),
-      operation="read_uint64"
+      operation="read_uint64",
     )
   }
   let low = read_uint(data, offset, byte_order).to_uint64()
@@ -58,16 +62,10 @@ pub fn read_bytes(data : Bytes, offset : Int, length : Int) -> Bytes raise {
       offset~,
       length~,
       buffer_size=data.length(),
-      operation="read_bytes"
+      operation="read_bytes",
     )
   }
-  // Create a bytes array from the slice by converting to string and back
-  // This is not the most efficient but works with available APIs
-  let mut result_str = ""
-  for i = 0; i < length; i = i + 1 {
-    result_str = result_str + data[offset + i].to_int().to_char().to_string()
-  }
-  result_str.to_bytes()
+  [..data[offset:offset + length]]
 }
 
 ///|
@@ -82,7 +80,7 @@ pub fn copy_to_fixed_array(
       offset~,
       length=size,
       buffer_size=data.length(),
-      operation="copy_to_fixed_array"
+      operation="copy_to_fixed_array",
     )
   }
   let result = FixedArray::make(size, 0)
