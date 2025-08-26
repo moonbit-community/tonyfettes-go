@@ -1,31 +1,19 @@
-///| Main Mach-O file parsing functionality
-
-///| Based on Go's debug/macho package
-
 ///|
-/// Create a new File from raw bytes
 pub fn parse_file(data : Bytes) -> File raise {
   if data.length() < 4 {
     raise FormatError::FileTooSmall(actual_size=data.length(), required_size=4)
   }
-
-  // Read magic number to determine byte order and architecture
   let magic = read_uint(data, 0, Little)
   let byte_order = match determine_byte_order(magic) {
     Some(order) => order
     None => raise FormatError::InvalidMagic(magic~)
   }
-
-  // Correct magic number based on detected byte order
   let actual_magic = read_uint(data, 0, byte_order)
-
-  // Parse file header
   let header = parse_file_header(data, byte_order, actual_magic)
   parse_file_with_header(data, header, byte_order)
 }
 
 ///|
-/// Parse the file header
 fn parse_file_header(
   data : Bytes,
   byte_order : ByteOrder,
@@ -37,7 +25,10 @@ fn parse_file_header(
     file_header_size_32
   }
   if data.length() < header_size {
-    raise FormatError::FileTooSmall(actual_size=data.length(), required_size=header_size)
+    raise FormatError::FileTooSmall(
+      actual_size=data.length(),
+      required_size=header_size,
+    )
   }
   let cpu = Cpu::from_uint(read_uint(data, 4, byte_order))
   let sub_cpu = read_uint(data, 8, byte_order)
@@ -49,7 +40,6 @@ fn parse_file_header(
 }
 
 ///|
-/// Parse the complete file with header
 fn parse_file_with_header(
   data : Bytes,
   header : FileHeader,
@@ -60,29 +50,28 @@ fn parse_file_with_header(
   } else {
     file_header_size_32
   }
-
-  // Validate command size
   if header_size.reinterpret_as_uint() + header.cmdsz >
     data.length().reinterpret_as_uint() {
     raise FormatError::CommandDataOverflow(
       offset=header_size.to_int64(),
       size=header.cmdsz,
-      file_size=data.length()
+      file_size=data.length(),
     )
   }
-
-  // Parse load commands
   let cmd_data = read_bytes(
     data,
     header_size,
     header.cmdsz.reinterpret_as_int(),
   )
-  let (loads, sections, symtab, dysymtab) = parse_load_commands(cmd_data, byte_order, header.ncmd)
+  let (loads, sections, symtab, dysymtab) = parse_load_commands(
+    cmd_data,
+    byte_order,
+    header.ncmd,
+  )
   { header, byte_order, loads, sections, symtab, dysymtab }
 }
 
 ///|
-/// Parse all load commands
 fn parse_load_commands(
   data : Bytes,
   byte_order : ByteOrder,
@@ -95,15 +84,12 @@ fn parse_load_commands(
   let mut offset = 0
   let mut cmd_count = 0_U
   while cmd_count < ncmd && offset + 8 <= data.length() {
-    // Read command header
     let cmd = LoadCmd::from_uint(read_uint(data, offset, byte_order))
     let siz = read_uint(data, offset + 4, byte_order)
     if siz < 8_U || offset + siz.reinterpret_as_int() > data.length() {
       raise ParseError::InvalidCommandSize(offset~, size=siz)
     }
     let cmddat = read_bytes(data, offset, siz.reinterpret_as_int())
-
-    // Parse specific command types
     match cmd {
       LoadCmd::Segment => {
         let (segment, segment_sections) = parse_segment_32(cmddat, byte_order)
@@ -137,9 +123,7 @@ fn parse_load_commands(
         let rpath = parse_rpath_cmd(cmddat, byte_order)
         loads.push(LoadCommand::Rpath(rpath))
       }
-      _ =>
-        // Unknown command, store as raw bytes
-        loads.push(LoadCommand::LoadBytes({ data: cmddat }))
+      _ => loads.push(LoadCommand::LoadBytes({ data: cmddat }))
     }
     offset = offset + siz.reinterpret_as_int()
     cmd_count = cmd_count + 1_U
@@ -147,10 +131,7 @@ fn parse_load_commands(
   (loads, sections, symtab, dysymtab)
 }
 
-/// Convenience functions for creating File instances
-
 ///|
-/// Create a File directly from bytes
 pub fn new_file(data : Bytes) -> File raise {
   parse_file(data)
 }

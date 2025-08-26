@@ -1,5 +1,4 @@
 ///|
-/// Test cases for parser functionality
 test "parse_file too small" {
   let small_data : Bytes = "12"
   try {
@@ -21,24 +20,20 @@ test "parse_file invalid magic" {
     let _ = parse_file(invalid_data)
     fail("Expected error for invalid magic")
   } catch {
-    FormatError::InvalidMagic(magic~) =>
-      // Magic should be 0x78563412 when read as little endian
-      assert_eq(magic, 0x78563412_U)
+    FormatError::InvalidMagic(magic~) => assert_eq(magic, 0x78563412_U)
     _ => fail("Expected InvalidMagic error")
   }
 }
 
 ///|
 test "parse file header basic" {
-  // Create a minimal valid header using type annotation
-  // Magic number for 32-bit Mach-O (0xfeedface in little endian = 0xce 0xfa 0xed 0xfe)
-  let header_data : Bytes = "\xce\xfa\xed\xfe" + // magic_32 (little endian)
-    "\x07\x00\x00\x00" + // cpu (i386 = 7)
-    "\x00\x00\x00\x00" + // subcpu (0)
-    "\x02\x00\x00\x00" + // file type (exec = 2)
-    "\x00\x00\x00\x00" + // ncmd (0)
-    "\x00\x00\x00\x00" + // cmdsz (0)
-    "\x00\x00\x00\x00" // flags (0)
+  let header_data : Bytes = "\xce\xfa\xed\xfe" +
+    "\x07\x00\x00\x00" +
+    "\x00\x00\x00\x00" +
+    "\x02\x00\x00\x00" +
+    "\x00\x00\x00\x00" +
+    "\x00\x00\x00\x00" +
+    "\x00\x00\x00\x00"
   try {
     let file = parse_file(header_data)
     assert_eq(file.header.magic, magic_32)

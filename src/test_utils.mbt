@@ -1,7 +1,4 @@
 ///|
-/// Test cases for utility functions
-
-// Helper to create a minimal test file with given values
 fn create_test_file_helper() -> File {
   {
     header: {
@@ -117,7 +114,6 @@ test "get_flags_description" {
 
 ///|
 test "get_load_command_type" {
-  // Test segment command
   let segment = {
     load_bytes: { data: Bytes::new(0) },
     header: {
@@ -137,8 +133,6 @@ test "get_load_command_type" {
   }
   let seg_cmd = LoadCommand::Segment(segment)
   assert_eq(get_load_command_type(seg_cmd), "SEGMENT_64")
-
-  // Test other command types
   let load_bytes = LoadCommand::LoadBytes({ data: Bytes::new(0) })
   assert_eq(get_load_command_type(load_bytes), "LoadBytes")
 }

@@ -2,14 +2,14 @@
 test "read_uint little endian" {
   let data : Bytes = "\x01\x02\x03\x04"
   let result = read_uint(data, 0, Little)
-  assert_eq(result, 67305985_U) // 0x04030201
+  assert_eq(result, 67305985_U)
 }
 
 ///|
 test "read_uint big endian" {
   let data : Bytes = "\x01\x02\x03\x04"
   let result = read_uint(data, 0, Big)
-  assert_eq(result, 16909060_U) // 0x01020304
+  assert_eq(result, 16909060_U)
 }
 
 ///|
@@ -33,9 +33,9 @@ test "is_valid_magic" {
 
 ///|
 test "read_uint buffer overflow" {
-  let data : Bytes = "12" // Only 2 bytes
+  let data : Bytes = "12"
   try {
-    let _ = read_uint(data, 0, Little) // Needs 4 bytes
+    let _ = read_uint(data, 0, Little)
     fail("Expected buffer overflow error")
   } catch {
     BufferOverflowError::ReadOverflow(
@@ -55,9 +55,9 @@ test "read_uint buffer overflow" {
 
 ///|
 test "read_bytes buffer overflow" {
-  let data : Bytes = "hello" // Only 5 bytes
+  let data : Bytes = "hello"
   try {
-    let _ = read_bytes(data, 0, 10) // Try to read 10 bytes
+    let _ = read_bytes(data, 0, 10)
     fail("Expected buffer overflow error")
   } catch {
     BufferOverflowError::ReadOverflow(

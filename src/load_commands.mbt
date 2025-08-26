@@ -1,20 +1,13 @@
-///| Load command parsing functions
-
-///| Handles parsing of different types of Mach-O load commands
-
 ///|
-/// Parse a 32-bit segment load command
 pub fn parse_segment_32(
   data : Bytes,
   byte_order : ByteOrder,
 ) -> (Segment, Array[Section]) raise {
-  if data.length() < 56 { // Size of Segment32 struct
+  if data.length() < 56 {
     raise ParseError::SegmentTooSmall(offset=0L, command_type="Segment32")
   }
   let cmd = LoadCmd::from_uint(read_uint(data, 0, byte_order))
   let len = read_uint(data, 4, byte_order)
-
-  // Extract name (16 bytes starting at offset 8)
   let name : Bytes = [..data[8:24]]
   let addr = read_uint(data, 24, byte_order).to_uint64()
   let memsz = read_uint(data, 28, byte_order).to_uint64()
@@ -38,16 +31,14 @@ pub fn parse_segment_32(
     flag,
   }
   let segment = { load_bytes: { data, }, header, data: None }
-
-  // Parse sections
   let sections = Array::new()
   let section_offset = 56
   for i = 0; i < nsect.reinterpret_as_int(); i = i + 1 {
-    let sect_start = section_offset + i * 68 // Size of Section32
+    let sect_start = section_offset + i * 68
     if sect_start + 68 > data.length() {
       raise ParseError::SectionDataOverflow(
         offset=sect_start.to_int64(),
-        section_type="Section32"
+        section_type="Section32",
       )
     }
     let section = parse_section_32(read_bytes(data, sect_start, 68), byte_order)
@@ -57,17 +48,15 @@ pub fn parse_segment_32(
 }
 
 ///|
-/// Parse a 64-bit segment load command
 pub fn parse_segment_64(
   data : Bytes,
   byte_order : ByteOrder,
 ) -> (Segment, Array[Section]) raise {
-  if data.length() < 72 { // Size of Segment64 struct
+  if data.length() < 72 {
     raise ParseError::SegmentTooSmall(offset=0L, command_type="Segment64")
   }
   let cmd = LoadCmd::from_uint(read_uint(data, 0, byte_order))
   let len = read_uint(data, 4, byte_order)
-
   let name : Bytes = [..data[8:24]]
   let addr = read_uint64(data, 24, byte_order)
   let memsz = read_uint64(data, 32, byte_order)
@@ -91,16 +80,14 @@ pub fn parse_segment_64(
     flag,
   }
   let segment = { load_bytes: { data, }, header, data: None }
-
-  // Parse sections
   let sections = Array::new()
   let section_offset = 72
   for i = 0; i < nsect.reinterpret_as_int(); i = i + 1 {
-    let sect_start = section_offset + i * 80 // Size of Section64
+    let sect_start = section_offset + i * 80
     if sect_start + 80 > data.length() {
       raise ParseError::SectionDataOverflow(
         offset=sect_start.to_int64(),
-        section_type="Section64"
+        section_type="Section64",
       )
     }
     let section = parse_section_64(read_bytes(data, sect_start, 80), byte_order)
@@ -110,16 +97,10 @@ pub fn parse_segment_64(
 }
 
 ///|
-/// Parse a 32-bit section
-fn parse_section_32(
-  data : Bytes,
-  byte_order : ByteOrder,
-) -> Section raise {
+fn parse_section_32(data : Bytes, byte_order : ByteOrder) -> Section raise {
   if data.length() < 68 {
     raise ParseError::MissingData(offset=0L, expected="Section32 (68 bytes)")
   }
-
-  // Extract section name (16 bytes at offset 0)
   let name : Bytes = [..data[0:16]]
   let seg : Bytes = [..data[16:32]]
   let addr = read_uint(data, 32, byte_order).to_uint64()
@@ -140,27 +121,15 @@ fn parse_section_32(
     nreloc,
     flags,
   }
-  {
-    header,
-    relocs: Array::new(), // Relocations parsed separately
-    data: None,
-  }
+  { header, relocs: Array::new(), data: None }
 }
 
 ///|
-/// Parse a 64-bit section
-fn parse_section_64(
-  data : Bytes,
-  byte_order : ByteOrder,
-) -> Section raise {
+fn parse_section_64(data : Bytes, byte_order : ByteOrder) -> Section raise {
   if data.length() < 80 {
     raise ParseError::MissingData(offset=0L, expected="Section64 (80 bytes)")
   }
-
-  // Extract section name (16 bytes at offset 0)
   let name : Bytes = [..data[0:16]]
-
-  // Extract segment name (16 bytes at offset 16)
   let seg : Bytes = [..data[16:32]]
   let addr = read_uint64(data, 32, byte_order)
   let size = read_uint64(data, 40, byte_order)
@@ -180,43 +149,27 @@ fn parse_section_64(
     nreloc,
     flags,
   }
-  {
-    header,
-    relocs: Array::new(), // Relocations parsed separately
-    data: None,
-  }
+  { header, relocs: Array::new(), data: None }
 }
 
 ///|
-/// Parse symbol table command
-pub fn parse_symtab_cmd(
-  data : Bytes,
-  byte_order : ByteOrder,
-) -> Symtab raise {
-  if data.length() < 24 { // Size of SymtabCmd
+pub fn parse_symtab_cmd(data : Bytes, byte_order : ByteOrder) -> Symtab raise {
+  if data.length() < 24 {
     raise ParseError::MissingData(offset=0L, expected="SymtabCmd (24 bytes)")
   }
   let symoff = read_uint(data, 8, byte_order)
   let nsyms = read_uint(data, 12, byte_order)
   let stroff = read_uint(data, 16, byte_order)
   let strsize = read_uint(data, 20, byte_order)
-  {
-    load_bytes: { data, },
-    symoff,
-    nsyms,
-    stroff,
-    strsize,
-    syms: Array::new(), // Symbols parsed separately with string table access
-  }
+  { load_bytes: { data, }, symoff, nsyms, stroff, strsize, syms: Array::new() }
 }
 
 ///|
-/// Parse dynamic symbol table command
 pub fn parse_dysymtab_cmd(
   data : Bytes,
   byte_order : ByteOrder,
 ) -> Dysymtab raise {
-  if data.length() < 80 { // Size of DysymtabCmd
+  if data.length() < 80 {
     raise ParseError::MissingData(offset=0L, expected="DysymtabCmd (80 bytes)")
   }
   let ilocalsym = read_uint(data, 8, byte_order)
@@ -257,17 +210,13 @@ pub fn parse_dysymtab_cmd(
     nextrel,
     locreloff,
     nlocrel,
-    indirect_syms: Array::new(), // Parsed separately
+    indirect_syms: Array::new(),
   }
 }
 
 ///|
-/// Parse dynamic library command
-pub fn parse_dylib_cmd(
-  data : Bytes,
-  byte_order : ByteOrder,
-) -> Dylib raise {
-  if data.length() < 24 { // Minimum size of DylibCmd
+pub fn parse_dylib_cmd(data : Bytes, byte_order : ByteOrder) -> Dylib raise {
+  if data.length() < 24 {
     raise ParseError::MissingData(offset=0L, expected="DylibCmd (24 bytes)")
   }
   let name_offset = read_uint(data, 8, byte_order)
@@ -278,7 +227,7 @@ pub fn parse_dylib_cmd(
     raise InvalidDataError::InvalidOffset(
       offset=name_offset.reinterpret_as_int(),
       max_offset=data.length(),
-      context="dylib name offset"
+      context="dylib name offset",
     )
   }
   let name_data = read_bytes(
@@ -291,12 +240,8 @@ pub fn parse_dylib_cmd(
 }
 
 ///|
-/// Parse rpath command
-pub fn parse_rpath_cmd(
-  data : Bytes,
-  byte_order : ByteOrder,
-) -> Rpath raise {
-  if data.length() < 12 { // Minimum size of RpathCmd
+pub fn parse_rpath_cmd(data : Bytes, byte_order : ByteOrder) -> Rpath raise {
+  if data.length() < 12 {
     raise ParseError::MissingData(offset=0L, expected="RpathCmd (12 bytes)")
   }
   let path_offset = read_uint(data, 8, byte_order)
@@ -304,7 +249,7 @@ pub fn parse_rpath_cmd(
     raise InvalidDataError::InvalidOffset(
       offset=path_offset.reinterpret_as_int(),
       max_offset=data.length(),
-      context="rpath path offset"
+      context="rpath path offset",
     )
   }
   let path_data = read_bytes(

@@ -1,34 +1,26 @@
-///| Core data structures for Mach-O file format
-
-///| Based on Go's debug/macho package
-
 ///|
-/// A FileHeader represents a Mach-O file header.
 pub struct FileHeader {
-  magic : UInt // Magic number
-  cpu : Cpu // CPU type
-  sub_cpu : UInt // CPU subtype
-  type_ : Type // File type
-  ncmd : UInt // Number of load commands
-  cmdsz : UInt // Size of load commands
-  flags : UInt // Flags
+  magic : UInt
+  cpu : Cpu
+  sub_cpu : UInt
+  type_ : Type
+  ncmd : UInt
+  cmdsz : UInt
+  flags : UInt
 } derive(Eq, Show)
 
 ///|
-/// ByteOrder represents the byte order of the file
 pub enum ByteOrder {
   Little
   Big
 } derive(Eq, Show)
 
 ///|
-/// A Load represents any Mach-O load command.
 pub trait Load {
   raw(Self) -> Bytes
 }
 
 ///|
-/// LoadCommand enum to represent different types of load commands
 pub enum LoadCommand {
   LoadBytes(LoadBytes)
   Segment(Segment)
@@ -53,7 +45,6 @@ impl Load for LoadCommand with raw(self) {
 }
 
 ///|
-/// A LoadBytes is the uninterpreted bytes of a Mach-O load command.
 pub struct LoadBytes {
   data : Bytes
 } derive(Eq, Show)
@@ -64,27 +55,25 @@ impl Load for LoadBytes with raw(self) {
 }
 
 ///|
-/// A SegmentHeader is the header for a Mach-O 32-bit or 64-bit load segment command.
 pub struct SegmentHeader {
-  cmd : LoadCmd // Command type
-  len : UInt // Command length
-  name : Bytes // Segment name
-  addr : UInt64 // Virtual memory address
-  memsz : UInt64 // Virtual memory size
-  offset : UInt64 // File offset
-  filesz : UInt64 // File size
-  maxprot : UInt // Maximum VM protection
-  prot : UInt // Initial VM protection
-  nsect : UInt // Number of sections
-  flag : UInt // Flags
+  cmd : LoadCmd
+  len : UInt
+  name : Bytes
+  addr : UInt64
+  memsz : UInt64
+  offset : UInt64
+  filesz : UInt64
+  maxprot : UInt
+  prot : UInt
+  nsect : UInt
+  flag : UInt
 } derive(Eq, Show)
 
 ///|
-/// A Segment represents a Mach-O 32-bit or 64-bit load segment command.
 pub struct Segment {
   load_bytes : LoadBytes
   header : SegmentHeader
-  data : Bytes? // Segment data (loaded on demand)
+  data : Bytes?
 } derive(Eq, Show)
 
 ///|
@@ -93,41 +82,37 @@ impl Load for Segment with raw(self) {
 }
 
 ///|
-/// SectionHeader contains the metadata for a section.
 pub struct SectionHeader {
-  name : Bytes // Section name
-  seg : Bytes // Segment name
-  addr : UInt64 // Memory address
-  size : UInt64 // Size in bytes
-  offset : UInt // File offset
-  align : UInt // Section alignment (power of 2)
-  reloff : UInt // File offset to relocation entries
-  nreloc : UInt // Number of relocation entries
-  flags : UInt // Section flags
+  name : Bytes
+  seg : Bytes
+  addr : UInt64
+  size : UInt64
+  offset : UInt
+  align : UInt
+  reloff : UInt
+  nreloc : UInt
+  flags : UInt
 } derive(Eq, Show)
 
 ///|
-/// A Reloc represents a Mach-O relocation.
 pub struct Reloc {
-  addr : UInt // Address
-  value : UInt // Value
-  type_ : Int // Relocation type
-  len : Int // Length (0=byte, 1=word, 2=long, 3=quad)
-  pcrel : Bool // PC-relative
-  is_extern : Bool // External symbol (valid if scattered == false)
-  scattered : Bool // Scattered relocation
+  addr : UInt
+  value : UInt
+  type_ : Int
+  len : Int
+  pcrel : Bool
+  is_extern : Bool
+  scattered : Bool
 } derive(Eq, Show)
 
 ///|
-/// A Section represents a Mach-O section.
 pub struct Section {
   header : SectionHeader
   relocs : Array[Reloc]
-  data : Bytes? // Section data (loaded on demand)
+  data : Bytes?
 } derive(Eq, Show)
 
 ///|
-/// A Dylib represents a Mach-O load dynamic library command.
 pub struct Dylib {
   load_bytes : LoadBytes
   name : Bytes
@@ -142,7 +127,6 @@ impl Load for Dylib with raw(self) {
 }
 
 ///|
-/// A Symbol is a Mach-O 32-bit or 64-bit symbol table entry.
 pub struct Symbol {
   name : Bytes
   type_ : Int
@@ -152,14 +136,13 @@ pub struct Symbol {
 } derive(Eq, Show)
 
 ///|
-/// A Symtab represents a Mach-O symbol table command.
 pub struct Symtab {
   load_bytes : LoadBytes
-  symoff : UInt // File offset to symbol table
-  nsyms : UInt // Number of symbols
-  stroff : UInt // File offset to string table
-  strsize : UInt // Bytes table size
-  syms : Array[Symbol] // Symbols
+  symoff : UInt
+  nsyms : UInt
+  stroff : UInt
+  strsize : UInt
+  syms : Array[Symbol]
 } derive(Eq, Show)
 
 ///|
@@ -168,28 +151,27 @@ impl Load for Symtab with raw(self) {
 }
 
 ///|
-/// A Dysymtab represents a Mach-O dynamic symbol table command.
 pub struct Dysymtab {
   load_bytes : LoadBytes
-  ilocalsym : UInt // Index to local symbols
-  nlocalsym : UInt // Number of local symbols
-  iextdefsym : UInt // Index to externally defined symbols
-  nextdefsym : UInt // Number of externally defined symbols
-  iundefsym : UInt // Index to undefined symbols
-  nundefsym : UInt // Number of undefined symbols
-  tocoffset : UInt // File offset to table of contents
-  ntoc : UInt // Number of entries in table of contents
-  modtaboff : UInt // File offset to module table
-  nmodtab : UInt // Number of entries in module table
-  extrefsymoff : UInt // File offset to referenced symbol table
-  nextrefsyms : UInt // Number of referenced symbol table entries
-  indirectsymoff : UInt // File offset to indirect symbol table
-  nindirectsyms : UInt // Number of indirect symbol table entries
-  extreloff : UInt // File offset to external relocation entries
-  nextrel : UInt // Number of external relocation entries
-  locreloff : UInt // File offset to local relocation entries
-  nlocrel : UInt // Number of local relocation entries
-  indirect_syms : Array[UInt] // Indices into Symtab.syms
+  ilocalsym : UInt
+  nlocalsym : UInt
+  iextdefsym : UInt
+  nextdefsym : UInt
+  iundefsym : UInt
+  nundefsym : UInt
+  tocoffset : UInt
+  ntoc : UInt
+  modtaboff : UInt
+  nmodtab : UInt
+  extrefsymoff : UInt
+  nextrefsyms : UInt
+  indirectsymoff : UInt
+  nindirectsyms : UInt
+  extreloff : UInt
+  nextrel : UInt
+  locreloff : UInt
+  nlocrel : UInt
+  indirect_syms : Array[UInt]
 } derive(Eq, Show)
 
 ///|
@@ -198,7 +180,6 @@ impl Load for Dysymtab with raw(self) {
 }
 
 ///|
-/// A Rpath represents a Mach-O rpath command.
 pub struct Rpath {
   load_bytes : LoadBytes
   path : Bytes
@@ -210,7 +191,6 @@ impl Load for Rpath with raw(self) {
 }
 
 ///|
-/// A Thread represents a Mach-O thread state command.
 pub struct Thread {
   load_bytes : LoadBytes
   type_ : UInt
@@ -223,7 +203,6 @@ impl Load for Thread with raw(self) {
 }
 
 ///|
-/// A File represents an open Mach-O file.
 pub struct File {
   header : FileHeader
   byte_order : ByteOrder
@@ -234,7 +213,6 @@ pub struct File {
 } derive(Show)
 
 ///|
-/// FormatError is returned when the data does not have the correct format for a Mach-O file.
 suberror FormatError {
   InvalidMagic(magic~ : UInt)
   FileTooSmall(actual_size~ : Int, required_size~ : Int)
@@ -243,7 +221,6 @@ suberror FormatError {
 }
 
 ///|
-/// ParseError is returned when parsing fails due to invalid data structure
 suberror ParseError {
   InvalidCommandSize(offset~ : Int, size~ : UInt)
   SegmentTooSmall(offset~ : Int64, command_type~ : String)
@@ -252,13 +229,16 @@ suberror ParseError {
 }
 
 ///|
-/// BufferOverflowError is returned when reading beyond buffer boundaries
 suberror BufferOverflowError {
-  ReadOverflow(offset~ : Int, length~ : Int, buffer_size~ : Int, operation~ : String)
+  ReadOverflow(
+    offset~ : Int,
+    length~ : Int,
+    buffer_size~ : Int,
+    operation~ : String
+  )
 }
 
 ///|
-/// InvalidDataError is returned when data contains invalid values
 suberror InvalidDataError {
   InvalidOffset(offset~ : Int, max_offset~ : Int, context~ : String)
   InvalidIndex(index~ : Int, max_index~ : Int, context~ : String)
@@ -266,7 +246,6 @@ suberror InvalidDataError {
 }
 
 ///|
-/// CommandError is returned when load command parsing fails
 suberror CommandError {
   UnknownCommand(command~ : UInt, offset~ : Int)
   InvalidCommandLength(command~ : UInt, length~ : UInt, offset~ : Int)
@@ -274,146 +253,131 @@ suberror CommandError {
 }
 
 ///|
-/// Raw data structures for binary parsing
-
-///|
-
-///|
-/// 32-bit segment load command
 pub struct Segment32 {
-  cmd : UInt // Command type
-  len : UInt // Command length
-  name : FixedArray[Byte] // Segment name (16 bytes)
-  addr : UInt // Virtual memory address
-  memsz : UInt // Virtual memory size
-  offset : UInt // File offset
-  filesz : UInt // File size
-  maxprot : UInt // Maximum VM protection
-  prot : UInt // Initial VM protection
-  nsect : UInt // Number of sections
-  flag : UInt // Flags
+  cmd : UInt
+  len : UInt
+  name : FixedArray[Byte]
+  addr : UInt
+  memsz : UInt
+  offset : UInt
+  filesz : UInt
+  maxprot : UInt
+  prot : UInt
+  nsect : UInt
+  flag : UInt
 } derive(Eq, Show)
 
 ///|
-/// 64-bit segment load command
 pub struct Segment64 {
-  cmd : UInt // Command type
-  len : UInt // Command length
-  name : FixedArray[Byte] // Segment name (16 bytes)
-  addr : UInt64 // Virtual memory address
-  memsz : UInt64 // Virtual memory size
-  offset : UInt64 // File offset
-  filesz : UInt64 // File size
-  maxprot : UInt // Maximum VM protection
-  prot : UInt // Initial VM protection
-  nsect : UInt // Number of sections
-  flag : UInt // Flags
+  cmd : UInt
+  len : UInt
+  name : FixedArray[Byte]
+  addr : UInt64
+  memsz : UInt64
+  offset : UInt64
+  filesz : UInt64
+  maxprot : UInt
+  prot : UInt
+  nsect : UInt
+  flag : UInt
 } derive(Eq, Show)
 
 ///|
-/// Symbol table command
 pub struct SymtabCmd {
-  cmd : UInt // Command type
-  len : UInt // Command length
-  symoff : UInt // File offset to symbol table
-  nsyms : UInt // Number of symbols
-  stroff : UInt // File offset to string table
-  strsize : UInt // Bytes table size
+  cmd : UInt
+  len : UInt
+  symoff : UInt
+  nsyms : UInt
+  stroff : UInt
+  strsize : UInt
 } derive(Eq, Show)
 
 ///|
-/// Dynamic symbol table command
 pub struct DysymtabCmd {
-  cmd : UInt // Command type
-  len : UInt // Command length
-  ilocalsym : UInt // Index to local symbols
-  nlocalsym : UInt // Number of local symbols
-  iextdefsym : UInt // Index to externally defined symbols
-  nextdefsym : UInt // Number of externally defined symbols
-  iundefsym : UInt // Index to undefined symbols
-  nundefsym : UInt // Number of undefined symbols
-  tocoffset : UInt // File offset to table of contents
-  ntoc : UInt // Number of entries in table of contents
-  modtaboff : UInt // File offset to module table
-  nmodtab : UInt // Number of entries in module table
-  extrefsymoff : UInt // File offset to referenced symbol table
-  nextrefsyms : UInt // Number of referenced symbol table entries
-  indirectsymoff : UInt // File offset to indirect symbol table
-  nindirectsyms : UInt // Number of indirect symbol table entries
-  extreloff : UInt // File offset to external relocation entries
-  nextrel : UInt // Number of external relocation entries
-  locreloff : UInt // File offset to local relocation entries
-  nlocrel : UInt // Number of local relocation entries
+  cmd : UInt
+  len : UInt
+  ilocalsym : UInt
+  nlocalsym : UInt
+  iextdefsym : UInt
+  nextdefsym : UInt
+  iundefsym : UInt
+  nundefsym : UInt
+  tocoffset : UInt
+  ntoc : UInt
+  modtaboff : UInt
+  nmodtab : UInt
+  extrefsymoff : UInt
+  nextrefsyms : UInt
+  indirectsymoff : UInt
+  nindirectsyms : UInt
+  extreloff : UInt
+  nextrel : UInt
+  locreloff : UInt
+  nlocrel : UInt
 } derive(Eq, Show)
 
 ///|
-/// Dynamic library command
 pub struct DylibCmd {
-  cmd : UInt // Command type
-  len : UInt // Command length
-  name : UInt // Offset to library name
-  time : UInt // Library's build time stamp
-  current_version : UInt // Library's current version number
-  compat_version : UInt // Library's compatibility version number
+  cmd : UInt
+  len : UInt
+  name : UInt
+  time : UInt
+  current_version : UInt
+  compat_version : UInt
 } derive(Eq, Show)
 
 ///|
-/// Rpath command
 pub struct RpathCmd {
-  cmd : UInt // Command type
-  len : UInt // Command length
-  path : UInt // Offset to path string
+  cmd : UInt
+  len : UInt
+  path : UInt
 } derive(Eq, Show)
 
 ///|
-/// 32-bit section header
 pub struct Section32 {
-  name : FixedArray[Byte] // Section name (16 bytes)
-  seg : FixedArray[Byte] // Segment name (16 bytes)
-  addr : UInt // Memory address
-  size : UInt // Size in bytes
-  offset : UInt // File offset
-  align : UInt // Section alignment (power of 2)
-  reloff : UInt // File offset to relocation entries
-  nreloc : UInt // Number of relocation entries
-  flags : UInt // Section flags
-  reserve1 : UInt // Reserved
-  reserve2 : UInt // Reserved
+  name : FixedArray[Byte]
+  seg : FixedArray[Byte]
+  addr : UInt
+  size : UInt
+  offset : UInt
+  align : UInt
+  reloff : UInt
+  nreloc : UInt
+  flags : UInt
+  reserve1 : UInt
+  reserve2 : UInt
 } derive(Eq, Show)
 
 ///|
-/// 64-bit section header
 pub struct Section64 {
-  name : FixedArray[Byte] // Section name (16 bytes)
-  seg : FixedArray[Byte] // Segment name (16 bytes)
-  addr : UInt64 // Memory address
-  size : UInt64 // Size in bytes
-  offset : UInt // File offset
-  align : UInt // Section alignment (power of 2)
-  reloff : UInt // File offset to relocation entries
-  nreloc : UInt // Number of relocation entries
-  flags : UInt // Section flags
-  reserve1 : UInt // Reserved
-  reserve2 : UInt // Reserved
-  reserve3 : UInt // Reserved (64-bit only)
+  name : FixedArray[Byte]
+  seg : FixedArray[Byte]
+  addr : UInt64
+  size : UInt64
+  offset : UInt
+  align : UInt
+  reloff : UInt
+  nreloc : UInt
+  flags : UInt
+  reserve1 : UInt
+  reserve2 : UInt
+  reserve3 : UInt
 } derive(Eq, Show)
 
 ///|
-/// 32-bit symbol table entry
 pub struct Nlist32 {
-  name : UInt // Bytes table index
-  type_ : Byte // Symbol type
-  sect : Byte // Section number
-  desc : UInt // Symbol description
-  value : UInt // Symbol value
+  name : UInt
+  type_ : Byte
+  sect : Byte
+  desc : UInt
+  value : UInt
 } derive(Eq, Show)
 
 ///|
-/// 64-bit symbol table entry
 pub struct Nlist64 {
-  name : UInt // Bytes table index
-  type_ : Byte // Symbol type
-  sect : Byte // Section number
-  desc : UInt // Symbol description
-  value : UInt64 // Symbol value
+  name : UInt
+  type_ : Byte
+  sect : Byte
+  desc : UInt
+  value : UInt64
 } derive(Eq, Show)

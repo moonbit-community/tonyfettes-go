@@ -1,9 +1,4 @@
-///| Binary utility functions for Mach-O parsing
-
-///| These provide low-level binary data reading and parsing capabilities
-
 ///|
-/// Read a UInt from bytes at offset with given byte order
 pub fn read_uint(
   data : Bytes,
   offset : Int,
@@ -32,7 +27,6 @@ pub fn read_uint(
 }
 
 ///|
-/// Read a UInt64 from bytes at offset with given byte order
 pub fn read_uint64(
   data : Bytes,
   offset : Int,
@@ -55,7 +49,6 @@ pub fn read_uint64(
 }
 
 ///|
-/// Create new bytes as a subset of another byte array - simulate a slice
 pub fn read_bytes(data : Bytes, offset : Int, length : Int) -> Bytes raise {
   if offset + length > data.length() {
     raise BufferOverflowError::ReadOverflow(
@@ -69,7 +62,6 @@ pub fn read_bytes(data : Bytes, offset : Int, length : Int) -> Bytes raise {
 }
 
 ///|
-/// Copy bytes from source to fixed array (simplified approach using Int array)
 pub fn copy_to_fixed_array(
   data : Bytes,
   offset : Int,
@@ -91,11 +83,10 @@ pub fn copy_to_fixed_array(
 }
 
 ///|
-/// Determine byte order from magic number
 pub fn determine_byte_order(magic : UInt) -> ByteOrder? {
   if magic == magic_32 || magic == magic_64 {
     Some(Little)
-  } else if magic == 0xfacefeed_U || magic == 0xcffaedfe_U { // Big endian versions
+  } else if magic == 0xfacefeed_U || magic == 0xcffaedfe_U {
     Some(Big)
   } else {
     None
@@ -103,7 +94,6 @@ pub fn determine_byte_order(magic : UInt) -> ByteOrder? {
 }
 
 ///|
-/// Check if magic number is valid
 pub fn is_valid_magic(magic : UInt) -> Bool {
   magic == magic_32 ||
   magic == magic_64 ||

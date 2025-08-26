@@ -1,21 +1,14 @@
-///| Utility functions for working with Mach-O files
-
-///| Provides convenience methods for common operations
-
 ///|
-/// Check if the file is a 64-bit Mach-O file
 pub fn is_64bit(file : File) -> Bool {
   file.header.magic == magic_64
 }
 
 ///|
-/// Check if the file is a 32-bit Mach-O file
 pub fn is_32bit(file : File) -> Bool {
   file.header.magic == magic_32
 }
 
 ///|
-/// Get the architecture string for the file
 pub fn get_architecture(file : File) -> String {
   match file.header.cpu {
     I386 => "i386"
@@ -29,7 +22,6 @@ pub fn get_architecture(file : File) -> String {
 }
 
 ///|
-/// Get the file type string
 pub fn get_file_type(file : File) -> String {
   match file.header.type_ {
     Object => "Object"
@@ -41,7 +33,6 @@ pub fn get_file_type(file : File) -> String {
 }
 
 ///|
-/// Get a summary of the file
 pub fn get_file_summary(file : File) -> String {
   let arch = get_architecture(file)
   let ftype = get_file_type(file)
@@ -63,13 +54,11 @@ pub fn get_file_summary(file : File) -> String {
 }
 
 ///|
-/// Check if a file flag is set
 pub fn has_flag(file : File, flag : UInt) -> Bool {
   (file.header.flags & flag) != 0_U
 }
 
 ///|
-/// Get human-readable flag descriptions
 pub fn get_flags_description(file : File) -> Array[Bytes] {
   let flags : Array[Bytes] = []
   if has_flag(file, flag_no_undefs) {
@@ -154,7 +143,6 @@ pub fn get_flags_description(file : File) -> Array[Bytes] {
 }
 
 ///|
-/// Get load command type as string
 pub fn get_load_command_type(cmd : LoadCommand) -> Bytes {
   match cmd {
     LoadBytes(_) => "LoadBytes"
@@ -173,7 +161,6 @@ pub fn get_load_command_type(cmd : LoadCommand) -> Bytes {
 }
 
 ///|
-/// Count load commands by type
 pub fn count_load_commands_by_type(file : File) -> Array[(Bytes, Int)] {
   let counts : Array[(Bytes, Int)] = []
   let mut segment_count = 0

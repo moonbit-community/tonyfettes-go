@@ -1,5 +1,4 @@
 ///|
-/// Test cases for constants and enums
 test "magic number constants" {
   assert_eq(magic_32, 4277009102_U)
   assert_eq(magic_64, 4277009103_U)

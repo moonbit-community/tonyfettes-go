@@ -1,15 +1,8 @@
-///| Mach-O file format constants and enums
-
 ///|
-/// Based on Go's debug/macho package
-
-// File header size constants
 pub let file_header_size_32 : Int = 7 * 4
 
 ///|
 pub let file_header_size_64 : Int = 8 * 4
-
-// Magic numbers for Mach-O files
 
 ///|
 pub let magic_32 : UInt = 0xfeedface_U
@@ -20,18 +13,15 @@ pub let magic_64 : UInt = 0xfeedfacf_U
 ///|
 pub let magic_fat : UInt = 0xcafebabe_U
 
-// CPU architecture flags
-
 ///|
 let cpu_arch_64 : UInt = 0x01000000_U
 
 ///|
-/// A Type is the Mach-O file type, e.g. an object file, executable, or dynamic library.
 pub enum Type {
-  Object // Object file (.o)
-  Exec // Executable
-  Dylib // Dynamic library (.dylib)
-  Bundle // Bundle
+  Object
+  Exec
+  Dylib
+  Bundle
   Unknown(UInt)
 } derive(Eq, Show)
 
@@ -58,14 +48,13 @@ pub fn Type::to_uint(self : Type) -> UInt {
 }
 
 ///|
-/// A Cpu is a Mach-O cpu type.
 pub enum Cpu {
-  I386 // Intel 386
-  Amd64 // AMD64 (x86-64)
-  Arm // ARM
-  Arm64 // ARM64
-  Ppc // PowerPC
-  Ppc64 // PowerPC 64
+  I386
+  Amd64
+  Arm
+  Arm64
+  Ppc
+  Ppc64
   Unknown(UInt)
 } derive(Eq, Show)
 
@@ -73,11 +62,11 @@ pub enum Cpu {
 pub fn Cpu::from_uint(value : UInt) -> Cpu {
   match value {
     7_U => I386
-    0x1000007_U => Amd64 // 7 | cpu_arch_64
+    0x1000007_U => Amd64
     12_U => Arm
-    0x100000c_U => Arm64 // 12 | cpu_arch_64
+    0x100000c_U => Arm64
     18_U => Ppc
-    0x1000012_U => Ppc64 // 18 | cpu_arch_64
+    0x1000012_U => Ppc64
     _ => Unknown(value)
   }
 }
@@ -96,17 +85,16 @@ pub fn Cpu::to_uint(self : Cpu) -> UInt {
 }
 
 ///|
-/// A LoadCmd is a Mach-O load command.
 pub enum LoadCmd {
-  Segment // Load a segment
-  Symtab // Link-edit stab symbol table info
-  Thread // Thread
-  UnixThread // Unix thread (includes stack)
-  Dysymtab // Dynamic link-edit symbol table info
-  Dylib // Load dylib command
-  Dylinker // ID dylinker command (not load dylinker command)
-  Segment64 // 64-bit segment
-  Rpath // Runpath additions
+  Segment
+  Symtab
+  Thread
+  UnixThread
+  Dysymtab
+  Dylib
+  Dylinker
+  Segment64
+  Rpath
   Unknown(UInt)
 } derive(Eq, Show)
 
@@ -143,7 +131,6 @@ pub fn LoadCmd::to_uint(self : LoadCmd) -> UInt {
 }
 
 ///|
-/// File header flags
 pub let flag_no_undefs : UInt = 0x1_U
 
 ///|
