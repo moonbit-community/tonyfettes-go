@@ -14,15 +14,6 @@ pub struct FatArch {
 } derive(Eq, Show)
 
 ///|
-pub struct FatArchHeader {
-  cpu : UInt
-  sub_cpu : UInt
-  offset : UInt
-  size : UInt
-  align : UInt
-} derive(Eq, Show)
-
-///|
 pub struct FatFile {
   magic : UInt
   arches : Array[FatArch]

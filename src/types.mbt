@@ -282,13 +282,6 @@ suberror InvalidDataError {
 }
 
 ///|
-suberror CommandError {
-  UnknownCommand(command~ : UInt, offset~ : Int)
-  InvalidCommandLength(command~ : UInt, length~ : UInt, offset~ : Int)
-  MissingCommandData(command~ : UInt, offset~ : Int, message~ : String)
-}
-
-///|
 pub struct Segment32 {
   cmd : UInt
   len : UInt

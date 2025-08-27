@@ -8,6 +8,8 @@ fn count_load_commands_by_type(File) -> Array[(Bytes, Int)]
 
 fn determine_byte_order(UInt) -> ByteOrder?
 
+fn extract_thread_state(Thread, Cpu, ByteOrder) -> ThreadState raise
+
 let fat_arch_size : Int
 
 let fat_header_size : Int
@@ -72,6 +74,14 @@ let flag_two_level : UInt
 
 let flag_weak_defines : UInt
 
+fn format_regs_386(Regs386) -> String
+
+fn format_regs_amd64(RegsAMD64) -> String
+
+fn format_relocation(Reloc) -> String
+
+fn format_thread_state(ThreadState) -> String
+
 fn get_arch_count(FatFile) -> Int
 
 fn get_arch_file(FatFile, Cpu) -> File?
@@ -108,6 +118,8 @@ fn is_universal_binary(Bytes) -> Bool raise
 
 fn is_valid_magic(UInt) -> Bool
 
+fn is_valid_reloc_type(Int, Cpu) -> Bool
+
 let magic_32 : UInt
 
 let magic_64 : UInt
@@ -132,7 +144,11 @@ fn parse_fat_header(Bytes, Int) -> FatHeader raise
 
 fn parse_file(Bytes) -> File raise
 
+fn parse_relocations(Bytes, Int, UInt, ByteOrder) -> Array[Reloc] raise
+
 fn parse_rpath_cmd(Bytes, ByteOrder) -> Rpath raise
+
+fn parse_section_with_relocations(Section, Bytes, ByteOrder) -> Section raise
 
 fn parse_segment_32(Bytes, ByteOrder) -> (Segment, Array[Section]) raise
 
@@ -144,16 +160,18 @@ fn parse_symtab(Bytes, Symtab, Bool, ByteOrder) -> Symtab raise
 
 fn parse_symtab_cmd(Bytes, ByteOrder) -> Symtab raise
 
+fn parse_thread_state(Bytes, Cpu, ByteOrder) -> ThreadState raise
+
 fn read_bytes(Bytes, Int, Int) -> Bytes raise
 
 fn read_uint(Bytes, Int, ByteOrder) -> UInt raise
 
 fn read_uint64(Bytes, Int, ByteOrder) -> UInt64 raise
 
+fn reloc_length_bytes(Int) -> Int
+
 // Errors
 type BufferOverflowError
-
-type CommandError
 
 type FormatError
 
@@ -264,16 +282,6 @@ pub struct FatArch {
 impl Eq for FatArch
 impl Show for FatArch
 
-pub struct FatArchHeader {
-  cpu : UInt
-  sub_cpu : UInt
-  offset : UInt
-  size : UInt
-  align : UInt
-}
-impl Eq for FatArchHeader
-impl Show for FatArchHeader
-
 pub struct FatFile {
   magic : UInt
   arches : Array[FatArch]
@@ -364,6 +372,53 @@ pub struct Nlist64 {
 impl Eq for Nlist64
 impl Show for Nlist64
 
+pub struct Regs386 {
+  ax : UInt
+  bx : UInt
+  cx : UInt
+  dx : UInt
+  di : UInt
+  si : UInt
+  bp : UInt
+  sp : UInt
+  ss : UInt
+  flags : UInt
+  ip : UInt
+  cs : UInt
+  ds : UInt
+  es : UInt
+  fs : UInt
+  gs : UInt
+}
+impl Eq for Regs386
+impl Show for Regs386
+
+pub struct RegsAMD64 {
+  ax : UInt64
+  bx : UInt64
+  cx : UInt64
+  dx : UInt64
+  di : UInt64
+  si : UInt64
+  bp : UInt64
+  sp : UInt64
+  r8 : UInt64
+  r9 : UInt64
+  r10 : UInt64
+  r11 : UInt64
+  r12 : UInt64
+  r13 : UInt64
+  r14 : UInt64
+  r15 : UInt64
+  ip : UInt64
+  flags : UInt64
+  cs : UInt64
+  fs : UInt64
+  gs : UInt64
+}
+impl Eq for RegsAMD64
+impl Show for RegsAMD64
+
 pub struct Reloc {
   addr : UInt
   value : UInt
@@ -375,6 +430,63 @@ pub struct Reloc {
 }
 impl Eq for Reloc
 impl Show for Reloc
+
+pub enum RelocTypeARM {
+  ARM_RELOC_VANILLA
+  ARM_RELOC_PAIR
+  ARM_RELOC_SECTDIFF
+  ARM_RELOC_LOCAL_SECTDIFF
+  ARM_RELOC_PB_LA_PTR
+  ARM_RELOC_BR24
+  ARM_THUMB_RELOC_BR22
+  ARM_THUMB_32BIT_BRANCH
+  ARM_RELOC_HALF
+  ARM_RELOC_HALF_SECTDIFF
+}
+fn RelocTypeARM::from_int(Int) -> Self?
+fn RelocTypeARM::to_int(Self) -> Int
+
+pub enum RelocTypeARM64 {
+  ARM64_RELOC_UNSIGNED
+  ARM64_RELOC_SUBTRACTOR
+  ARM64_RELOC_BRANCH26
+  ARM64_RELOC_PAGE21
+  ARM64_RELOC_PAGEOFF12
+  ARM64_RELOC_GOT_LOAD_PAGE21
+  ARM64_RELOC_GOT_LOAD_PAGEOFF12
+  ARM64_RELOC_POINTER_TO_GOT
+  ARM64_RELOC_TLVP_LOAD_PAGE21
+  ARM64_RELOC_TLVP_LOAD_PAGEOFF12
+  ARM64_RELOC_ADDEND
+}
+fn RelocTypeARM64::from_int(Int) -> Self?
+fn RelocTypeARM64::to_int(Self) -> Int
+
+pub enum RelocTypeGeneric {
+  GENERIC_RELOC_VANILLA
+  GENERIC_RELOC_PAIR
+  GENERIC_RELOC_SECTDIFF
+  GENERIC_RELOC_PB_LA_PTR
+  GENERIC_RELOC_LOCAL_SECTDIFF
+  GENERIC_RELOC_TLV
+}
+fn RelocTypeGeneric::from_int(Int) -> Self?
+fn RelocTypeGeneric::to_int(Self) -> Int
+
+pub enum RelocTypeX86_64 {
+  X86_64_RELOC_UNSIGNED
+  X86_64_RELOC_SIGNED
+  X86_64_RELOC_BRANCH
+  X86_64_RELOC_GOT_LOAD
+  X86_64_RELOC_GOT
+  X86_64_RELOC_SUBTRACTOR
+  X86_64_RELOC_SIGNED_1
+  X86_64_RELOC_SIGNED_2
+  X86_64_RELOC_SIGNED_4
+  X86_64_RELOC_TLV
+}
+fn RelocTypeX86_64::from_int(Int) -> Self?
+fn RelocTypeX86_64::to_int(Self) -> Int
 
 pub struct Rpath {
   load_bytes : LoadBytes
@@ -543,6 +655,13 @@ pub struct Thread {
 }
 impl Eq for Thread
 impl Show for Thread
+
+pub enum ThreadState {
+  I386(Regs386)
+  AMD64(RegsAMD64)
+  Unknown(Bytes)
+}
+impl Show for ThreadState
 
 pub enum Type {
   Object
