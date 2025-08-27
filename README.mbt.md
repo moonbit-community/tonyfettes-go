@@ -292,6 +292,52 @@ This library is a port of Go's `debug/macho` package. When contributing:
 - Follow MoonBit coding conventions
 - Update documentation for any API changes
 
+## Roadmap
+
+This library is a partial port of Go's `debug/macho` package and is under active development. Currently **~60-70%** of the original functionality has been implemented. The following critical features from the original Go implementation are not yet available and are planned for future releases:
+
+### Priority 1 - Critical Missing Features
+
+- **Fat/Universal Binary Support:** Complete implementation missing - cannot parse "fat" binaries containing multiple Mach-O files for different architectures. This requires implementing `FatFile`, `FatArch` types and associated parsing logic.
+- **File I/O Integration:** No file system access capabilities - only handles raw byte data. Missing `open_file()`, `new_file()` with proper I/O, and file closing functionality.
+- **Complete Symbol Parsing:** Symbol table structures exist but actual symbol extraction from file data is not implemented. Missing `parseSymtab()` functionality.
+- **Section/Segment Data Access:** Cannot read actual content from sections and segments. Missing `Data()` and `Open()` methods for sections/segments.
+
+### Priority 2 - Important Missing Features
+
+- **Relocation Processing:** Relocation structures are defined but parsing of individual relocation entries from binary data is not implemented.
+- **Architecture-Specific Relocation Types:** Missing complete relocation type system with constants for x86_64, ARM, ARM64 architectures and their string representations.
+- **Advanced Load Command Parsing:** Missing parsing for thread state commands (`LC_THREAD`, `LC_UNIXTHREAD`), dynamic linker commands, and other specialized load commands.
+- **Comprehensive Error Handling:** Different error handling approach from Go's `FormatError` system.
+
+### Priority 3 - Advanced Features
+
+- **DWARF Debug Information:** No support for parsing DWARF debugging information from `__DWARF` segments.
+- **High-Level Query API:** Missing some convenience methods like `Segment(name)`, `Section(name)`, and advanced symbol/library import analysis.
+- **Thread State Parsing:** Cannot parse register state information from thread commands.
+- **Comprehensive Testing Infrastructure:** Missing integration tests with real Mach-O binary files (only unit tests currently available).
+
+### Implementation Status
+
+**✅ Implemented:**
+
+- Basic Mach-O header parsing (32-bit/64-bit)
+- Load command structure parsing
+- Segment and section parsing frameworks
+- Symbol table command parsing (structure only)
+- Basic utility functions and constants
+- File type and architecture detection
+
+**❌ Missing Critical Components:**
+
+- Universal binary support
+- Actual symbol data extraction
+- Relocation parsing
+- File I/O operations
+- Section/segment content access
+
+This roadmap reflects the current ~60-70% completion status compared to the original Go `debug/macho` package.
+
 ## License
 
 Apache-2.0 - See LICENSE file for details.
