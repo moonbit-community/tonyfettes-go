@@ -43,9 +43,29 @@ This is a [MoonBit](https://docs.moonbitlang.com) project.
 
 - When writing tests, you are encouraged to use `inspect` and run
   `moon test --update` to update the snapshots, only use assertions like
-  `assert_eq` when you are in some loops where each snapshot may vary. You can
-  use `moon coverage analyze > uncovered.log` to see which parts of your code
-  are not covered by tests.
+  `assert_eq` when you are in some loops where each snapshot may vary.
+
+## Coverage Analysis
+
+To analyze test coverage and identify areas needing more tests:
+
+1. **Generate coverage data**: Run `moon test --enable-coverage` to execute tests with coverage tracking enabled
+2. **Analyze coverage**: Run `moon coverage analyze` to see detailed coverage information, including:
+   - Total uncovered lines and files
+   - Specific line numbers that are not covered (marked with `<-- UNCOVERED`)
+   - Function-level coverage gaps
+   - Error handling paths that may not be tested
+3. **Save coverage report**: Use `moon coverage analyze > uncovered.log` to save coverage analysis to a file for review
+4. **Review uncovered code**: The coverage report shows which lines, functions, and branches are not covered by tests
+5. **Write targeted tests**: Focus on writing tests for uncovered areas identified in the coverage report
+
+### Coverage Output Format
+
+The coverage analyzer shows uncovered lines with specific details:
+- File paths with uncovered line counts
+- Exact line numbers marked with `<-- UNCOVERED` 
+- Context showing the surrounding code structure
+- Common uncovered areas include error conditions, edge cases, and less common code paths
 
 - agent-todo.md has some small tasks that are easy for AI to pick up, agent is
   welcome to finish the tasks and check the box when you are done

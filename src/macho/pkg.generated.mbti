@@ -1,5 +1,5 @@
 // Generated using `moon info`, DON'T EDIT IT
-package "moonbit/macho"
+package "moonbit/macho/macho"
 
 // Values
 fn copy_to_fixed_array(Bytes, Int, Int) -> FixedArray[Int] raise

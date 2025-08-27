@@ -1,0 +1,130 @@
+///|
+test "parse_symtab_cmd success" {
+  // Create symtab command: cmd + len + symoff + nsyms + stroff + strsize (little endian)
+  let data : Bytes = b"\x02\x00\x00\x00\x18\x00\x00\x00\x00\x10\x00\x00\x64\x00\x00\x00\x00\x20\x00\x00\x00\x01\x00\x00"
+  let symtab = parse_symtab_cmd(data, Little)
+  assert_eq(symtab.symoff, 0x1000_U)
+  assert_eq(symtab.nsyms, 100_U)
+  assert_eq(symtab.stroff, 0x2000_U)
+  assert_eq(symtab.strsize, 256_U)
+}
+
+///|
+test "parse_symtab_cmd too small" {
+  let data : Bytes = "12345678901234567890123" // Only 23 bytes, need 24
+  try {
+    let _ = parse_symtab_cmd(data, Little)
+    fail("Expected MissingData error")
+  } catch {
+    ParseError::MissingData(offset~, expected~) => {
+      assert_eq(offset, 0L)
+      assert_eq(expected, "SymtabCmd (24 bytes)")
+    }
+    _ => fail("Expected MissingData error")
+  }
+}
+
+///|
+test "parse_dysymtab_cmd success" {
+  // Create minimal 80-byte dysymtab command: cmd + len + ilocalsym(10) + nlocalsym(5) + rest zeros (little endian)
+  let data : Bytes = b"\x0b\x00\x00\x00\x50\x00\x00\x00\x0a\x00\x00\x00\x05\x00\x00\x00" +
+    Bytes::make(64, b'\x00')
+  let dysymtab = parse_dysymtab_cmd(data, Little)
+  assert_eq(dysymtab.ilocalsym, 10_U)
+  assert_eq(dysymtab.nlocalsym, 5_U)
+}
+
+///|
+test "parse_dysymtab_cmd too small" {
+  let data : Bytes = "short"
+  try {
+    let _ = parse_dysymtab_cmd(data, Little)
+    fail("Expected MissingData error")
+  } catch {
+    ParseError::MissingData(offset~, expected~) => {
+      assert_eq(offset, 0L)
+      assert_eq(expected, "DysymtabCmd (80 bytes)")
+    }
+    _ => fail("Expected MissingData error")
+  }
+}
+
+///|
+test "parse_dylib_cmd success" {
+  // Create minimal dylib command: cmd + len + name_offset + timestamp + current_ver + compat_ver (little endian)
+  let data : Bytes = b"\x0c\x00\x00\x00\x30\x00\x00\x00\x18\x00\x00\x00\x12\x34\x56\x78\x01\x02\x03\x04\x05\x06\x07\x08/usr/lib/libSystem.B.dylib\x00"
+  let dylib = parse_dylib_cmd(data, Little)
+  assert_eq(dylib.time, 0x78563412_U)
+  assert_eq(dylib.current_version, 0x04030201_U)
+  assert_eq(dylib.compat_version, 0x08070605_U)
+}
+
+///|
+test "parse_dylib_cmd too small" {
+  let data : Bytes = "short"
+  try {
+    let _ = parse_dylib_cmd(data, Little)
+    fail("Expected MissingData error")
+  } catch {
+    ParseError::MissingData(offset~, expected~) => {
+      assert_eq(offset, 0L)
+      assert_eq(expected, "DylibCmd (24 bytes)")
+    }
+    _ => fail("Expected MissingData error")
+  }
+}
+
+///|
+test "parse_dylib_cmd invalid name offset" {
+  let data : Bytes = b"\x0c\x00\x00\x00\x18\x00\x00\x00\x00\x01\x00\x00\x12\x34\x56\x78\x01\x02\x03\x04\x05\x06\x07\x08"
+  try {
+    let _ = parse_dylib_cmd(data, Little)
+    fail("Expected InvalidOffset error")
+  } catch {
+    InvalidDataError::InvalidOffset(offset~, max_offset~, context~) => {
+      assert_eq(offset, 256)
+      assert_eq(max_offset, 24)
+      assert_eq(context, "dylib name offset")
+    }
+    _ => fail("Expected InvalidOffset error")
+  }
+}
+
+///|
+test "parse_rpath_cmd success" {
+  let data : Bytes = b"\x1c\x00\x00\x80\x20\x00\x00\x00\x0c\x00\x00\x00/usr/local/lib\x00"
+  let rpath = parse_rpath_cmd(data, Little)
+  // The path should be extracted from the data starting at offset 12
+  assert_eq(rpath.path.length() > 0, true)
+}
+
+///|
+test "parse_rpath_cmd too small" {
+  let data : Bytes = "short"
+  try {
+    let _ = parse_rpath_cmd(data, Little)
+    fail("Expected MissingData error")
+  } catch {
+    ParseError::MissingData(offset~, expected~) => {
+      assert_eq(offset, 0L)
+      assert_eq(expected, "RpathCmd (12 bytes)")
+    }
+    _ => fail("Expected MissingData error")
+  }
+}
+
+///|
+test "parse_rpath_cmd invalid path offset" {
+  let data : Bytes = b"\x1c\x00\x00\x80\x20\x00\x00\x00\x00\x01\x00\x00"
+  try {
+    let _ = parse_rpath_cmd(data, Little)
+    fail("Expected InvalidOffset error")
+  } catch {
+    InvalidDataError::InvalidOffset(offset~, max_offset~, context~) => {
+      assert_eq(offset, 256)
+      assert_eq(max_offset, 12)
+      assert_eq(context, "rpath path offset")
+    }
+    _ => fail("Expected InvalidOffset error")
+  }
+}

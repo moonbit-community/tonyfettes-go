@@ -29,12 +29,12 @@ test "parsing a mach-o file" {
 
   let data = header_bytes
 
-  match @lib.parse_file(data) {
+  match @macho.parse_file(data) {
     Ok(file) => {
       println("Successfully parsed Mach-O file:")
-      println("  Architecture: " + @lib.get_architecture(file))
-      println("  File Type: " + @lib.get_file_type(file))
-      println("  64-bit: " + @lib.is_64bit(file).to_string())
+      println("  Architecture: " + @macho.get_architecture(file))
+      println("  File Type: " + @macho.get_file_type(file))
+      println("  64-bit: " + @macho.is_64bit(file).to_string())
     }
     Err(err) => {
       println("Parse error: " + err.message)
@@ -49,15 +49,15 @@ test "parsing a mach-o file" {
 test "file analysis example" {
   let file = {
     header: {
-      magic: @lib.magic_64,
-      cpu: @lib.Arm64,
+      magic: @macho.magic_64,
+      cpu: @macho.Arm64,
       sub_cpu: 0_U,
-      type_: @lib.Exec,
+      type_: @macho.Exec,
       ncmd: 3_U,
       cmdsz: 200_U,
-      flags: @lib.flag_pie.lor(@lib.flag_two_level)
+      flags: @macho.flag_pie.lor(@macho.flag_two_level)
     },
-    byte_order: @lib.Little,
+    byte_order: @macho.Little,
     loads: [],
     sections: [],
     symtab: None,
@@ -65,18 +65,18 @@ test "file analysis example" {
   }
 
   // Get comprehensive file information
-  let info = @lib.get_detailed_info(file)
+  let info = @macho.get_detailed_info(file)
   println("Detailed File Analysis:")
   println(info)
 
   // Check specific flags
-  if @lib.has_flag(file, @lib.flag_pie) {
+  if @macho.has_flag(file, @macho.flag_pie) {
     println("This is a Position Independent Executable (PIE)")
   }
 
   // Get flag descriptions
-  let flags = @lib.get_flags_description(file)
-  println("File flags: " + @lib.join_strings(flags, ", "))
+  let flags = @macho.get_flags_description(file)
+  println("File flags: " + @macho.join_strings(flags, ", "))
 }
 ```
 
@@ -85,24 +85,24 @@ test "file analysis example" {
 ```moonbit
 test "working with mach-o constants" {
   // File type detection
-  let obj_type = @lib.Type::from_uint(1_U)
+  let obj_type = @macho.Type::from_uint(1_U)
   inspect(obj_type, content="Object")
 
-  let exec_type = @lib.Type::from_uint(2_U)
+  let exec_type = @macho.Type::from_uint(2_U)
   inspect(exec_type, content="Exec")
 
   // CPU architecture detection
-  let x86_cpu = @lib.Cpu::from_uint(7_U)
+  let x86_cpu = @macho.Cpu::from_uint(7_U)
   inspect(x86_cpu, content="I386")
 
-  let arm64_cpu = @lib.Cpu::from_uint(16777228_U)
+  let arm64_cpu = @macho.Cpu::from_uint(16777228_U)
   inspect(arm64_cpu, content="Arm64")
 
   // Load command types
-  let segment_cmd = @lib.LoadCmd::from_uint(1_U)
+  let segment_cmd = @macho.LoadCmd::from_uint(1_U)
   inspect(segment_cmd, content="Segment")
 
-  let symtab_cmd = @lib.LoadCmd::from_uint(2_U)
+  let symtab_cmd = @macho.LoadCmd::from_uint(2_U)
   inspect(symtab_cmd, content="Symtab")
 }
 ```
@@ -113,19 +113,19 @@ test "working with mach-o constants" {
 test "binary parsing utilities" {
   // C-string extraction
   let data = "hello\u{00}world"
-  let str = @lib.cstring(data)
+  let str = @macho.cstring(data)
   inspect(str, content="hello")
 
   // Reading integers with byte order
   let int_data = "\u{01}\u{02}\u{03}\u{04}"
-  let little_endian = @lib.read_uint(int_data, 0, @lib.Little)
-  let big_endian = @lib.read_uint(int_data, 0, @lib.Big)
+  let little_endian = @macho.read_uint(int_data, 0, @macho.Little)
+  let big_endian = @macho.read_uint(int_data, 0, @macho.Big)
 
   inspect(little_endian, content="67305985")   // 0x04030201
   inspect(big_endian, content="16909060")      // 0x01020304
 
   // Byte order detection from magic numbers
-  let byte_order = @lib.determine_byte_order(@lib.magic_32)
+  let byte_order = @macho.determine_byte_order(@macho.magic_32)
   inspect(byte_order, content="Some(Little)")
 }
 ```

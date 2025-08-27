@@ -74,3 +74,82 @@ test "read_bytes buffer overflow" {
     _ => fail("Expected ReadOverflow error")
   }
 }
+
+///|
+test "read_uint64 little endian" {
+  let data : Bytes = "\x01\x02\x03\x04\x05\x06\x07\x08"
+  let result = read_uint64(data, 0, Little)
+  assert_eq(result, 578437695752307201_UL)
+}
+
+///|
+test "read_uint64 big endian" {
+  let data : Bytes = "\x01\x02\x03\x04\x05\x06\x07\x08"
+  let result = read_uint64(data, 0, Big)
+  assert_eq(result, 72623859790382856_UL)
+}
+
+///|
+test "read_uint64 buffer overflow" {
+  let data : Bytes = "1234567"
+  try {
+    let _ = read_uint64(data, 0, Little)
+    fail("Expected buffer overflow error")
+  } catch {
+    BufferOverflowError::ReadOverflow(
+      offset~,
+      length~,
+      buffer_size~,
+      operation~
+    ) => {
+      assert_eq(offset, 0)
+      assert_eq(length, 8)
+      assert_eq(buffer_size, 7)
+      assert_eq(operation, "read_uint64")
+    }
+    _ => fail("Expected ReadOverflow error")
+  }
+}
+
+///|
+test "copy_to_fixed_array success" {
+  let data : Bytes = "hello"
+  let result = copy_to_fixed_array(data, 0, 5)
+  assert_eq(result[0], 104) // 'h'
+  assert_eq(result[1], 101) // 'e'
+  assert_eq(result[2], 108) // 'l'
+  assert_eq(result[3], 108) // 'l'
+  assert_eq(result[4], 111) // 'o'
+}
+
+///|
+test "copy_to_fixed_array buffer overflow" {
+  let data : Bytes = "hi"
+  try {
+    let _ = copy_to_fixed_array(data, 0, 5)
+    fail("Expected buffer overflow error")
+  } catch {
+    BufferOverflowError::ReadOverflow(
+      offset~,
+      length~,
+      buffer_size~,
+      operation~
+    ) => {
+      assert_eq(offset, 0)
+      assert_eq(length, 5)
+      assert_eq(buffer_size, 2)
+      assert_eq(operation, "copy_to_fixed_array")
+    }
+    _ => fail("Expected ReadOverflow error")
+  }
+}
+
+///|
+test "Bytes contains" {
+  let data : Bytes = "hello world"
+  assert_true(data.contains(b'h'))
+  assert_true(data.contains(b'o'))
+  assert_true(data.contains(b' '))
+  assert_false(data.contains(b'x'))
+  assert_false(data.contains(b'z'))
+}

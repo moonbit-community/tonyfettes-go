@@ -61,3 +61,47 @@ test "new_file convenience function" {
     _ => fail("Expected FileTooSmall error")
   }
 }
+
+///|
+test "parse_file 64-bit magic" {
+  let header_data : Bytes = "\xcf\xfa\xed\xfe" +
+    "\x07\x00\x00\x01" +
+    "\x00\x00\x00\x00" +
+    "\x02\x00\x00\x00" +
+    "\x00\x00\x00\x00" +
+    "\x00\x00\x00\x00" +
+    "\x00\x00\x00\x00" +
+    "\x00\x00\x00\x00"
+  try {
+    let file = parse_file(header_data)
+    assert_eq(file.header.magic, magic_64)
+    assert_eq(file.header.cpu, Amd64)
+    assert_eq(file.header.type_, Exec)
+    assert_eq(file.byte_order, Little)
+  } catch {
+    _ => fail("Expected successful parsing")
+  }
+}
+
+///|
+test "parse_file with command data overflow" {
+  // Create header with moderate cmdsz that would still overflow the 28-byte file
+  let header_data : Bytes = "\xce\xfa\xed\xfe" +
+    "\x07\x00\x00\x00" +
+    "\x00\x00\x00\x00" +
+    "\x02\x00\x00\x00" +
+    "\x01\x00\x00\x00" +
+    "\x64\x00\x00\x00" + // cmdsz = 100 bytes, but file is only 28 bytes  
+    "\x00\x00\x00\x00"
+  try {
+    let _ = parse_file(header_data)
+    fail("Expected CommandDataOverflow error")
+  } catch {
+    FormatError::CommandDataOverflow(offset~, size~, file_size~) => {
+      assert_eq(offset, 28L)
+      assert_eq(size, 100_U)
+      assert_eq(file_size, 28)
+    }
+    _ => fail("Expected CommandDataOverflow error")
+  }
+}
