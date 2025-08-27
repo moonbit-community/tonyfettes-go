@@ -128,3 +128,53 @@ test "parse_rpath_cmd invalid path offset" {
     _ => fail("Expected InvalidOffset error")
   }
 }
+
+///|
+test "parse_segment_32 success" {
+  // Create minimal 32-bit segment command (56 bytes): cmd + len + name + vm_addr + vm_size + file_offset + file_size + maxprot + prot + nsect + flags
+  let data : Bytes = b"\x01\x00\x00\x00\x38\x00\x00\x00__TEXT\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00"
+  let (segment, sections) = parse_segment_32(data, Little)
+  assert_eq(sections.length(), 0)
+  assert_eq(segment.header.cmd, Segment)
+  assert_eq(segment.header.len, 56_U)
+}
+
+///|
+test "parse_segment_32 too small" {
+  let data : Bytes = "short data" // Only 10 bytes, need 56
+  try {
+    let _ = parse_segment_32(data, Little)
+    fail("Expected SegmentTooSmall error")
+  } catch {
+    ParseError::SegmentTooSmall(offset~, command_type~) => {
+      assert_eq(offset, 0L)
+      assert_eq(command_type, "Segment32")
+    }
+    _ => fail("Expected SegmentTooSmall error")
+  }
+}
+
+///|
+test "parse_segment_64 success" {
+  // Create minimal 64-bit segment command (72 bytes): cmd + len + name + vm_addr + vm_size + file_offset + file_size + maxprot + prot + nsect + flags
+  let data : Bytes = b"\x19\x00\x00\x00\x48\x00\x00\x00__TEXT\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00"
+  let (segment, sections) = parse_segment_64(data, Little)
+  assert_eq(sections.length(), 0)
+  assert_eq(segment.header.cmd, Segment64)
+  assert_eq(segment.header.len, 72_U)
+}
+
+///|
+test "parse_segment_64 too small" {
+  let data : Bytes = "short data for segment64" // Only 24 bytes, need 72
+  try {
+    let _ = parse_segment_64(data, Little)
+    fail("Expected SegmentTooSmall error")
+  } catch {
+    ParseError::SegmentTooSmall(offset~, command_type~) => {
+      assert_eq(offset, 0L)
+      assert_eq(command_type, "Segment64")
+    }
+    _ => fail("Expected SegmentTooSmall error")
+  }
+}

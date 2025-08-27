@@ -105,3 +105,49 @@ test "parse_file with command data overflow" {
     _ => fail("Expected CommandDataOverflow error")
   }
 }
+
+///|
+test "parse_file with load commands" {
+  // Create a 32-bit file with one load command (symtab)
+  let header_data : Bytes = "\xce\xfa\xed\xfe" + // magic_32
+    "\x07\x00\x00\x00" + // cpu = I386  
+    "\x00\x00\x00\x00" + // sub_cpu
+    "\x02\x00\x00\x00" + // type = Exec
+    "\x01\x00\x00\x00" + // ncmd = 1
+    "\x18\x00\x00\x00" + // cmdsz = 24 (size of symtab command)
+    "\x00\x00\x00\x00" + // flags
+    // Symtab load command (24 bytes): cmd + len + symoff + nsyms + stroff + strsize
+    "\x02\x00\x00\x00" + // cmd = Symtab
+    "\x18\x00\x00\x00" + // len = 24
+    "\x00\x10\x00\x00" + // symoff = 0x1000
+    "\x0a\x00\x00\x00" + // nsyms = 10
+    "\x00\x20\x00\x00" + // stroff = 0x2000  
+    "\x00\x01\x00\x00" // strsize = 256
+  let file = parse_file(header_data)
+  assert_eq(file.header.magic, magic_32)
+  assert_eq(file.header.ncmd, 1_U)
+  assert_eq(file.loads.length(), 1)
+  match file.loads[0] {
+    LoadCommand::Symtab(symtab) => {
+      assert_eq(symtab.symoff, 0x1000_U)
+      assert_eq(symtab.nsyms, 10_U)
+    }
+    _ => fail("Expected Symtab load command")
+  }
+}
+
+///|
+test "parse_load_commands invalid command size" {
+  // Create command data with invalid size
+  let cmd_data : Bytes = b"\x02\x00\x00\x00\x04\x00\x00\x00" // cmd=2, len=4 (too small, min is 8)
+  try {
+    let _ = parse_load_commands(cmd_data, Little, 1_U)
+    fail("Expected InvalidCommandSize error")
+  } catch {
+    ParseError::InvalidCommandSize(offset~, size~) => {
+      assert_eq(offset, 0)
+      assert_eq(size, 4_U)
+    }
+    _ => fail("Expected InvalidCommandSize error")
+  }
+}

@@ -156,3 +156,36 @@ test "get_arch_file not found" {
     None => () // Expected
   }
 }
+
+///|
+test "parse_fat_file complete with valid data" {
+  // Create a complete fat file with header + arch + embedded mach-o files
+  let fat_header : Bytes = b"\xca\xfe\xba\xbe\x00\x00\x00\x01" // magic + 1 arch
+  let fat_arch : Bytes = b"\x00\x00\x00\x07\x00\x00\x00\x00\x00\x00\x00\x1c\x00\x00\x00\x20\x00\x00\x00\x0c" // i386 arch at offset 28, size 32
+  // Embedded Mach-O file (minimal 32-bit header, 32 bytes)
+  let macho_data : Bytes = b"\xce\xfa\xed\xfe\x07\x00\x00\x00\x00\x00\x00\x00\x02\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00"
+  let complete_data = fat_header + fat_arch + macho_data
+  let fat_file = parse_fat_file(complete_data)
+  assert_eq(fat_file.arches.length(), 1)
+  assert_eq(fat_file.files.length(), 1)
+  assert_eq(fat_file.arches[0].cpu, I386)
+  assert_eq(fat_file.files[0].header.cpu, I386)
+}
+
+///|
+test "parse_fat_file file too small for embedded macho" {
+  // Create fat file where embedded file would exceed bounds
+  let fat_header : Bytes = b"\xca\xfe\xba\xbe\x00\x00\x00\x01" // magic + 1 arch
+  let fat_arch : Bytes = b"\x00\x00\x00\x07\x00\x00\x00\x00\x00\x00\x00\x1c\x00\x00\x01\x00\x00\x00\x00\x0c" // i386 arch at offset 28, size 256 (too big)
+  let short_data = fat_header + fat_arch + b"short"
+  try {
+    let _ = parse_fat_file(short_data)
+    fail("Expected FileTooSmall error")
+  } catch {
+    FileTooSmall(actual_size~, required_size~) => {
+      assert_eq(actual_size, 33) // 8 + 20 + 5 bytes  
+      assert_eq(required_size, 284) // 28 + 256 bytes
+    }
+    _ => fail("Expected FileTooSmall error")
+  }
+}
