@@ -80,14 +80,14 @@ pub fn parse_fat_file(data : Bytes) -> FatFile raise {
   let files : Array[File] = []
 
   // Parse each fat architecture
-  for i = 0; i < header.nfat_arch.to_int(); i = i + 1 {
+  for i = 0; i < header.nfat_arch.reinterpret_as_int(); i = i + 1 {
     let arch_offset = fat_header_size + i * fat_arch_size
     let arch = parse_fat_arch(data, arch_offset)
     arches.push(arch)
 
     // Extract and parse the Mach-O file for this architecture
-    let file_start = arch.offset.to_int()
-    let file_size = arch.size.to_int()
+    let file_start = arch.offset.reinterpret_as_int()
+    let file_size = arch.size.reinterpret_as_int()
     if data.length() < file_start + file_size {
       raise FileTooSmall(
         actual_size=data.length(),
