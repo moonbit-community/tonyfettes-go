@@ -68,7 +68,16 @@ fn parse_file_with_header(
     byte_order,
     header.ncmd,
   )
-  { header, byte_order, loads, sections, symtab, dysymtab }
+  let final_symtab = match symtab {
+    Some(st) => {
+      let is_64bit = header.magic == magic_64
+      Some(parse_symtab(data, st, is_64bit, byte_order)) catch {
+        _ => Some(st) // Fall back to original symtab if parsing fails
+      }
+    }
+    None => None
+  }
+  { header, byte_order, loads, sections, symtab: final_symtab, dysymtab }
 }
 
 ///|
@@ -134,4 +143,43 @@ fn parse_load_commands(
 ///|
 pub fn new_file(data : Bytes) -> File raise {
   parse_file(data)
+}
+
+///|
+pub fn open_file(path : String) -> File raise {
+  let data = @fs.read_file_to_bytes(path)
+  parse_file(data)
+}
+
+///|
+pub fn parse_symtab(
+  file_data : Bytes,
+  symtab : Symtab,
+  is_64bit : Bool,
+  byte_order : ByteOrder,
+) -> Symtab raise {
+  let symdata_offset = symtab.symoff.reinterpret_as_int()
+  let string_table_offset = symtab.stroff.reinterpret_as_int()
+  let string_table_size = symtab.strsize.reinterpret_as_int()
+  let symdata = read_bytes(
+    file_data,
+    symdata_offset,
+    symtab.nsyms.reinterpret_as_int() * (if is_64bit { 16 } else { 12 }),
+  )
+  let strtab = read_bytes(file_data, string_table_offset, string_table_size)
+  let symbols = parse_symbols(
+    symdata,
+    strtab,
+    symtab.nsyms,
+    is_64bit,
+    byte_order,
+  )
+  {
+    load_bytes: symtab.load_bytes,
+    symoff: symtab.symoff,
+    nsyms: symtab.nsyms,
+    stroff: symtab.stroff,
+    strsize: symtab.strsize,
+    syms: symbols,
+  }
 }

@@ -82,6 +82,24 @@ impl Load for Segment with raw(self) {
 }
 
 ///|
+pub fn Segment::data(self : Segment, file_data : Bytes) -> Bytes raise {
+  match self.data {
+    Some(data) => data
+    None => {
+      let offset = self.header.offset.to_uint().reinterpret_as_int()
+      let size = self.header.filesz.to_uint().reinterpret_as_int()
+      if file_data.length() < offset + size {
+        raise ParseError::MissingData(
+          offset=offset.to_int64(),
+          expected="Segment data (" + size.to_string() + " bytes)",
+        )
+      }
+      read_bytes(file_data, offset, size)
+    }
+  }
+}
+
+///|
 pub struct SectionHeader {
   name : Bytes
   seg : Bytes
@@ -111,6 +129,24 @@ pub struct Section {
   relocs : Array[Reloc]
   data : Bytes?
 } derive(Eq, Show)
+
+///|
+pub fn Section::data(self : Section, file_data : Bytes) -> Bytes raise {
+  match self.data {
+    Some(data) => data
+    None => {
+      let offset = self.header.offset.reinterpret_as_int()
+      let size = self.header.size.to_uint().reinterpret_as_int()
+      if file_data.length() < offset + size {
+        raise ParseError::MissingData(
+          offset=offset.to_int64(),
+          expected="Section data (" + size.to_string() + " bytes)",
+        )
+      }
+      read_bytes(file_data, offset, size)
+    }
+  }
+}
 
 ///|
 pub struct Dylib {

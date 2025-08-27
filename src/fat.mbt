@@ -1,0 +1,134 @@
+///|
+pub struct FatHeader {
+  magic : UInt
+  nfat_arch : UInt
+} derive(Eq, Show)
+
+///|
+pub struct FatArch {
+  cpu : Cpu
+  sub_cpu : UInt
+  offset : UInt
+  size : UInt
+  align : UInt
+} derive(Eq, Show)
+
+///|
+pub struct FatArchHeader {
+  cpu : UInt
+  sub_cpu : UInt
+  offset : UInt
+  size : UInt
+  align : UInt
+} derive(Eq, Show)
+
+///|
+pub struct FatFile {
+  magic : UInt
+  arches : Array[FatArch]
+  files : Array[File]
+} derive(Show)
+
+///|
+pub let fat_header_size : Int = 2 * 4
+
+///|
+pub let fat_arch_size : Int = 5 * 4
+
+///|
+pub fn is_fat(magic : UInt) -> Bool {
+  magic == magic_fat || magic == 0xbebafeca_U // swapped fat magic
+}
+
+///|
+pub fn parse_fat_header(data : Bytes, offset : Int) -> FatHeader raise {
+  if data.length() < offset + fat_header_size {
+    raise FileTooSmall(
+      actual_size=data.length(),
+      required_size=offset + fat_header_size,
+    )
+  }
+  let magic = read_uint(data, offset, Big)
+  let nfat_arch = read_uint(data, offset + 4, Big)
+  if not(is_fat(magic)) {
+    raise InvalidMagic(magic~)
+  }
+  { magic, nfat_arch }
+}
+
+///|
+pub fn parse_fat_arch(data : Bytes, offset : Int) -> FatArch raise {
+  if data.length() < offset + fat_arch_size {
+    raise FileTooSmall(
+      actual_size=data.length(),
+      required_size=offset + fat_arch_size,
+    )
+  }
+  let cpu_raw = read_uint(data, offset, Big)
+  let sub_cpu = read_uint(data, offset + 4, Big)
+  let file_offset = read_uint(data, offset + 8, Big)
+  let size = read_uint(data, offset + 12, Big)
+  let align = read_uint(data, offset + 16, Big)
+  let cpu = Cpu::from_uint(cpu_raw)
+  { cpu, sub_cpu, offset: file_offset, size, align }
+}
+
+///|
+pub fn parse_fat_file(data : Bytes) -> FatFile raise {
+  let header = parse_fat_header(data, 0)
+  let arches : Array[FatArch] = []
+  let files : Array[File] = []
+
+  // Parse each fat architecture
+  for i = 0; i < header.nfat_arch.to_int(); i = i + 1 {
+    let arch_offset = fat_header_size + i * fat_arch_size
+    let arch = parse_fat_arch(data, arch_offset)
+    arches.push(arch)
+
+    // Extract and parse the Mach-O file for this architecture
+    let file_start = arch.offset.to_int()
+    let file_size = arch.size.to_int()
+    if data.length() < file_start + file_size {
+      raise FileTooSmall(
+        actual_size=data.length(),
+        required_size=file_start + file_size,
+      )
+    }
+    let file_data = read_bytes(data, file_start, file_size)
+    files.push(parse_file(file_data))
+  }
+  { magic: header.magic, arches, files }
+}
+
+///|
+pub fn get_arch_file(fat_file : FatFile, cpu : Cpu) -> File? {
+  for i = 0; i < fat_file.arches.length(); i = i + 1 {
+    if fat_file.arches[i].cpu == cpu {
+      return Some(fat_file.files[i])
+    }
+  }
+  None
+}
+
+///|
+pub fn get_arch_count(fat_file : FatFile) -> Int {
+  fat_file.arches.length()
+}
+
+///|
+pub fn get_supported_architectures(fat_file : FatFile) -> Array[Cpu] {
+  let cpus : Array[Cpu] = []
+  for arch in fat_file.arches {
+    cpus.push(arch.cpu)
+  }
+  cpus
+}
+
+///|
+pub fn is_universal_binary(data : Bytes) -> Bool raise {
+  if data.length() < 4 {
+    return false
+  }
+  let magic = read_uint(data, 0, Big)
+  is_fat(magic)
+}

@@ -2,17 +2,15 @@
 package "moonbit/macho"
 
 // Values
-fn copy_to_fixed_array(Bytes, Int, Int) -> FixedArray[Int]
+fn copy_to_fixed_array(Bytes, Int, Int) -> FixedArray[Int] raise
 
 fn count_load_commands_by_type(File) -> Array[(Bytes, Int)]
 
-fn cstring(Bytes) -> Bytes
-
-fn cstring_from_fixed_array(FixedArray[Byte]) -> Bytes
-
-fn cstring_from_fixed_int_array(FixedArray[Int]) -> Bytes
-
 fn determine_byte_order(UInt) -> ByteOrder?
+
+let fat_arch_size : Int
+
+let fat_header_size : Int
 
 let file_header_size_32 : Int
 
@@ -74,13 +72,15 @@ let flag_two_level : UInt
 
 let flag_weak_defines : UInt
 
-fn get_architecture(File) -> Bytes
+fn get_arch_count(FatFile) -> Int
 
-fn get_detailed_info(File) -> Bytes
+fn get_arch_file(FatFile, Cpu) -> File?
 
-fn get_file_summary(File) -> Bytes
+fn get_architecture(File) -> String
 
-fn get_file_type(File) -> Bytes
+fn get_file_summary(File) -> String
+
+fn get_file_type(File) -> String
 
 fn get_flags_description(File) -> Array[Bytes]
 
@@ -94,11 +94,17 @@ fn get_section_names(File) -> Array[Bytes]
 
 fn get_segment_names(File) -> Array[Bytes]
 
+fn get_supported_architectures(FatFile) -> Array[Cpu]
+
 fn has_flag(File, UInt) -> Bool
 
 fn is_32bit(File) -> Bool
 
 fn is_64bit(File) -> Bool
+
+fn is_fat(UInt) -> Bool
+
+fn is_universal_binary(Bytes) -> Bool raise
 
 fn is_valid_magic(UInt) -> Bool
 
@@ -108,35 +114,52 @@ let magic_64 : UInt
 
 let magic_fat : UInt
 
-fn new_file(Bytes) -> ParseResult[File]
+fn new_file(Bytes) -> File raise
 
-fn open_file(Bytes) -> ParseResult[File]
+fn open_file(String) -> File raise
 
-fn parse_dylib_cmd(Bytes, ByteOrder) -> ParseResult[Dylib]
+fn parse_dylib_cmd(Bytes, ByteOrder) -> Dylib raise
 
-fn parse_dynamic_symbol_indices(Bytes, UInt, ByteOrder) -> ParseResult[Array[UInt]]
+fn parse_dynamic_symbol_indices(Bytes, UInt, ByteOrder) -> Array[UInt] raise
 
-fn parse_dysymtab_cmd(Bytes, ByteOrder) -> ParseResult[Dysymtab]
+fn parse_dysymtab_cmd(Bytes, ByteOrder) -> Dysymtab raise
 
-fn parse_file(Bytes) -> ParseResult[File]
+fn parse_fat_arch(Bytes, Int) -> FatArch raise
 
-fn parse_rpath_cmd(Bytes, ByteOrder) -> ParseResult[Rpath]
+fn parse_fat_file(Bytes) -> FatFile raise
 
-fn parse_segment_32(Bytes, ByteOrder) -> ParseResult[(Segment, Array[Section])]
+fn parse_fat_header(Bytes, Int) -> FatHeader raise
 
-fn parse_segment_64(Bytes, ByteOrder) -> ParseResult[(Segment, Array[Section])]
+fn parse_file(Bytes) -> File raise
 
-fn parse_symbols(Bytes, Bytes, UInt, Bool, ByteOrder) -> ParseResult[Array[Symbol]]
+fn parse_rpath_cmd(Bytes, ByteOrder) -> Rpath raise
 
-fn parse_symtab_cmd(Bytes, ByteOrder) -> ParseResult[Symtab]
+fn parse_segment_32(Bytes, ByteOrder) -> (Segment, Array[Section]) raise
 
-fn read_bytes(Bytes, Int, Int) -> Bytes
+fn parse_segment_64(Bytes, ByteOrder) -> (Segment, Array[Section]) raise
 
-fn read_uint(Bytes, Int, ByteOrder) -> UInt
+fn parse_symbols(Bytes, Bytes, UInt, Bool, ByteOrder) -> Array[Symbol] raise
 
-fn read_uint64(Bytes, Int, ByteOrder) -> UInt64
+fn parse_symtab(Bytes, Symtab, Bool, ByteOrder) -> Symtab raise
+
+fn parse_symtab_cmd(Bytes, ByteOrder) -> Symtab raise
+
+fn read_bytes(Bytes, Int, Int) -> Bytes raise
+
+fn read_uint(Bytes, Int, ByteOrder) -> UInt raise
+
+fn read_uint64(Bytes, Int, ByteOrder) -> UInt64 raise
 
 // Errors
+type BufferOverflowError
+
+type CommandError
+
+type FormatError
+
+type InvalidDataError
+
+type ParseError
 
 // Types and methods
 pub enum ByteOrder {
@@ -231,6 +254,40 @@ pub struct DysymtabCmd {
 impl Eq for DysymtabCmd
 impl Show for DysymtabCmd
 
+pub struct FatArch {
+  cpu : Cpu
+  sub_cpu : UInt
+  offset : UInt
+  size : UInt
+  align : UInt
+}
+impl Eq for FatArch
+impl Show for FatArch
+
+pub struct FatArchHeader {
+  cpu : UInt
+  sub_cpu : UInt
+  offset : UInt
+  size : UInt
+  align : UInt
+}
+impl Eq for FatArchHeader
+impl Show for FatArchHeader
+
+pub struct FatFile {
+  magic : UInt
+  arches : Array[FatArch]
+  files : Array[File]
+}
+impl Show for FatFile
+
+pub struct FatHeader {
+  magic : UInt
+  nfat_arch : UInt
+}
+impl Eq for FatHeader
+impl Show for FatHeader
+
 pub struct File {
   header : FileHeader
   byte_order : ByteOrder
@@ -252,15 +309,6 @@ pub struct FileHeader {
 }
 impl Eq for FileHeader
 impl Show for FileHeader
-
-pub struct FormatError {
-  offset : Int64
-  message : Bytes
-  value : Bytes?
-}
-fn FormatError::to_string(Self) -> Bytes
-impl Eq for FormatError
-impl Show for FormatError
 
 pub struct LoadBytes {
   data : Bytes
@@ -316,12 +364,6 @@ pub struct Nlist64 {
 impl Eq for Nlist64
 impl Show for Nlist64
 
-pub enum ParseResult[T] {
-  Ok(T)
-  Err(FormatError)
-}
-impl[T : Show] Show for ParseResult[T]
-
 pub struct Reloc {
   addr : UInt
   value : UInt
@@ -354,6 +396,7 @@ pub struct Section {
   relocs : Array[Reloc]
   data : Bytes?
 }
+fn Section::data(Self, Bytes) -> Bytes raise
 impl Eq for Section
 impl Show for Section
 
@@ -409,6 +452,7 @@ pub struct Segment {
   header : SegmentHeader
   data : Bytes?
 }
+fn Segment::data(Self, Bytes) -> Bytes raise
 impl Eq for Segment
 impl Show for Segment
 

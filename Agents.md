@@ -137,3 +137,64 @@ fn high_level_parse(data : Bytes) -> File raise {
 3. **Group related errors**: Use separate suberror types for different layers (FormatError, ParseError, etc.)
 4. **Test error cases**: Always write tests for both success and error scenarios using `try...catch`
 5. **Document error conditions**: Clearly document what errors a function may raise
+
+## Implementation Learnings
+
+### Method Definition Syntax
+
+When adding methods to existing types in MoonBit, use the explicit syntax:
+
+```moonbit
+pub fn TypeName::method_name(self : TypeName, other_params : Type) -> ReturnType raise {
+  // Method body
+}
+```
+
+All parameter types must be explicitly annotated, including `self`.
+
+### File I/O Integration
+
+- Use `@fs.read_file_to_bytes(path)` for reading files from filesystem
+- The `@fs` package provides direct file system access capabilities
+- File I/O functions should handle errors appropriately, either with try/catch or by letting errors propagate
+
+### Type Conversions
+
+- Use `reinterpret_as_int()` instead of deprecated `to_int()` for UInt to Int conversion
+- For UInt64 to Int conversion: `value.to_uint().reinterpret_as_int()`
+- Always check data bounds before performing conversions
+
+### Data Access Patterns
+
+When implementing data extraction from binary formats:
+
+```moonbit
+pub fn Section::data(self : Section, file_data : Bytes) -> Bytes raise {
+  match self.data {
+    Some(data) => data  // Return cached data if available
+    None => {
+      // Extract from file_data using offset and size
+      let offset = self.header.offset.reinterpret_as_int()
+      let size = self.header.size.to_uint().reinterpret_as_int()
+      if file_data.length() < offset + size {
+        raise ParseError::MissingData(/*...*/)
+      }
+      read_bytes(file_data, offset, size)
+    }
+  }
+}
+```
+
+### Symbol Parsing Integration
+
+- Symbol parsing should be integrated into the main file parsing pipeline
+- Use fallback mechanisms when symbol parsing fails to maintain robustness
+- Parse symbols lazily or with error handling to avoid breaking the entire file parsing
+
+### Project Architecture Insights
+
+- The macho library implements a Mach-O binary format parser similar to Go's debug/macho
+- Fat/Universal binary support was already well-implemented
+- The main missing pieces were file I/O, data access methods, and complete symbol parsing
+- Tests are comprehensive and help ensure implementation correctness
+- The codebase follows MoonBit's block-style organization with `///|` separators
