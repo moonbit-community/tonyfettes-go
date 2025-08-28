@@ -102,39 +102,6 @@ test "read_uint64 buffer overflow" {
 }
 
 ///|
-test "copy_to_fixed_array success" {
-  let data : Bytes = "hello"
-  let result = copy_to_fixed_array(data, 0, 5)
-  assert_eq(result[0], 104) // 'h'
-  assert_eq(result[1], 101) // 'e'
-  assert_eq(result[2], 108) // 'l'
-  assert_eq(result[3], 108) // 'l'
-  assert_eq(result[4], 111) // 'o'
-}
-
-///|
-test "copy_to_fixed_array buffer overflow" {
-  let data : Bytes = "hi"
-  try {
-    let _ = copy_to_fixed_array(data, 0, 5)
-    fail("Expected buffer overflow error")
-  } catch {
-    BufferOverflowError::ReadOverflow(
-      offset~,
-      length~,
-      buffer_size~,
-      operation~
-    ) => {
-      assert_eq(offset, 0)
-      assert_eq(length, 5)
-      assert_eq(buffer_size, 2)
-      assert_eq(operation, "copy_to_fixed_array")
-    }
-    _ => fail("Expected ReadOverflow error")
-  }
-}
-
-///|
 test "Bytes contains" {
   let data : Bytes = "hello world"
   assert_true(data.contains(b'h'))

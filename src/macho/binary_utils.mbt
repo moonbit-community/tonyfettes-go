@@ -58,27 +58,6 @@ fn read_bytes(data : Bytes, offset : Int, length : Int) -> Bytes raise {
 }
 
 ///|
-fn copy_to_fixed_array(
-  data : Bytes,
-  offset : Int,
-  size : Int,
-) -> FixedArray[Int] raise {
-  if offset + size > data.length() {
-    raise BufferOverflowError::ReadOverflow(
-      offset~,
-      length=size,
-      buffer_size=data.length(),
-      operation="copy_to_fixed_array",
-    )
-  }
-  let result = FixedArray::make(size, 0)
-  for i = 0; i < size; i = i + 1 {
-    result[i] = data[offset + i].to_int()
-  }
-  result
-}
-
-///|
 fn determine_byte_order(magic : UInt) -> ByteOrder? {
   if magic == magic_32 || magic == magic_64 {
     Some(Little)
