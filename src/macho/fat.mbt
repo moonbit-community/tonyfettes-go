@@ -27,12 +27,12 @@ pub let fat_header_size : Int = 2 * 4
 pub let fat_arch_size : Int = 5 * 4
 
 ///|
-pub fn is_fat(magic : UInt) -> Bool {
+fn is_fat(magic : UInt) -> Bool {
   magic == MagicFat || magic == 0xbebafeca_U // swapped fat magic
 }
 
 ///|
-pub fn parse_fat_header(data : Bytes, offset : Int) -> FatHeader raise {
+fn parse_fat_header(data : Bytes, offset : Int) -> FatHeader raise {
   if data.length() < offset + fat_header_size {
     raise FileTooSmall(
       actual_size=data.length(),
@@ -48,7 +48,7 @@ pub fn parse_fat_header(data : Bytes, offset : Int) -> FatHeader raise {
 }
 
 ///|
-pub fn parse_fat_arch(data : Bytes, offset : Int) -> FatArch raise {
+fn parse_fat_arch(data : Bytes, offset : Int) -> FatArch raise {
   if data.length() < offset + fat_arch_size {
     raise FileTooSmall(
       actual_size=data.length(),
@@ -65,7 +65,7 @@ pub fn parse_fat_arch(data : Bytes, offset : Int) -> FatArch raise {
 }
 
 ///|
-pub fn parse_fat_file(data : Bytes) -> FatFile raise {
+pub fn FatFile::new(data : Bytes) -> FatFile raise {
   let header = parse_fat_header(data, 0)
   let arches : Array[FatArch] = []
   let files : Array[File] = []
@@ -89,14 +89,4 @@ pub fn parse_fat_file(data : Bytes) -> FatFile raise {
     files.push(parse_file(file_data))
   }
   { magic: header.magic, arches, files }
-}
-
-///|
-pub fn get_arch_file(fat_file : FatFile, cpu : Cpu) -> File? {
-  for i = 0; i < fat_file.arches.length(); i = i + 1 {
-    if fat_file.arches[i].cpu == cpu {
-      return Some(fat_file.files[i])
-    }
-  }
-  None
 }

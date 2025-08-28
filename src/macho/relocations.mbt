@@ -1,12 +1,12 @@
 /// Relocation Processing
-/// 
+///
 /// Handles parsing and processing of Mach-O relocation entries, including
 /// both scattered and non-scattered relocation formats.
 /// Based on Apple's Mach-O specification and Go's debug/macho implementation.
 
 ///|
 /// Parse relocations for a section from raw binary data
-pub fn parse_relocations(
+fn parse_relocations(
   data : Bytes,
   offset : Int,
   count : UInt,

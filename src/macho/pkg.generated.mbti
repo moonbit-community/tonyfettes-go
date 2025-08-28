@@ -66,57 +66,9 @@ let flag_two_level : UInt
 
 let flag_weak_defines : UInt
 
-fn get_arch_file(FatFile, Cpu) -> File?
-
-fn get_architecture(File) -> String
-
-fn get_file_type(File) -> String
-
-fn get_section_names(File) -> Array[Bytes]
-
-fn get_segment_names(File) -> Array[Bytes]
-
-fn has_flag(File, UInt) -> Bool
-
-fn is_32bit(File) -> Bool
-
-fn is_64bit(File) -> Bool
-
-fn is_fat(UInt) -> Bool
-
 fn new_file(Bytes) -> File raise
 
 fn open_file(String) -> File raise
-
-fn parse_dylib_cmd(Bytes, ByteOrder) -> Dylib raise
-
-fn parse_dynamic_symbol_indices(Bytes, UInt, ByteOrder) -> Array[UInt] raise
-
-fn parse_dysymtab_cmd(Bytes, ByteOrder) -> Dysymtab raise
-
-fn parse_fat_arch(Bytes, Int) -> FatArch raise
-
-fn parse_fat_file(Bytes) -> FatFile raise
-
-fn parse_fat_header(Bytes, Int) -> FatHeader raise
-
-fn parse_file(Bytes) -> File raise
-
-fn parse_relocations(Bytes, Int, UInt, ByteOrder) -> Array[Reloc] raise
-
-fn parse_rpath_cmd(Bytes, ByteOrder) -> Rpath raise
-
-fn parse_segment_32(Bytes, ByteOrder) -> (Segment, Array[Section]) raise
-
-fn parse_segment_64(Bytes, ByteOrder) -> (Segment, Array[Section]) raise
-
-fn parse_symbols(Bytes, Bytes, UInt, Bool, ByteOrder) -> Array[Symbol] raise
-
-fn parse_symtab(Bytes, Symtab, Bool, ByteOrder) -> Symtab raise
-
-fn parse_symtab_cmd(Bytes, ByteOrder) -> Symtab raise
-
-fn parse_thread_state(Bytes, Cpu, ByteOrder) -> ThreadState raise
 
 // Errors
 type BufferOverflowError
@@ -247,6 +199,7 @@ pub struct FatFile {
   arches : Array[FatArch]
   files : Array[File]
 }
+fn FatFile::new(Bytes) -> Self raise
 impl Show for FatFile
 
 pub struct FatHeader {

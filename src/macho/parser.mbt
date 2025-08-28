@@ -1,5 +1,5 @@
 ///|
-pub fn parse_file(data : Bytes) -> File raise {
+fn parse_file(data : Bytes) -> File raise {
   if data.length() < 4 {
     raise FormatError::FileTooSmall(actual_size=data.length(), required_size=4)
   }
@@ -152,7 +152,7 @@ pub fn open_file(path : String) -> File raise {
 }
 
 ///|
-pub fn parse_symtab(
+fn parse_symtab(
   file_data : Bytes,
   symtab : Symtab,
   is_64bit : Bool,

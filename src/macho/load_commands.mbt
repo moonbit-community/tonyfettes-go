@@ -1,5 +1,5 @@
 ///|
-pub fn parse_segment_32(
+fn parse_segment_32(
   data : Bytes,
   byte_order : ByteOrder,
 ) -> (Segment, Array[Section]) raise {
@@ -48,7 +48,7 @@ pub fn parse_segment_32(
 }
 
 ///|
-pub fn parse_segment_64(
+fn parse_segment_64(
   data : Bytes,
   byte_order : ByteOrder,
 ) -> (Segment, Array[Section]) raise {
@@ -153,7 +153,7 @@ fn parse_section_64(data : Bytes, byte_order : ByteOrder) -> Section raise {
 }
 
 ///|
-pub fn parse_symtab_cmd(data : Bytes, byte_order : ByteOrder) -> Symtab raise {
+fn parse_symtab_cmd(data : Bytes, byte_order : ByteOrder) -> Symtab raise {
   if data.length() < 24 {
     raise ParseError::MissingData(offset=0L, expected="SymtabCmd (24 bytes)")
   }
@@ -165,10 +165,7 @@ pub fn parse_symtab_cmd(data : Bytes, byte_order : ByteOrder) -> Symtab raise {
 }
 
 ///|
-pub fn parse_dysymtab_cmd(
-  data : Bytes,
-  byte_order : ByteOrder,
-) -> Dysymtab raise {
+fn parse_dysymtab_cmd(data : Bytes, byte_order : ByteOrder) -> Dysymtab raise {
   if data.length() < 80 {
     raise ParseError::MissingData(offset=0L, expected="DysymtabCmd (80 bytes)")
   }
@@ -215,7 +212,7 @@ pub fn parse_dysymtab_cmd(
 }
 
 ///|
-pub fn parse_dylib_cmd(data : Bytes, byte_order : ByteOrder) -> Dylib raise {
+fn parse_dylib_cmd(data : Bytes, byte_order : ByteOrder) -> Dylib raise {
   if data.length() < 24 {
     raise ParseError::MissingData(offset=0L, expected="DylibCmd (24 bytes)")
   }
@@ -240,7 +237,7 @@ pub fn parse_dylib_cmd(data : Bytes, byte_order : ByteOrder) -> Dylib raise {
 }
 
 ///|
-pub fn parse_rpath_cmd(data : Bytes, byte_order : ByteOrder) -> Rpath raise {
+fn parse_rpath_cmd(data : Bytes, byte_order : ByteOrder) -> Rpath raise {
   if data.length() < 12 {
     raise ParseError::MissingData(offset=0L, expected="RpathCmd (12 bytes)")
   }

@@ -61,7 +61,7 @@ pub enum ThreadState {
 
 ///|
 /// Parse thread state from raw thread command data
-pub fn parse_thread_state(
+fn parse_thread_state(
   data : Bytes,
   cpu_type : Cpu,
   byte_order : ByteOrder,

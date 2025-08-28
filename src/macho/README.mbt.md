@@ -26,11 +26,11 @@ test "parsing a mach-o file" {
     "\x00\x00\x00\x00" + // ncmd (0)
     "\x00\x00\x00\x00" + // cmdsz (0)
     "\x00\x00\x00\x00" // flags (0)
-  let file = @macho.parse_file(data)
+  let file = @macho.new_file(data)
   println("Successfully parsed Mach-O file:")
   println("  Architecture: " + @macho.get_architecture(file))
   println("  File Type: " + @macho.get_file_type(file))
-  println("  64-bit: " + @macho.is_64bit(file).to_string())
+  println("  64-bit: " + file.header.magic.to_string())
 }
 ```
 
@@ -74,7 +74,7 @@ test "extracting dwarf debug information" {
     b"\x00\x00\x00\x00" + // ncmd (0)
     b"\x00\x00\x00\x00" + // cmdsz (0)
     b"\x00\x00\x00\x00" // flags (0)
-  let file = @macho.parse_file(file_data)
+  let file = @macho.new_file(file_data)
 
   // Extract DWARF debug information
   match file.dwarf(file_data) {

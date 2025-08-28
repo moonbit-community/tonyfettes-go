@@ -1,5 +1,5 @@
 ///|
-pub fn parse_symbols(
+fn parse_symbols(
   symdata : Bytes,
   strtab : Bytes,
   nsyms : UInt,
@@ -64,7 +64,7 @@ fn parse_single_symbol(
 }
 
 ///|
-pub fn parse_dynamic_symbol_indices(
+fn parse_dynamic_symbol_indices(
   data : Bytes,
   nindirectsyms : UInt,
   byte_order : ByteOrder,
@@ -143,25 +143,4 @@ pub fn File::section(self : File, name : Bytes) -> Section? {
     }
   }
   None
-}
-
-///|
-pub fn get_section_names(file : File) -> Array[Bytes] {
-  let names = Array::new()
-  for section in file.sections {
-    names.push(section.header.name)
-  }
-  names
-}
-
-///|
-pub fn get_segment_names(file : File) -> Array[Bytes] {
-  let names = Array::new()
-  for load_cmd in file.loads {
-    match load_cmd {
-      LoadCommand::Segment(segment) => names.push(segment.header.name)
-      _ => ()
-    }
-  }
-  names
 }
