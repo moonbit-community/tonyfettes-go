@@ -1,11 +1,11 @@
 {
-  "name": "moonbit/macho",
+  "name": "tonyfettes/debugo",
   "version": "0.1.0",
   "deps": {
     "moonbitlang/x": "0.4.32"
   },
   "readme": "README.md",
-  "repository": "https://github.com/moonbit/macho",
+  "repository": "https://github.com/moonbit-community/macho",
   "license": "Apache-2.0",
   "keywords": ["macho", "mach-o", "binary", "parser", "loader"],
   "description": "A MoonBit library for parsing Mach-O binary files - ported from Go's debug/macho package",

@@ -19,64 +19,18 @@ A comprehensive MoonBit library for parsing Mach-O binary files, ported from Go'
 ```moonbit
 test "parsing a mach-o file" {
   // Create sample Mach-O header data (32-bit executable)
-  let header_bytes = "\u{ce}\u{fa}\u{ed}\u{fe}" +  // magic_32 (little endian)
-                     "\u{07}\u{00}\u{00}\u{00}" +  // cpu (i386 = 7)
-                     "\u{00}\u{00}\u{00}\u{00}" +  // subcpu (0)
-                     "\u{02}\u{00}\u{00}\u{00}" +  // file type (exec = 2)
-                     "\u{00}\u{00}\u{00}\u{00}" +  // ncmd (0)
-                     "\u{00}\u{00}\u{00}\u{00}" +  // cmdsz (0)
-                     "\u{00}\u{00}\u{00}\u{00}"    // flags (0)
-
-  let data = header_bytes
-
-  match @macho.parse_file(data) {
-    Ok(file) => {
-      println("Successfully parsed Mach-O file:")
-      println("  Architecture: " + @macho.get_architecture(file))
-      println("  File Type: " + @macho.get_file_type(file))
-      println("  64-bit: " + @macho.is_64bit(file).to_string())
-    }
-    Err(err) => {
-      println("Parse error: " + err.message)
-    }
-  }
-}
-```
-
-### File Information Analysis
-
-```moonbit
-test "file analysis example" {
-  let file = {
-    header: {
-      magic: @macho.magic_64,
-      cpu: @macho.Arm64,
-      sub_cpu: 0_U,
-      type_: @macho.Exec,
-      ncmd: 3_U,
-      cmdsz: 200_U,
-      flags: @macho.flag_pie.lor(@macho.flag_two_level)
-    },
-    byte_order: @macho.Little,
-    loads: [],
-    sections: [],
-    symtab: None,
-    dysymtab: None
-  }
-
-  // Get comprehensive file information
-  let info = @macho.get_detailed_info(file)
-  println("Detailed File Analysis:")
-  println(info)
-
-  // Check specific flags
-  if @macho.has_flag(file, @macho.flag_pie) {
-    println("This is a Position Independent Executable (PIE)")
-  }
-
-  // Get flag descriptions
-  let flags = @macho.get_flags_description(file)
-  println("File flags: " + @macho.join_strings(flags, ", "))
+  let data : Bytes = "\xce\xfa\xed\xfe" + // magic_32 (little endian)
+    "\x07\x00\x00\x00" + // cpu (i386 = 7)
+    "\x00\x00\x00\x00" + // subcpu (0)
+    "\x02\x00\x00\x00" + // file type (exec = 2)
+    "\x00\x00\x00\x00" + // ncmd (0)
+    "\x00\x00\x00\x00" + // cmdsz (0)
+    "\x00\x00\x00\x00" // flags (0)
+  let file = @macho.parse_file(data)
+  println("Successfully parsed Mach-O file:")
+  println("  Architecture: " + @macho.get_architecture(file))
+  println("  File Type: " + @macho.get_file_type(file))
+  println("  64-bit: " + @macho.is_64bit(file).to_string())
 }
 ```
 
@@ -104,29 +58,6 @@ test "working with mach-o constants" {
 
   let symtab_cmd = @macho.LoadCmd::from_uint(2_U)
   inspect(symtab_cmd, content="Symtab")
-}
-```
-
-### Binary Utilities
-
-```moonbit
-test "binary parsing utilities" {
-  // C-string extraction
-  let data = "hello\u{00}world"
-  let str = @macho.cstring(data)
-  inspect(str, content="hello")
-
-  // Reading integers with byte order
-  let int_data = "\u{01}\u{02}\u{03}\u{04}"
-  let little_endian = @macho.read_uint(int_data, 0, @macho.Little)
-  let big_endian = @macho.read_uint(int_data, 0, @macho.Big)
-
-  inspect(little_endian, content="67305985")   // 0x04030201
-  inspect(big_endian, content="16909060")      // 0x01020304
-
-  // Byte order detection from magic numbers
-  let byte_order = @macho.determine_byte_order(@macho.magic_32)
-  inspect(byte_order, content="Some(Little)")
 }
 ```
 
@@ -250,23 +181,6 @@ Common file flags include:
 - `flag_two_level` - Two-level namespace
 - `flag_no_undefs` - No undefined symbols
 - `flag_dyld_link` - Linked by dynamic linker
-
-## Error Handling
-
-The library uses a `ParseResult[T]` type for error handling:
-
-```moonbit
-enum ParseResult[T] {
-  Ok(T)
-  Err(FormatError)
-}
-```
-
-`FormatError` provides detailed error information:
-
-- `offset: Int64` - Byte offset where error occurred
-- `message: Bytes` - Human-readable error message
-- `value: Bytes?` - Optional problematic value
 
 ## Security Considerations
 

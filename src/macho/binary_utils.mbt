@@ -1,5 +1,5 @@
 ///|
-pub fn read_uint(
+fn read_uint(
   data : Bytes,
   offset : Int,
   byte_order : ByteOrder,
@@ -27,7 +27,7 @@ pub fn read_uint(
 }
 
 ///|
-pub fn read_uint64(
+fn read_uint64(
   data : Bytes,
   offset : Int,
   byte_order : ByteOrder,
@@ -49,7 +49,7 @@ pub fn read_uint64(
 }
 
 ///|
-pub fn read_bytes(data : Bytes, offset : Int, length : Int) -> Bytes raise {
+fn read_bytes(data : Bytes, offset : Int, length : Int) -> Bytes raise {
   if offset + length > data.length() {
     raise BufferOverflowError::ReadOverflow(
       offset~,
@@ -62,7 +62,7 @@ pub fn read_bytes(data : Bytes, offset : Int, length : Int) -> Bytes raise {
 }
 
 ///|
-pub fn copy_to_fixed_array(
+fn copy_to_fixed_array(
   data : Bytes,
   offset : Int,
   size : Int,
