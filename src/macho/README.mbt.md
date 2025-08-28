@@ -28,9 +28,9 @@ test "parsing a mach-o file" {
     "\x00\x00\x00\x00" // flags (0)
   let file = @macho.new_file(data)
   println("Successfully parsed Mach-O file:")
-  println("  Architecture: " + @macho.get_architecture(file))
-  println("  File Type: " + @macho.get_file_type(file))
-  println("  64-bit: " + file.header.magic.to_string())
+  println("  Architecture: \{file.header.cpu}")
+  println("  File Type: \{file.header.type_}")
+  println("  Magic: \{file.header.magic}")
 }
 ```
 
