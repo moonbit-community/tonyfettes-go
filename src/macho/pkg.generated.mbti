@@ -272,7 +272,7 @@ pub struct File {
   symtab : Symtab?
   dysymtab : Dysymtab?
 }
-fn File::dwarf(Self, Bytes) -> DwarfData?
+fn File::dwarf(Self, Bytes) -> DwarfData? raise
 impl Show for File
 
 pub struct FileHeader {

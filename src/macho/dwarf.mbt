@@ -15,27 +15,30 @@ pub struct DwarfData {
 /// Extract DWARF debug information from a Mach-O file
 /// Returns DwarfData containing all DWARF sections found in the file
 pub fn File::dwarf(self : File, file_data : Bytes) -> DwarfData? raise {
-  fn decompress_section_data(
-    section : Section,
-    file_data : Bytes,
-  ) -> Bytes raise {
-    let data = section.data(file_data)
-
-    // Check if this is a ZLIB-compressed section by examining first 4 bytes
-    if data.length() >= 12 && data is [.. "ZLIB", ..] {
-      decompress_zlib_section(data)
+  fn section_data(s : Section, file_data : Bytes) -> Bytes raise {
+    let b = s.data(file_data)
+    if b.length() >= 12 && b is [.. "ZLIB", ..] {
+      let dlen = read_uint64_be(b, 4)
+      let input_buffer = @io.Buffer::from_bytes([..b[12:]])
+      let (r, err) = @zlib.Reader::new(input_buffer)
+      if err is Some(err) {
+        raise err
+      }
+      let output_buffer = @io.Buffer::new(size_hint=dlen.to_int())
+      let (_, copy_err) = @io.copy(output_buffer, r)
+      match copy_err {
+        Some(_) =>
+          raise ParseError::MissingData(
+            offset=0L,
+            expected="Complete ZLIB decompressed data",
+          )
+        None => ()
+      }
+      let _ = r.close()
+      output_buffer.to_bytes()
     } else {
-      data
+      b
     }
-  }
-
-  fn decompress_zlib_section(data : Bytes) -> Bytes raise {
-    // Extract uncompressed size (8 bytes, big-endian)
-    let dlen = read_uint64_be(data, 4)
-
-    // For now, return a simple error indicating ZLIB decompression is not fully implemented
-    // TODO: Implement proper ZLIB decompression using @zlib package once API is stable
-    ...
   }
 
   let sections = Map::new()
@@ -43,8 +46,8 @@ pub fn File::dwarf(self : File, file_data : Bytes) -> DwarfData? raise {
   // Look for DWARF sections in all file sections
   for section in self.sections {
     let suffix = dwarf_suffix(section)
-    if suffix != "" {
-      let data = decompress_section_data(section, file_data)
+    if suffix != b"" {
+      let data = section_data(section, file_data)
       sections[suffix] = data
     }
   }

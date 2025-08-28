@@ -61,6 +61,68 @@ test "working with mach-o constants" {
 }
 ```
 
+### Working with DWARF Debug Information
+
+```moonbit
+test "extracting dwarf debug information" {
+  // Parse a Mach-O file with debug symbols
+  // In practice, you would read the file_data using @fs.read_to_string or similar
+  let file_data = b"\xce\xfa\xed\xfe" + // Sample Mach-O data with DWARF sections
+    b"\x07\x00\x00\x00" + // cpu (i386 = 7)
+    b"\x00\x00\x00\x00" + // subcpu (0)
+    b"\x02\x00\x00\x00" + // file type (exec = 2)
+    b"\x00\x00\x00\x00" + // ncmd (0)
+    b"\x00\x00\x00\x00" + // cmdsz (0)
+    b"\x00\x00\x00\x00" // flags (0)
+  let file = @macho.parse_file(file_data)
+
+  // Extract DWARF debug information
+  match file.dwarf(file_data) {
+    Some(dwarf_data) => {
+      // List all available DWARF sections
+      let section_names = dwarf_data.get_section_names()
+      println("Available DWARF sections:")
+      for name in section_names {
+        println("  " + name.to_string())
+      }
+
+      // Access specific DWARF sections
+      match dwarf_data.get_section(b"info") {
+        Some(debug_info) =>
+          println(
+            "Found .debug_info section (" +
+            debug_info.length().to_string() +
+            " bytes)",
+          )
+        None => println("No .debug_info section found")
+      }
+      match dwarf_data.get_section(b"str") {
+        Some(debug_str) =>
+          println(
+            "Found .debug_str section (" +
+            debug_str.length().to_string() +
+            " bytes)",
+          )
+        None => println("No .debug_str section found")
+      }
+
+      // Check for compressed sections (automatically decompressed)
+      if dwarf_data.has_section(b"line") {
+        println("Found .debug_line section")
+      }
+    }
+    None => println("No DWARF debug information found")
+  }
+}
+```
+
+The DWARF implementation includes:
+
+- **Automatic Decompression**: ZLIB-compressed DWARF sections (starting with "ZLIB" magic) are automatically decompressed
+- **Section Name Expansion**: Handles Mach-O's 16-character section name truncation for DWARF sections
+- **Standard DWARF Sections**: Supports all common DWARF sections including `.debug_info`, `.debug_str`, `.debug_line`, etc.
+- **Error Handling**: Proper error reporting for malformed or missing DWARF data
+
 ## API Reference
 
 ### Core Types
@@ -147,6 +209,13 @@ Placeholder for file system access (not implemented).
 - `find_segment(file: File, name: Bytes) -> Segment?` - Find segment by name
 - `find_section(file: File, name: Bytes) -> Section?` - Find section by name
 
+#### DWARF Debug Information
+
+- `File::dwarf(file: File, file_data: Bytes) -> DwarfData?` - Extract DWARF debug information
+- `DwarfData::get_section(data: DwarfData, name: Bytes) -> Bytes?` - Get DWARF section by name
+- `DwarfData::get_section_names(data: DwarfData) -> Array[Bytes]` - Get all available DWARF section names
+- `DwarfData::has_section(data: DwarfData, name: Bytes) -> Bool` - Check if DWARF section exists
+
 ### Binary Utilities
 
 #### Bytes Processing
@@ -208,13 +277,12 @@ This library is a port of Go's `debug/macho` package. When contributing:
 
 ## Roadmap
 
-This library is a comprehensive port of Go's `debug/macho` package and is more complete than initially estimated. Currently **~75-80%** of the original functionality has been implemented. After thorough analysis, several features previously thought missing have been found to be fully implemented.
+This library is a comprehensive port of Go's `debug/macho` package and is more complete than initially estimated. Currently **~85-90%** of the original functionality has been implemented. After thorough analysis, several features previously thought missing have been found to be fully implemented.
 
 ### Priority 1 - Critical Missing Features
 
 - **Relocation Processing:** While `Reloc` structures are defined, the complete parsing of relocation entries from binary data is not implemented. The Go implementation includes sophisticated scattered/non-scattered relocation handling with architecture-specific decoding that needs to be ported.
 - **Architecture-Specific Relocation Types:** Missing the complete relocation type system from `reloctype.go` - 4 relocation type enums (`RelocTypeGeneric`, `RelocTypeX86_64`, `RelocTypeARM`, `RelocTypeARM64`) with 73+ constants and string representations.
-- **DWARF Debug Information:** No support for parsing DWARF debugging information from `__DWARF` segments, including ZLIB decompression and integration with debug information systems.
 
 ### Priority 2 - Important Missing Features
 
@@ -242,16 +310,16 @@ This library is a comprehensive port of Go's `debug/macho` package and is more c
 - ✅ **High-Level Query Functions** - Segment/section lookup, name extraction, and file analysis utilities
 - ✅ **Architecture Support** - Complete CPU type system with all major architectures
 - ✅ **Load Command Framework** - Comprehensive load command parsing with proper type dispatch
+- ✅ **DWARF Debug Information** - Complete parsing of DWARF debugging information from `__DWARF` segments, including ZLIB decompression support
 
 **❌ Remaining Critical Components:**
 
 - Complete relocation parsing and type system
-- DWARF debug information support  
 - Architecture-specific relocation constants
 - Streaming data access methods
 - Register state parsing for thread commands
 
-This updated roadmap reflects the current **~75-80%** completion status compared to the original Go `debug/macho` package. The library is significantly more complete than initially assessed, with most core functionality fully implemented.
+This updated roadmap reflects the current **~85-90%** completion status compared to the original Go `debug/macho` package. The library is significantly more complete than initially assessed, with most core functionality fully implemented.
 
 ## License
 

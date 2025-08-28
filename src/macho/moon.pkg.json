@@ -1,6 +1,8 @@
 {
   "import": [
     "moonbitlang/x/fs",
-    "gmlewis/zlib"
+    "gmlewis/zlib",
+    "gmlewis/io",
+    "gmlewis/flate"
   ]
 }
