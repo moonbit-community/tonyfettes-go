@@ -1,17 +1,17 @@
 ///|
-pub let file_header_size_32 : Int = 7 * 4
+let file_header_size_32 : Int = 7 * 4
 
 ///|
-pub let file_header_size_64 : Int = 8 * 4
+let file_header_size_64 : Int = 8 * 4
 
 ///|
-pub let magic_32 : UInt = 0xfeedface_U
+pub const Magic32 : UInt = 0xfeedface_U
 
 ///|
-pub let magic_64 : UInt = 0xfeedfacf_U
+pub const Magic64 : UInt = 0xfeedfacf_U
 
 ///|
-pub let magic_fat : UInt = 0xcafebabe_U
+pub const MagicFat : UInt = 0xcafebabe_U
 
 ///|
 let cpu_arch_64 : UInt = 0x01000000_U

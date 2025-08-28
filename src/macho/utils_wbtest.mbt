@@ -2,7 +2,7 @@
 fn create_test_file_helper() -> File {
   {
     header: {
-      magic: magic_64,
+      magic: Magic64,
       cpu: Arm64,
       sub_cpu: 0_U,
       type_: Exec,
@@ -23,7 +23,7 @@ test "is_64bit and is_32bit" {
   let file64 = create_test_file_helper()
   let file32 = {
     header: {
-      magic: magic_32,
+      magic: Magic32,
       cpu: I386,
       sub_cpu: 0_U,
       type_: Exec,
@@ -47,7 +47,7 @@ test "is_64bit and is_32bit" {
 test "get_architecture" {
   let file_i386 = {
     header: {
-      magic: magic_32,
+      magic: Magic32,
       cpu: I386,
       sub_cpu: 0_U,
       type_: Exec,
@@ -68,7 +68,7 @@ test "get_architecture" {
 test "get_file_type" {
   let file_obj = {
     header: {
-      magic: magic_64,
+      magic: Magic64,
       cpu: Arm64,
       sub_cpu: 0_U,
       type_: Object,

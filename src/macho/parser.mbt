@@ -19,7 +19,7 @@ fn parse_file_header(
   byte_order : ByteOrder,
   magic : UInt,
 ) -> FileHeader raise {
-  let header_size = if magic == magic_64 {
+  let header_size = if magic == Magic64 {
     file_header_size_64
   } else {
     file_header_size_32
@@ -45,7 +45,7 @@ fn parse_file_with_header(
   header : FileHeader,
   byte_order : ByteOrder,
 ) -> File raise {
-  let header_size = if header.magic == magic_64 {
+  let header_size = if header.magic == Magic64 {
     file_header_size_64
   } else {
     file_header_size_32
@@ -70,7 +70,7 @@ fn parse_file_with_header(
   )
   let final_symtab = match symtab {
     Some(st) => {
-      let is_64bit = header.magic == magic_64
+      let is_64bit = header.magic == Magic64
       Some(parse_symtab(data, st, is_64bit, byte_order)) catch {
         _ => Some(st) // Fall back to original symtab if parsing fails
       }

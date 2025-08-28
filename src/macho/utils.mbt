@@ -1,11 +1,11 @@
 ///|
 pub fn is_64bit(file : File) -> Bool {
-  file.header.magic == magic_64
+  file.header.magic == Magic64
 }
 
 ///|
 pub fn is_32bit(file : File) -> Bool {
-  file.header.magic == magic_32
+  file.header.magic == Magic32
 }
 
 ///|

@@ -1,8 +1,8 @@
 ///|
 test "magic number constants" {
-  assert_eq(magic_32, 4277009102_U)
-  assert_eq(magic_64, 4277009103_U)
-  assert_eq(magic_fat, 3405691582_U)
+  assert_eq(Magic32, 4277009102_U)
+  assert_eq(Magic64, 4277009103_U)
+  assert_eq(MagicFat, 3405691582_U)
 }
 
 ///|

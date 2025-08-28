@@ -1,13 +1,13 @@
 ///|
 test "is_fat true cases" {
-  assert_true(is_fat(magic_fat))
+  assert_true(is_fat(MagicFat))
   assert_true(is_fat(0xbebafeca_U)) // swapped fat magic
 }
 
 ///|
 test "is_fat false cases" {
-  assert_false(is_fat(magic_32))
-  assert_false(is_fat(magic_64))
+  assert_false(is_fat(Magic32))
+  assert_false(is_fat(Magic64))
   assert_false(is_fat(0x12345678_U))
 }
 
@@ -78,7 +78,7 @@ test "parse_fat_arch file too small" {
 test "get_arch_file found" {
   let test_file : File = {
     header: {
-      magic: magic_32,
+      magic: Magic32,
       cpu: I386,
       sub_cpu: 0_U,
       type_: Object,
@@ -93,7 +93,7 @@ test "get_arch_file found" {
     dysymtab: None,
   }
   let fat_file : FatFile = {
-    magic: magic_fat,
+    magic: MagicFat,
     arches: [{ cpu: I386, sub_cpu: 0_U, offset: 0_U, size: 100_U, align: 12_U }],
     files: [test_file],
   }
@@ -106,7 +106,7 @@ test "get_arch_file found" {
 ///|
 test "get_arch_file not found" {
   let fat_file : FatFile = {
-    magic: magic_fat,
+    magic: MagicFat,
     arches: [{ cpu: I386, sub_cpu: 0_U, offset: 0_U, size: 100_U, align: 12_U }],
     files: [],
   }

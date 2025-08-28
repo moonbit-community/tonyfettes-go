@@ -28,7 +28,7 @@ pub let fat_arch_size : Int = 5 * 4
 
 ///|
 pub fn is_fat(magic : UInt) -> Bool {
-  magic == magic_fat || magic == 0xbebafeca_U // swapped fat magic
+  magic == MagicFat || magic == 0xbebafeca_U // swapped fat magic
 }
 
 ///|

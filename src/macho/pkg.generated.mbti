@@ -2,15 +2,17 @@
 package "tonyfettes/debugo/macho"
 
 // Values
+const Magic32 : UInt = 0xfeedface_
+
+const Magic64 : UInt = 0xfeedfacf_
+
+const MagicFat : UInt = 0xcafebabe_
+
 fn extract_thread_state(Thread, Cpu, ByteOrder) -> ThreadState raise
 
 let fat_arch_size : Int
 
 let fat_header_size : Int
-
-let file_header_size_32 : Int
-
-let file_header_size_64 : Int
 
 let flag_all_mods_bound : UInt
 
@@ -81,12 +83,6 @@ fn is_32bit(File) -> Bool
 fn is_64bit(File) -> Bool
 
 fn is_fat(UInt) -> Bool
-
-let magic_32 : UInt
-
-let magic_64 : UInt
-
-let magic_fat : UInt
 
 fn new_file(Bytes) -> File raise
 

@@ -14,8 +14,8 @@ test "read_uint big endian" {
 
 ///|
 test "determine_byte_order" {
-  assert_eq(determine_byte_order(magic_32), Some(Little))
-  assert_eq(determine_byte_order(magic_64), Some(Little))
+  assert_eq(determine_byte_order(Magic32), Some(Little))
+  assert_eq(determine_byte_order(Magic64), Some(Little))
   assert_eq(determine_byte_order(0xfacefeed_U), Some(Big))
   assert_eq(determine_byte_order(0xcffaedfe_U), Some(Big))
   assert_eq(determine_byte_order(0x12345678_U), None)

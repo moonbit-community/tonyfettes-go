@@ -59,7 +59,7 @@ fn read_bytes(data : Bytes, offset : Int, length : Int) -> Bytes raise {
 
 ///|
 fn determine_byte_order(magic : UInt) -> ByteOrder? {
-  if magic == magic_32 || magic == magic_64 {
+  if magic == Magic32 || magic == Magic64 {
     Some(Little)
   } else if magic == 0xfacefeed_U || magic == 0xcffaedfe_U {
     Some(Big)

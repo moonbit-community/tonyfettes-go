@@ -36,7 +36,7 @@ test "parse file header basic" {
     "\x00\x00\x00\x00"
   try {
     let file = parse_file(header_data)
-    assert_eq(file.header.magic, magic_32)
+    assert_eq(file.header.magic, Magic32)
     assert_eq(file.header.cpu, I386)
     assert_eq(file.header.type_, Exec)
     assert_eq(file.header.ncmd, 0_U)
@@ -74,7 +74,7 @@ test "parse_file 64-bit magic" {
     "\x00\x00\x00\x00"
   try {
     let file = parse_file(header_data)
-    assert_eq(file.header.magic, magic_64)
+    assert_eq(file.header.magic, Magic64)
     assert_eq(file.header.cpu, Amd64)
     assert_eq(file.header.type_, Exec)
     assert_eq(file.byte_order, Little)
@@ -124,7 +124,7 @@ test "parse_file with load commands" {
     "\x00\x20\x00\x00" + // stroff = 0x2000  
     "\x00\x01\x00\x00" // strsize = 256
   let file = parse_file(header_data)
-  assert_eq(file.header.magic, magic_32)
+  assert_eq(file.header.magic, Magic32)
   assert_eq(file.header.ncmd, 1_U)
   assert_eq(file.loads.length(), 1)
   match file.loads[0] {
