@@ -1,0 +1,495 @@
+package moonbitlang/core/macho
+
+// Mach-O file header
+struct FileHeader {
+  magic : UInt
+  cpu : Cpu
+  sub_cpu : UInt
+  type_ : Type
+  ncmd : UInt
+  cmdsz : UInt
+  flags : UInt
+}
+
+// Mach-O file type
+enum Type {
+  Object
+  Executable
+  DynamicLibrary
+  Bundle
+}
+
+// Mach-O CPU type
+enum Cpu {
+  Cpu386
+  CpuAmd64
+  CpuArm
+  CpuArm64
+  CpuPpc
+  CpuPpc64
+}
+
+// Mach-O load command
+enum LoadCmd {
+  Segment
+  Symtab
+  Thread
+  UnixThread
+  Dysymtab
+  Dylib
+  Dylinker
+  Segment64
+  Rpath
+}
+
+// 32-bit segment load command
+struct Segment32 {
+  cmd : LoadCmd
+  len : UInt
+  name : FixedArray[Byte]
+  addr : UInt
+  memsz : UInt
+  offset : UInt
+  filesz : UInt
+  maxprot : UInt
+  prot : UInt
+  nsect : UInt
+  flag : UInt
+}
+
+// 64-bit segment load command
+struct Segment64 {
+  cmd : LoadCmd
+  len : UInt
+  name : FixedArray[Byte]
+  addr : UInt64
+  memsz : UInt64
+  offset : UInt64
+  filesz : UInt64
+  maxprot : UInt
+  prot : UInt
+  nsect : UInt
+  flag : UInt
+}
+
+// Symbol table command
+struct SymtabCmd {
+  cmd : LoadCmd
+  len : UInt
+  symoff : UInt
+  nsyms : UInt
+  stroff : UInt
+  strsize : UInt
+}
+
+// Dynamic symbol table command
+struct DysymtabCmd {
+  cmd : LoadCmd
+  len : UInt
+  ilocalsym : UInt
+  nlocalsym : UInt
+  iextdefsym : UInt
+  nextdefsym : UInt
+  iundefsym : UInt
+  nundefsym : UInt
+  tocoffset : UInt
+  ntoc : UInt
+  modtaboff : UInt
+  nmodtab : UInt
+  extrefsymoff : UInt
+  nextrefsyms : UInt
+  indirectsymoff : UInt
+  nindirectsyms : UInt
+  extreloff : UInt
+  nextrel : UInt
+  locreloff : UInt
+  nlocrel : UInt
+}
+
+// Dynamic library command
+struct DylibCmd {
+  cmd : LoadCmd
+  len : UInt
+  name : UInt
+  time : UInt
+  current_version : UInt
+  compat_version : UInt
+}
+
+// Rpath command
+struct RpathCmd {
+  cmd : LoadCmd
+  len : UInt
+  path : UInt
+}
+
+// Thread command
+struct Thread {
+  cmd : LoadCmd
+  len : UInt
+  type_ : UInt
+  data : Array[UInt]
+}
+
+// 32-bit section header
+struct Section32 {
+  name : FixedArray[Byte]
+  seg : FixedArray[Byte]
+  addr : UInt
+  size : UInt
+  offset : UInt
+  align : UInt
+  reloff : UInt
+  nreloc : UInt
+  flags : UInt
+  reserve1 : UInt
+  reserve2 : UInt
+}
+
+// 64-bit section header
+struct Section64 {
+  name : FixedArray[Byte]
+  seg : FixedArray[Byte]
+  addr : UInt64
+  size : UInt64
+  offset : UInt
+  align : UInt
+  reloff : UInt
+  nreloc : UInt
+  flags : UInt
+  reserve1 : UInt
+  reserve2 : UInt
+  reserve3 : UInt
+}
+
+// 32-bit symbol table entry
+struct Nlist32 {
+  name : UInt
+  type_ : Byte
+  sect : Byte
+  desc : UInt16
+  value : UInt
+}
+
+// 64-bit symbol table entry
+struct Nlist64 {
+  name : UInt
+  type_ : Byte
+  sect : Byte
+  desc : UInt16
+  value : UInt64
+}
+
+// 386 register structure
+struct Regs386 {
+  ax : UInt
+  bx : UInt
+  cx : UInt
+  dx : UInt
+  di : UInt
+  si : UInt
+  bp : UInt
+  sp : UInt
+  ss : UInt
+  flags : UInt
+  ip : UInt
+  cs : UInt
+  ds : UInt
+  es : UInt
+  fs : UInt
+  gs : UInt
+}
+
+// AMD64 register structure
+struct RegsAMD64 {
+  ax : UInt64
+  bx : UInt64
+  cx : UInt64
+  dx : UInt64
+  di : UInt64
+  si : UInt64
+  bp : UInt64
+  sp : UInt64
+  r8 : UInt64
+  r9 : UInt64
+  r10 : UInt64
+  r11 : UInt64
+  r12 : UInt64
+  r13 : UInt64
+  r14 : UInt64
+  r15 : UInt64
+  ip : UInt64
+  flags : UInt64
+  cs : UInt64
+  fs : UInt64
+  gs : UInt64
+}
+
+// Load command interface
+trait Load {
+  raw(Self) -> Array[Byte]
+}
+
+// Load command bytes
+type LoadBytes Array[Byte]
+
+// Segment header
+struct SegmentHeader {
+  cmd : LoadCmd
+  len : UInt
+  name : String
+  addr : UInt64
+  memsz : UInt64
+  offset : UInt64
+  filesz : UInt64
+  maxprot : UInt
+  prot : UInt
+  nsect : UInt
+  flag : UInt
+}
+
+// Segment
+struct Segment {
+  load_bytes : LoadBytes
+  segment_header : SegmentHeader
+}
+
+// Section header
+struct SectionHeader {
+  name : String
+  seg : String
+  addr : UInt64
+  size : UInt64
+  offset : UInt
+  align : UInt
+  reloff : UInt
+  nreloc : UInt
+  flags : UInt
+}
+
+// Relocation entry
+struct Reloc {
+  addr : UInt
+  value : UInt
+  type_ : Byte
+  len : Byte
+  pcrel : Bool
+  extern : Bool
+  scattered : Bool
+}
+
+// Section
+struct Section {
+  section_header : SectionHeader
+  relocs : Array[Reloc]
+}
+
+// Dynamic library
+struct Dylib {
+  load_bytes : LoadBytes
+  name : String
+  time : UInt
+  current_version : UInt
+  compat_version : UInt
+}
+
+// Symbol table
+struct Symtab {
+  load_bytes : LoadBytes
+  symtab_cmd : SymtabCmd
+  syms : Array[Symbol]
+}
+
+// Dynamic symbol table
+struct Dysymtab {
+  load_bytes : LoadBytes
+  dysymtab_cmd : DysymtabCmd
+  indirect_syms : Array[UInt]
+}
+
+// Rpath
+struct Rpath {
+  load_bytes : LoadBytes
+  path : String
+}
+
+// Symbol
+struct Symbol {
+  name : String
+  type_ : Byte
+  sect : Byte
+  desc : UInt16
+  value : UInt64
+}
+
+// File represents a Mach-O file
+struct File {
+  file_header : FileHeader
+  loads : Array[Load]
+  sections : Array[Section]
+  symtab : Symtab?
+  dysymtab : Dysymtab?
+}
+
+// Format error
+struct FormatError {
+  off : Int64
+  msg : String
+  val : String?
+}
+
+// Fat file header
+struct FatArchHeader {
+  cpu : Cpu
+  sub_cpu : UInt
+  offset : UInt
+  size : UInt
+  align : UInt
+}
+
+// Fat architecture
+struct FatArch {
+  fat_arch_header : FatArchHeader
+  file : File
+}
+
+// Fat file
+struct FatFile {
+  magic : UInt
+  arches : Array[FatArch]
+}
+
+// Relocation types
+enum RelocTypeGeneric {
+  Vanilla
+  Pair
+  Sectdiff
+  PbLaPtr
+  LocalSectdiff
+  Tlv
+}
+
+enum RelocTypeX86_64 {
+  Unsigned
+  Signed
+  Branch
+  GotLoad
+  Got
+  Subtractor
+  Signed1
+  Signed2
+  Signed4
+  Tlv
+}
+
+enum RelocTypeARM {
+  Vanilla
+  Pair
+  Sectdiff
+  LocalSectdiff
+  PbLaPtr
+  Br24
+  ThumbBr22
+  Thumb32BitBranch
+  Half
+  HalfSectdiff
+}
+
+enum RelocTypeARM64 {
+  Unsigned
+  Subtractor
+  Branch26
+  Page21
+  Pageoff12
+  GotLoadPage21
+  GotLoadPageoff12
+  PointerToGot
+  TlvpLoadPage21
+  TlvpLoadPageoff12
+  Addend
+}
+
+// Constants
+pub let magic32 : UInt
+pub let magic64 : UInt
+pub let magic_fat : UInt
+
+// File header sizes
+pub let file_header_size32 : Int
+pub let file_header_size64 : Int
+
+// File flags
+pub let flag_no_undefs : UInt
+pub let flag_incr_link : UInt
+pub let flag_dyld_link : UInt
+pub let flag_bind_at_load : UInt
+pub let flag_prebound : UInt
+pub let flag_split_segs : UInt
+pub let flag_lazy_init : UInt
+pub let flag_two_level : UInt
+pub let flag_force_flat : UInt
+pub let flag_no_multi_defs : UInt
+pub let flag_no_fix_prebinding : UInt
+pub let flag_prebindable : UInt
+pub let flag_all_mods_bound : UInt
+pub let flag_subsections_via_symbols : UInt
+pub let flag_canonical : UInt
+pub let flag_weak_defines : UInt
+pub let flag_binds_to_weak : UInt
+pub let flag_allow_stack_execution : UInt
+pub let flag_root_safe : UInt
+pub let flag_setuid_safe : UInt
+pub let flag_no_reexported_dylibs : UInt
+pub let flag_pie : UInt
+pub let flag_dead_strippable_dylib : UInt
+pub let flag_has_tlv_descriptors : UInt
+pub let flag_no_heap_execution : UInt
+pub let flag_app_extension_safe : UInt
+
+// Error values
+pub let err_not_fat : FormatError
+
+// Functions
+pub fn open(name : String) -> File!FormatError
+pub fn new_file(r : @io.ReaderAt) -> File!FormatError
+pub fn new_fat_file(r : @io.ReaderAt) -> FatFile!FormatError
+pub fn open_fat(name : String) -> FatFile!FormatError
+
+// Methods for File
+pub fn File::close(self : File) -> Unit!
+pub fn File::segment(self : File, name : String) -> Segment?
+pub fn File::section(self : File, name : String) -> Section?
+pub fn File::dwarf(self : File) -> @dwarf.Data!
+pub fn File::imported_symbols(self : File) -> Array[String]!FormatError
+pub fn File::imported_libraries(self : File) -> Array[String]!
+
+// Methods for Segment
+pub fn Segment::data(self : Segment) -> Array[Byte]!
+pub fn Segment::open(self : Segment) -> @io.ReadSeeker
+
+// Methods for Section
+pub fn Section::data(self : Section) -> Array[Byte]!
+pub fn Section::open(self : Section) -> @io.ReadSeeker
+
+// Methods for FatFile
+pub fn FatFile::close(self : FatFile) -> Unit!
+
+// Methods for Load types
+pub fn LoadBytes::raw(self : LoadBytes) -> Array[Byte]
+pub fn Segment::raw(self : Segment) -> Array[Byte]
+pub fn Dylib::raw(self : Dylib) -> Array[Byte]
+pub fn Symtab::raw(self : Symtab) -> Array[Byte]
+pub fn Dysymtab::raw(self : Dysymtab) -> Array[Byte]
+pub fn Rpath::raw(self : Rpath) -> Array[Byte]
+
+// String methods for enums
+pub fn Type::to_string(self : Type) -> String
+pub fn Cpu::to_string(self : Cpu) -> String
+pub fn LoadCmd::to_string(self : LoadCmd) -> String
+pub fn RelocTypeGeneric::to_string(self : RelocTypeGeneric) -> String
+pub fn RelocTypeX86_64::to_string(self : RelocTypeX86_64) -> String
+pub fn RelocTypeARM::to_string(self : RelocTypeARM) -> String
+pub fn RelocTypeARM64::to_string(self : RelocTypeARM64) -> String
+
+// Error methods
+pub fn FormatError::to_string(self : FormatError) -> String

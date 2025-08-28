@@ -126,14 +126,14 @@ test "zlib decompression" {
 ///|
 test "section name expansion" {
   // Test DWARF section name expansion for truncated names
-  assert_eq(expand_dwarf_section_name_bytes(b"str_offsets"), b"str_offsets")
-  assert_eq(expand_dwarf_section_name_bytes(b"line_str"), b"line_str")
-  assert_eq(expand_dwarf_section_name_bytes(b"loclists"), b"loclists")
-  assert_eq(expand_dwarf_section_name_bytes(b"pubnames"), b"pubnames")
-  assert_eq(expand_dwarf_section_name_bytes(b"pubtypes"), b"pubtypes")
-  assert_eq(expand_dwarf_section_name_bytes(b"rnglists"), b"rnglists")
+  assert_eq(expand_dwarf_section_name_bytes("str_offsets"), "str_offsets")
+  assert_eq(expand_dwarf_section_name_bytes("line_str"), "line_str")
+  assert_eq(expand_dwarf_section_name_bytes("loclists"), "loclists")
+  assert_eq(expand_dwarf_section_name_bytes("pubnames"), "pubnames")
+  assert_eq(expand_dwarf_section_name_bytes("pubtypes"), "pubtypes")
+  assert_eq(expand_dwarf_section_name_bytes("rnglists"), "rnglists")
 
   // Test that unknown suffixes pass through unchanged
-  assert_eq(expand_dwarf_section_name_bytes(b"info"), b"info")
-  assert_eq(expand_dwarf_section_name_bytes(b"unknown"), b"unknown")
+  assert_eq(expand_dwarf_section_name_bytes("info"), "info")
+  assert_eq(expand_dwarf_section_name_bytes("unknown"), "unknown")
 }
