@@ -83,7 +83,7 @@ pub fn copy_to_fixed_array(
 }
 
 ///|
-pub fn determine_byte_order(magic : UInt) -> ByteOrder? {
+fn determine_byte_order(magic : UInt) -> ByteOrder? {
   if magic == magic_32 || magic == magic_64 {
     Some(Little)
   } else if magic == 0xfacefeed_U || magic == 0xcffaedfe_U {
@@ -93,14 +93,6 @@ pub fn determine_byte_order(magic : UInt) -> ByteOrder? {
   }
 }
 
-///|
-pub fn is_valid_magic(magic : UInt) -> Bool {
-  magic == magic_32 ||
-  magic == magic_64 ||
-  magic == 0xfacefeed_U ||
-  magic == 0xcffaedfe_U ||
-  magic == magic_fat
-}
 
 ///|
 fn Bytes::contains(self : Bytes, byte : Byte) -> Bool {

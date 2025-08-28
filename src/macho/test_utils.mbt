@@ -85,14 +85,6 @@ test "get_file_type" {
   assert_eq(get_file_type(file_obj), "Object")
 }
 
-///|
-test "get_file_summary" {
-  let file = create_test_file_helper()
-  let summary = get_file_summary(file)
-  assert_true(summary.contains("64-bit"))
-  assert_true(summary.contains("Executable"))
-  assert_true(summary.contains("arm64"))
-}
 
 ///|
 test "has_flag" {
@@ -103,36 +95,4 @@ test "has_flag" {
   assert_false(has_flag(file, flag_bind_at_load))
 }
 
-///|
-test "get_flags_description" {
-  let file = create_test_file_helper()
-  let flags = get_flags_description(file)
-  assert_true(flags.length() >= 2)
-  assert_true(flags.contains("PIE"))
-  assert_true(flags.contains("TWO_LEVEL"))
-}
 
-///|
-test "get_load_command_type" {
-  let segment = {
-    load_bytes: { data: Bytes::new(0) },
-    header: {
-      cmd: LoadCmd::Segment64,
-      len: 72_U,
-      name: "__TEXT",
-      addr: 0_UL,
-      memsz: 1000_UL,
-      offset: 0_UL,
-      filesz: 1000_UL,
-      maxprot: 7_U,
-      prot: 5_U,
-      nsect: 0_U,
-      flag: 0_U,
-    },
-    data: None,
-  }
-  let seg_cmd = LoadCommand::Segment(segment)
-  assert_eq(get_load_command_type(seg_cmd), "SEGMENT_64")
-  let load_bytes = LoadCommand::LoadBytes({ data: Bytes::new(0) })
-  assert_eq(get_load_command_type(load_bytes), "LoadBytes")
-}

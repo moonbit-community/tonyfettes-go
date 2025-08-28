@@ -74,46 +74,6 @@ test "parse_fat_arch file too small" {
   }
 }
 
-///|
-test "is_universal_binary true" {
-  let data : Bytes = b"\xca\xfe\xba\xbe\x00\x00\x00\x01rest of data"
-  assert_true(is_universal_binary(data))
-}
-
-///|
-test "is_universal_binary false - too small" {
-  let data : Bytes = "123"
-  assert_false(is_universal_binary(data))
-}
-
-///|
-test "is_universal_binary false - wrong magic" {
-  let data : Bytes = b"\x12\x34\x56\x78rest"
-  assert_false(is_universal_binary(data))
-}
-
-///|
-test "get_arch_count" {
-  let fat_file : FatFile = {
-    magic: magic_fat,
-    arches: [{ cpu: I386, sub_cpu: 0_U, offset: 0_U, size: 100_U, align: 12_U }],
-    files: [],
-  }
-  assert_eq(get_arch_count(fat_file), 1)
-}
-
-///|
-test "get_supported_architectures" {
-  let arches = [
-    { cpu: I386, sub_cpu: 0_U, offset: 0_U, size: 100_U, align: 12_U },
-    { cpu: Arm64, sub_cpu: 0_U, offset: 1000_U, size: 200_U, align: 14_U },
-  ]
-  let fat_file : FatFile = { magic: magic_fat, arches, files: [] }
-  let cpus = get_supported_architectures(fat_file)
-  assert_eq(cpus.length(), 2)
-  assert_eq(cpus[0], I386)
-  assert_eq(cpus[1], Arm64)
-}
 
 ///|
 test "get_arch_file found" {

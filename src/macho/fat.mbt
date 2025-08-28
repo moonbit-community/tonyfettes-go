@@ -101,25 +101,3 @@ pub fn get_arch_file(fat_file : FatFile, cpu : Cpu) -> File? {
   None
 }
 
-///|
-pub fn get_arch_count(fat_file : FatFile) -> Int {
-  fat_file.arches.length()
-}
-
-///|
-pub fn get_supported_architectures(fat_file : FatFile) -> Array[Cpu] {
-  let cpus : Array[Cpu] = []
-  for arch in fat_file.arches {
-    cpus.push(arch.cpu)
-  }
-  cpus
-}
-
-///|
-pub fn is_universal_binary(data : Bytes) -> Bool raise {
-  if data.length() < 4 {
-    return false
-  }
-  let magic = read_uint(data, 0, Big)
-  is_fat(magic)
-}

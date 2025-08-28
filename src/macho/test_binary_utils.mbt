@@ -21,15 +21,6 @@ test "determine_byte_order" {
   assert_eq(determine_byte_order(0x12345678_U), None)
 }
 
-///|
-test "is_valid_magic" {
-  assert_true(is_valid_magic(magic_32))
-  assert_true(is_valid_magic(magic_64))
-  assert_true(is_valid_magic(magic_fat))
-  assert_true(is_valid_magic(0xfacefeed_U))
-  assert_true(is_valid_magic(0xcffaedfe_U))
-  assert_false(is_valid_magic(0x12345678_U))
-}
 
 ///|
 test "read_uint buffer overflow" {
