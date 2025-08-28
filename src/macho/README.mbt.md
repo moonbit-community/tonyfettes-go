@@ -26,7 +26,7 @@ test "parsing a mach-o file" {
     "\x00\x00\x00\x00" + // ncmd (0)
     "\x00\x00\x00\x00" + // cmdsz (0)
     "\x00\x00\x00\x00" // flags (0)
-  let file = @macho.new_file(data)
+  let file = @macho.File::new(data)
   println("Successfully parsed Mach-O file:")
   println("  Architecture: \{file.header.cpu}")
   println("  File Type: \{file.header.type_}")
@@ -74,7 +74,7 @@ test "extracting dwarf debug information" {
     b"\x00\x00\x00\x00" + // ncmd (0)
     b"\x00\x00\x00\x00" + // cmdsz (0)
     b"\x00\x00\x00\x00" // flags (0)
-  let file = @macho.new_file(file_data)
+  let file = @macho.File::new(file_data)
 
   // Extract DWARF debug information
   match file.dwarf(file_data) {

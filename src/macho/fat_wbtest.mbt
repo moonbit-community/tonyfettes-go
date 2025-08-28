@@ -12,19 +12,19 @@ test "is_fat false cases" {
 }
 
 ///|
-test "parse_fat_header success" {
+test "FatHeader::parse/success" {
   // Create minimal fat header: magic + nfat_arch
   let data : Bytes = b"\xca\xfe\xba\xbe\x00\x00\x00\x02"
-  let header = parse_fat_header(data, 0)
+  let header = FatHeader::parse(data, 0)
   assert_eq(header.magic, 0xcafebabe_U)
   assert_eq(header.nfat_arch, 2_U)
 }
 
 ///|
-test "parse_fat_header file too small" {
+test "FatHeader::parse/file-too-small" {
   let data : Bytes = "123" // Only 3 bytes
   try {
-    let _ = parse_fat_header(data, 0)
+    let _ = FatHeader::parse(data, 0)
     fail("Expected FileTooSmall error")
   } catch {
     FileTooSmall(actual_size~, required_size~) => {
@@ -36,10 +36,10 @@ test "parse_fat_header file too small" {
 }
 
 ///|
-test "parse_fat_header invalid magic" {
+test "FatHeader::parse/invalid-magic" {
   let data : Bytes = b"\x12\x34\x56\x78\x00\x00\x00\x02"
   try {
-    let _ = parse_fat_header(data, 0)
+    let _ = FatHeader::parse(data, 0)
     fail("Expected InvalidMagic error")
   } catch {
     InvalidMagic(magic~) => assert_eq(magic, 0x12345678_U)
@@ -48,10 +48,10 @@ test "parse_fat_header invalid magic" {
 }
 
 ///|
-test "parse_fat_arch success" {
+test "FatArch::parse/success" {
   // Create minimal fat arch: cpu_type + sub_cpu + offset + size + align
   let data : Bytes = b"\x00\x00\x00\x07\x00\x00\x00\x03\x00\x00\x10\x00\x00\x00\x20\x00\x00\x00\x00\x0c"
-  let arch = parse_fat_arch(data, 0)
+  let arch = FatArch::parse(data, 0)
   assert_eq(arch.cpu, I386)
   assert_eq(arch.sub_cpu, 3_U)
   assert_eq(arch.offset, 0x1000_U)
@@ -60,10 +60,10 @@ test "parse_fat_arch success" {
 }
 
 ///|
-test "parse_fat_arch file too small" {
+test "FatArch::parse/file-too-small" {
   let data : Bytes = "123456789012345" // Only 15 bytes, need 20
   try {
-    let _ = parse_fat_arch(data, 0)
+    let _ = FatArch::parse(data, 0)
     fail("Expected FileTooSmall error")
   } catch {
     FileTooSmall(actual_size~, required_size~) => {

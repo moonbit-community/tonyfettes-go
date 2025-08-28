@@ -61,18 +61,18 @@ pub enum ThreadState {
 
 ///|
 /// Parse thread state from raw thread command data
-fn parse_thread_state(
+fn ThreadState::parse(
   data : Bytes,
   cpu_type : Cpu,
   byte_order : ByteOrder,
 ) -> ThreadState raise {
   match cpu_type {
     I386 => {
-      let regs = parse_regs_386(data, byte_order)
+      let regs = Regs386::parse(data, byte_order)
       I386(regs)
     }
     Amd64 => {
-      let regs = parse_regs_amd64(data, byte_order)
+      let regs = RegsAMD64::parse(data, byte_order)
       AMD64(regs)
     }
     _ =>
@@ -83,7 +83,7 @@ fn parse_thread_state(
 
 ///|
 /// Parse 32-bit x86 register state
-fn parse_regs_386(data : Bytes, byte_order : ByteOrder) -> Regs386 raise {
+fn Regs386::parse(data : Bytes, byte_order : ByteOrder) -> Regs386 raise {
   // x86 thread state should be 64 bytes (16 registers * 4 bytes each)
   let expected_size = 64
   if data.length() < expected_size {
@@ -114,7 +114,7 @@ fn parse_regs_386(data : Bytes, byte_order : ByteOrder) -> Regs386 raise {
 
 ///|
 /// Parse 64-bit AMD64 register state
-fn parse_regs_amd64(data : Bytes, byte_order : ByteOrder) -> RegsAMD64 raise {
+fn RegsAMD64::parse(data : Bytes, byte_order : ByteOrder) -> RegsAMD64 raise {
   // AMD64 thread state should be 168 bytes (21 registers * 8 bytes each)
   let expected_size = 168
   if data.length() < expected_size {
@@ -160,5 +160,5 @@ pub fn extract_thread_state(
 
   // Skip the load command header (8 bytes: cmd + cmdsize)
   let state_data = read_bytes(thread_data, 8, thread_data.length() - 8)
-  parse_thread_state(state_data, cpu_type, byte_order)
+  ThreadState::parse(state_data, cpu_type, byte_order)
 }

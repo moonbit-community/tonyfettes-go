@@ -66,8 +66,6 @@ let flag_two_level : UInt
 
 let flag_weak_defines : UInt
 
-fn new_file(Bytes) -> File raise
-
 fn open_file(String) -> File raise
 
 // Errors
@@ -218,6 +216,7 @@ pub struct File {
 fn File::dwarf(Self, Bytes) -> DwarfData? raise
 fn File::imported_libraries(Self) -> Array[Bytes]
 fn File::imported_symbols(Self) -> Array[Bytes]
+fn File::new(Bytes) -> Self raise
 fn File::section(Self, Bytes) -> Section?
 fn File::segment(Self, Bytes) -> Segment?
 impl Show for File

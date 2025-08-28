@@ -1,8 +1,8 @@
 ///|
-test "parse_file too small" {
+test "File::parse too small" {
   let small_data : Bytes = "12"
   try {
-    let _ = parse_file(small_data)
+    let _ = File::parse(small_data)
     fail("Expected error for too small file")
   } catch {
     FormatError::FileTooSmall(actual_size~, required_size~) => {
@@ -14,10 +14,10 @@ test "parse_file too small" {
 }
 
 ///|
-test "parse_file invalid magic" {
+test "File::parse invalid magic" {
   let invalid_data : Bytes = "\x12\x34\x56\x78extra data here"
   try {
-    let _ = parse_file(invalid_data)
+    let _ = File::parse(invalid_data)
     fail("Expected error for invalid magic")
   } catch {
     FormatError::InvalidMagic(magic~) => assert_eq(magic, 0x78563412_U)
@@ -35,7 +35,7 @@ test "parse file header basic" {
     "\x00\x00\x00\x00" +
     "\x00\x00\x00\x00"
   try {
-    let file = parse_file(header_data)
+    let file = File::parse(header_data)
     assert_eq(file.header.magic, Magic32)
     assert_eq(file.header.cpu, I386)
     assert_eq(file.header.type_, Exec)
@@ -51,10 +51,10 @@ test "parse file header basic" {
 }
 
 ///|
-test "new_file convenience function" {
+test "File::new" {
   let small_data : Bytes = "12"
   try {
-    let _ = new_file(small_data)
+    let _ = File::new(small_data)
     fail("Expected error")
   } catch {
     FormatError::FileTooSmall(_) => ()
@@ -63,7 +63,7 @@ test "new_file convenience function" {
 }
 
 ///|
-test "parse_file 64-bit magic" {
+test "File::parse 64-bit magic" {
   let header_data : Bytes = "\xcf\xfa\xed\xfe" +
     "\x07\x00\x00\x01" +
     "\x00\x00\x00\x00" +
@@ -73,7 +73,7 @@ test "parse_file 64-bit magic" {
     "\x00\x00\x00\x00" +
     "\x00\x00\x00\x00"
   try {
-    let file = parse_file(header_data)
+    let file = File::parse(header_data)
     assert_eq(file.header.magic, Magic64)
     assert_eq(file.header.cpu, Amd64)
     assert_eq(file.header.type_, Exec)
@@ -84,7 +84,7 @@ test "parse_file 64-bit magic" {
 }
 
 ///|
-test "parse_file with command data overflow" {
+test "File::parse with command data overflow" {
   // Create header with moderate cmdsz that would still overflow the 28-byte file
   let header_data : Bytes = "\xce\xfa\xed\xfe" +
     "\x07\x00\x00\x00" +
@@ -94,7 +94,7 @@ test "parse_file with command data overflow" {
     "\x64\x00\x00\x00" + // cmdsz = 100 bytes, but file is only 28 bytes  
     "\x00\x00\x00\x00"
   try {
-    let _ = parse_file(header_data)
+    let _ = File::parse(header_data)
     fail("Expected CommandDataOverflow error")
   } catch {
     FormatError::CommandDataOverflow(offset~, size~, file_size~) => {
@@ -107,7 +107,7 @@ test "parse_file with command data overflow" {
 }
 
 ///|
-test "parse_file with load commands" {
+test "File::parse with load commands" {
   // Create a 32-bit file with one load command (symtab)
   let header_data : Bytes = "\xce\xfa\xed\xfe" + // magic_32
     "\x07\x00\x00\x00" + // cpu = I386  
@@ -123,7 +123,7 @@ test "parse_file with load commands" {
     "\x0a\x00\x00\x00" + // nsyms = 10
     "\x00\x20\x00\x00" + // stroff = 0x2000  
     "\x00\x01\x00\x00" // strsize = 256
-  let file = parse_file(header_data)
+  let file = File::parse(header_data)
   assert_eq(file.header.magic, Magic32)
   assert_eq(file.header.ncmd, 1_U)
   assert_eq(file.loads.length(), 1)

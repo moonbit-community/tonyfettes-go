@@ -1,5 +1,5 @@
 ///|
-fn parse_file(data : Bytes) -> File raise {
+fn File::parse(data : Bytes) -> File raise {
   if data.length() < 4 {
     raise FormatError::FileTooSmall(actual_size=data.length(), required_size=4)
   }
@@ -9,12 +9,12 @@ fn parse_file(data : Bytes) -> File raise {
     None => raise FormatError::InvalidMagic(magic~)
   }
   let actual_magic = read_uint(data, 0, byte_order)
-  let header = parse_file_header(data, byte_order, actual_magic)
+  let header = FileHeader::parse(data, byte_order, actual_magic)
   parse_file_with_header(data, header, byte_order)
 }
 
 ///|
-fn parse_file_header(
+fn FileHeader::parse(
   data : Bytes,
   byte_order : ByteOrder,
   magic : UInt,
@@ -71,7 +71,7 @@ fn parse_file_with_header(
   let final_symtab = match symtab {
     Some(st) => {
       let is_64bit = header.magic == Magic64
-      Some(parse_symtab(data, st, is_64bit, byte_order)) catch {
+      Some(Symtab::parse(data, st, is_64bit, byte_order)) catch {
         _ => Some(st) // Fall back to original symtab if parsing fails
       }
     }
@@ -101,35 +101,35 @@ fn parse_load_commands(
     let cmddat = read_bytes(data, offset, siz.reinterpret_as_int())
     match cmd {
       LoadCmd::Segment => {
-        let (segment, segment_sections) = parse_segment_32(cmddat, byte_order)
+        let (segment, segment_sections) = Segment32::parse(cmddat, byte_order)
         loads.push(LoadCommand::Segment(segment))
         for section in segment_sections {
           sections.push(section)
         }
       }
       LoadCmd::Segment64 => {
-        let (segment, segment_sections) = parse_segment_64(cmddat, byte_order)
+        let (segment, segment_sections) = Segment64::parse(cmddat, byte_order)
         loads.push(LoadCommand::Segment(segment))
         for section in segment_sections {
           sections.push(section)
         }
       }
       LoadCmd::Symtab => {
-        let st = parse_symtab_cmd(cmddat, byte_order)
+        let st = SymtabCmd::parse(cmddat, byte_order)
         loads.push(LoadCommand::Symtab(st))
         symtab = Some(st)
       }
       LoadCmd::Dysymtab => {
-        let dst = parse_dysymtab_cmd(cmddat, byte_order)
+        let dst = DysymtabCmd::parse(cmddat, byte_order)
         loads.push(LoadCommand::Dysymtab(dst))
         dysymtab = Some(dst)
       }
       LoadCmd::Dylib => {
-        let dylib = parse_dylib_cmd(cmddat, byte_order)
+        let dylib = DylibCmd::parse(cmddat, byte_order)
         loads.push(LoadCommand::Dylib(dylib))
       }
       LoadCmd::Rpath => {
-        let rpath = parse_rpath_cmd(cmddat, byte_order)
+        let rpath = RpathCmd::parse(cmddat, byte_order)
         loads.push(LoadCommand::Rpath(rpath))
       }
       _ => loads.push(LoadCommand::LoadBytes({ data: cmddat }))
@@ -141,18 +141,18 @@ fn parse_load_commands(
 }
 
 ///|
-pub fn new_file(data : Bytes) -> File raise {
-  parse_file(data)
+pub fn File::new(data : Bytes) -> File raise {
+  File::parse(data)
 }
 
 ///|
 pub fn open_file(path : String) -> File raise {
   let data = @fs.read_file_to_bytes(path)
-  parse_file(data)
+  File::parse(data)
 }
 
 ///|
-fn parse_symtab(
+fn Symtab::parse(
   file_data : Bytes,
   symtab : Symtab,
   is_64bit : Bool,

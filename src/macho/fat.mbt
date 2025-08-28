@@ -32,7 +32,7 @@ fn is_fat(magic : UInt) -> Bool {
 }
 
 ///|
-fn parse_fat_header(data : Bytes, offset : Int) -> FatHeader raise {
+fn FatHeader::parse(data : Bytes, offset : Int) -> FatHeader raise {
   if data.length() < offset + fat_header_size {
     raise FileTooSmall(
       actual_size=data.length(),
@@ -48,7 +48,7 @@ fn parse_fat_header(data : Bytes, offset : Int) -> FatHeader raise {
 }
 
 ///|
-fn parse_fat_arch(data : Bytes, offset : Int) -> FatArch raise {
+fn FatArch::parse(data : Bytes, offset : Int) -> FatArch raise {
   if data.length() < offset + fat_arch_size {
     raise FileTooSmall(
       actual_size=data.length(),
@@ -66,14 +66,14 @@ fn parse_fat_arch(data : Bytes, offset : Int) -> FatArch raise {
 
 ///|
 pub fn FatFile::new(data : Bytes) -> FatFile raise {
-  let header = parse_fat_header(data, 0)
+  let header = FatHeader::parse(data, 0)
   let arches : Array[FatArch] = []
   let files : Array[File] = []
 
   // Parse each fat architecture
   for i = 0; i < header.nfat_arch.reinterpret_as_int(); i = i + 1 {
     let arch_offset = fat_header_size + i * fat_arch_size
-    let arch = parse_fat_arch(data, arch_offset)
+    let arch = FatArch::parse(data, arch_offset)
     arches.push(arch)
 
     // Extract and parse the Mach-O file for this architecture
@@ -86,7 +86,7 @@ pub fn FatFile::new(data : Bytes) -> FatFile raise {
       )
     }
     let file_data = read_bytes(data, file_start, file_size)
-    files.push(parse_file(file_data))
+    files.push(File::parse(file_data))
   }
   { magic: header.magic, arches, files }
 }

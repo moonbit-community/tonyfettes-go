@@ -1,5 +1,5 @@
 ///|
-fn parse_segment_32(
+fn Segment32::parse(
   data : Bytes,
   byte_order : ByteOrder,
 ) -> (Segment, Array[Section]) raise {
@@ -41,14 +41,14 @@ fn parse_segment_32(
         section_type="Section32",
       )
     }
-    let section = parse_section_32(read_bytes(data, sect_start, 68), byte_order)
+    let section = Section32::parse(read_bytes(data, sect_start, 68), byte_order)
     sections.push(section)
   }
   (segment, sections)
 }
 
 ///|
-fn parse_segment_64(
+fn Segment64::parse(
   data : Bytes,
   byte_order : ByteOrder,
 ) -> (Segment, Array[Section]) raise {
@@ -90,14 +90,14 @@ fn parse_segment_64(
         section_type="Section64",
       )
     }
-    let section = parse_section_64(read_bytes(data, sect_start, 80), byte_order)
+    let section = Section64::parse(read_bytes(data, sect_start, 80), byte_order)
     sections.push(section)
   }
   (segment, sections)
 }
 
 ///|
-fn parse_section_32(data : Bytes, byte_order : ByteOrder) -> Section raise {
+fn Section32::parse(data : Bytes, byte_order : ByteOrder) -> Section raise {
   if data.length() < 68 {
     raise ParseError::MissingData(offset=0L, expected="Section32 (68 bytes)")
   }
@@ -125,7 +125,7 @@ fn parse_section_32(data : Bytes, byte_order : ByteOrder) -> Section raise {
 }
 
 ///|
-fn parse_section_64(data : Bytes, byte_order : ByteOrder) -> Section raise {
+fn Section64::parse(data : Bytes, byte_order : ByteOrder) -> Section raise {
   if data.length() < 80 {
     raise ParseError::MissingData(offset=0L, expected="Section64 (80 bytes)")
   }
@@ -153,7 +153,7 @@ fn parse_section_64(data : Bytes, byte_order : ByteOrder) -> Section raise {
 }
 
 ///|
-fn parse_symtab_cmd(data : Bytes, byte_order : ByteOrder) -> Symtab raise {
+fn SymtabCmd::parse(data : Bytes, byte_order : ByteOrder) -> Symtab raise {
   if data.length() < 24 {
     raise ParseError::MissingData(offset=0L, expected="SymtabCmd (24 bytes)")
   }
@@ -165,7 +165,7 @@ fn parse_symtab_cmd(data : Bytes, byte_order : ByteOrder) -> Symtab raise {
 }
 
 ///|
-fn parse_dysymtab_cmd(data : Bytes, byte_order : ByteOrder) -> Dysymtab raise {
+fn DysymtabCmd::parse(data : Bytes, byte_order : ByteOrder) -> Dysymtab raise {
   if data.length() < 80 {
     raise ParseError::MissingData(offset=0L, expected="DysymtabCmd (80 bytes)")
   }
@@ -212,7 +212,7 @@ fn parse_dysymtab_cmd(data : Bytes, byte_order : ByteOrder) -> Dysymtab raise {
 }
 
 ///|
-fn parse_dylib_cmd(data : Bytes, byte_order : ByteOrder) -> Dylib raise {
+fn DylibCmd::parse(data : Bytes, byte_order : ByteOrder) -> Dylib raise {
   if data.length() < 24 {
     raise ParseError::MissingData(offset=0L, expected="DylibCmd (24 bytes)")
   }
@@ -237,7 +237,7 @@ fn parse_dylib_cmd(data : Bytes, byte_order : ByteOrder) -> Dylib raise {
 }
 
 ///|
-fn parse_rpath_cmd(data : Bytes, byte_order : ByteOrder) -> Rpath raise {
+fn RpathCmd::parse(data : Bytes, byte_order : ByteOrder) -> Rpath raise {
   if data.length() < 12 {
     raise ParseError::MissingData(offset=0L, expected="RpathCmd (12 bytes)")
   }
