@@ -276,7 +276,7 @@ pub fn FormatError::to_string(self : FormatError) -> String {
 }
 
 ///|
-suberror ParseError {
+priv suberror ParseError {
   InvalidCommandSize(offset~ : Int, size~ : UInt)
   SegmentTooSmall(offset~ : Int64, command_type~ : String)
   SectionDataOverflow(offset~ : Int64, section_type~ : String)
@@ -284,7 +284,7 @@ suberror ParseError {
 }
 
 ///|
-suberror BufferOverflowError {
+priv suberror BufferOverflowError {
   ReadOverflow(
     offset~ : Int,
     length~ : Int,
@@ -373,7 +373,7 @@ pub struct DylibCmd {
 } derive(Eq, Show)
 
 ///|
-pub struct RpathCmd {
+struct RpathCmd {
   cmd : UInt
   len : UInt
   path : UInt
@@ -411,7 +411,7 @@ pub struct Section64 {
 } derive(Eq, Show)
 
 ///|
-pub struct Nlist32 {
+struct Nlist32 {
   name : UInt
   type_ : Byte
   sect : Byte

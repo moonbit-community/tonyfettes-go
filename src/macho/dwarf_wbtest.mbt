@@ -121,6 +121,10 @@ test "zlib decompression" {
   assert_false(test_data.has_section(b"test"))
   assert_eq(test_data.get_section_names().length(), 0)
   assert_eq(test_data.get_section(b"nonexistent"), None)
+
+  // Use the variables to avoid warnings
+  ignore(zlib_magic)
+  ignore(size_bytes)
 }
 
 ///|
