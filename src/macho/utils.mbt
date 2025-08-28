@@ -32,11 +32,7 @@ pub fn get_file_type(file : File) -> String {
   }
 }
 
-
 ///|
 pub fn has_flag(file : File, flag : UInt) -> Bool {
   (file.header.flags & flag) != 0_U
 }
-
-
-

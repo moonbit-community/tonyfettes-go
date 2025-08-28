@@ -50,6 +50,3 @@ test "parse_relocations success big endian" {
   assert_eq(relocs[0].addr, 0x1000_U)
   assert_eq(relocs[1].addr, 0x2000_U)
 }
-
-
-

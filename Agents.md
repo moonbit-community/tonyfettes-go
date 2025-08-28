@@ -62,8 +62,9 @@ To analyze test coverage and identify areas needing more tests:
 ### Coverage Output Format
 
 The coverage analyzer shows uncovered lines with specific details:
+
 - File paths with uncovered line counts
-- Exact line numbers marked with `<-- UNCOVERED` 
+- Exact line numbers marked with `<-- UNCOVERED`
 - Context showing the surrounding code structure
 - Common uncovered areas include error conditions, edge cases, and less common code paths
 
@@ -218,3 +219,85 @@ pub fn Section::data(self : Section, file_data : Bytes) -> Bytes raise {
 - The main missing pieces were file I/O, data access methods, and complete symbol parsing
 - Tests are comprehensive and help ensure implementation correctness
 - The codebase follows MoonBit's block-style organization with `///|` separators
+
+## ⚠️ CRITICAL: Binary Data Handling Rules
+
+### NEVER use String for binary data
+
+- **Strings in MoonBit are UTF-16 encoded**
+- `Bytes::to_string()` converts bytes to their textual UTF-16 representation, NOT raw binary data
+- This is completely wrong for binary formats like Mach-O
+
+### Example of WRONG approach
+
+```moonbit
+let sectname = section.header.name.to_string()  // ❌ WRONG!
+if sectname.starts_with("__debug_") { ... }     // ❌ WRONG!
+```
+
+### Example of CORRECT approach
+
+```moonbit
+let sectname = section.header.name              // ✅ CORRECT - keep as Bytes
+if sectname is [.. b"__debug_", ..] { ... }     // ✅ CORRECT - pattern matching
+```
+
+### Always use Bytes for binary data
+
+- Section names, segment names, and all binary data should stay as `Bytes`
+- Use `Bytes` comparison and manipulation functions
+- Only convert to String when you actually need text representation for humans
+
+### MoonBit Bytes API to use
+
+- Pattern matching with `is` expressions: `bytes is [.. b"prefix", ..]` for prefix checks
+- `bytes.op_get(index)` to get individual bytes
+- Slice syntax `bytes[start:end]` for extracting subsequences  
+- Direct byte literals like `b"__debug_"` for comparisons
+- `bytes.length()` for getting byte length
+- `[..suffix]` syntax to convert Views to Bytes when needed
+
+### Why this matters
+
+Binary file formats like Mach-O contain raw bytes that represent:
+
+- Magic numbers (4-byte sequences)
+- Section/segment names (null-terminated C strings)
+- Offsets and sizes (binary integers)
+- Architecture-specific data
+
+Converting these to UTF-16 strings breaks everything and causes comparison failures.
+
+### Common Patterns for Binary Data Processing
+
+**Checking prefixes:**
+
+```moonbit
+// ✅ CORRECT
+if sectname is [.. b"__debug_", .. suffix] {
+  // Process suffix
+}
+
+// ✅ CORRECT - exact byte matching
+if sectname is [b'_', b'_', b'd', b'e', b'b', b'u', b'g', b'_', .. suffix] {
+  // Process suffix
+}
+```
+
+**Extracting suffixes:**
+
+```moonbit
+// ✅ CORRECT - convert View to Bytes
+return [..suffix]  // When suffix is a View from pattern matching
+```
+
+**String literals vs Byte literals:**
+
+```moonbit
+// ✅ CORRECT - byte literals for binary data
+let debug_prefix = b"__debug_"
+sections[b"info"] = data
+
+// ❌ WRONG - string literals get converted incorrectly
+sections["info"] = data  // This creates UTF-16 encoded keys
+```

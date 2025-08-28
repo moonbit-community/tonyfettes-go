@@ -74,7 +74,6 @@ test "parse_fat_arch file too small" {
   }
 }
 
-
 ///|
 test "get_arch_file found" {
   let test_file : File = {

@@ -21,7 +21,6 @@ test "determine_byte_order" {
   assert_eq(determine_byte_order(0x12345678_U), None)
 }
 
-
 ///|
 test "read_uint buffer overflow" {
   let data : Bytes = "12"

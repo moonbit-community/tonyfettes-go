@@ -85,7 +85,6 @@ test "get_file_type" {
   assert_eq(get_file_type(file_obj), "Object")
 }
 
-
 ///|
 test "has_flag" {
   let file = create_test_file_helper()
@@ -94,5 +93,3 @@ test "has_flag" {
   assert_false(has_flag(file, flag_no_undefs))
   assert_false(has_flag(file, flag_bind_at_load))
 }
-
-

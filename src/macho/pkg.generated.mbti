@@ -1,9 +1,7 @@
 // Generated using `moon info`, DON'T EDIT IT
-package "moonbit/macho/macho"
+package "tonyfettes/debugo/macho"
 
 // Values
-fn copy_to_fixed_array(Bytes, Int, Int) -> FixedArray[Int] raise
-
 fn extract_thread_state(Thread, Cpu, ByteOrder) -> ThreadState raise
 
 let fat_arch_size : Int
@@ -132,12 +130,6 @@ fn parse_symtab_cmd(Bytes, ByteOrder) -> Symtab raise
 
 fn parse_thread_state(Bytes, Cpu, ByteOrder) -> ThreadState raise
 
-fn read_bytes(Bytes, Int, Int) -> Bytes raise
-
-fn read_uint(Bytes, Int, ByteOrder) -> UInt raise
-
-fn read_uint64(Bytes, Int, ByteOrder) -> UInt64 raise
-
 // Errors
 type BufferOverflowError
 
@@ -168,6 +160,14 @@ fn Cpu::from_uint(UInt) -> Self
 fn Cpu::to_uint(Self) -> UInt
 impl Eq for Cpu
 impl Show for Cpu
+
+pub struct DwarfData {
+  sections : Map[Bytes, Bytes]
+}
+fn DwarfData::get_section(Self, Bytes) -> Bytes?
+fn DwarfData::get_section_names(Self) -> Array[Bytes]
+fn DwarfData::has_section(Self, Bytes) -> Bool
+impl Show for DwarfData
 
 pub struct Dylib {
   load_bytes : LoadBytes
@@ -272,6 +272,7 @@ pub struct File {
   symtab : Symtab?
   dysymtab : Dysymtab?
 }
+fn File::dwarf(Self, Bytes) -> DwarfData?
 impl Show for File
 
 pub struct FileHeader {

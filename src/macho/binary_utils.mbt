@@ -1,9 +1,5 @@
 ///|
-fn read_uint(
-  data : Bytes,
-  offset : Int,
-  byte_order : ByteOrder,
-) -> UInt raise {
+fn read_uint(data : Bytes, offset : Int, byte_order : ByteOrder) -> UInt raise {
   if offset + 4 > data.length() {
     raise BufferOverflowError::ReadOverflow(
       offset~,
@@ -92,7 +88,6 @@ fn determine_byte_order(magic : UInt) -> ByteOrder? {
     None
   }
 }
-
 
 ///|
 fn Bytes::contains(self : Bytes, byte : Byte) -> Bool {

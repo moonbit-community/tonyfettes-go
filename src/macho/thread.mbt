@@ -162,4 +162,3 @@ pub fn extract_thread_state(
   let state_data = read_bytes(thread_data, 8, thread_data.length() - 8)
   parse_thread_state(state_data, cpu_type, byte_order)
 }
-

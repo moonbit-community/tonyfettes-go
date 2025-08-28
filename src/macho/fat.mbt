@@ -100,4 +100,3 @@ pub fn get_arch_file(fat_file : FatFile, cpu : Cpu) -> File? {
   }
   None
 }
-

@@ -103,6 +103,3 @@ fn parse_reloc_info(
     }
   }
 }
-
-
-
