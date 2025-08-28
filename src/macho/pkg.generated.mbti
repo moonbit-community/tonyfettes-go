@@ -4,10 +4,6 @@ package "moonbit/macho/macho"
 // Values
 fn copy_to_fixed_array(Bytes, Int, Int) -> FixedArray[Int] raise
 
-fn count_load_commands_by_type(File) -> Array[(Bytes, Int)]
-
-fn determine_byte_order(UInt) -> ByteOrder?
-
 fn extract_thread_state(Thread, Cpu, ByteOrder) -> ThreadState raise
 
 let fat_arch_size : Int
@@ -74,37 +70,19 @@ let flag_two_level : UInt
 
 let flag_weak_defines : UInt
 
-fn format_regs_386(Regs386) -> String
-
-fn format_regs_amd64(RegsAMD64) -> String
-
-fn format_relocation(Reloc) -> String
-
-fn format_thread_state(ThreadState) -> String
-
-fn get_arch_count(FatFile) -> Int
-
 fn get_arch_file(FatFile, Cpu) -> File?
 
 fn get_architecture(File) -> String
 
-fn get_file_summary(File) -> String
-
 fn get_file_type(File) -> String
-
-fn get_flags_description(File) -> Array[Bytes]
 
 fn get_imported_libraries(File) -> Array[Bytes]
 
 fn get_imported_symbols(File) -> Array[Bytes]
 
-fn get_load_command_type(LoadCommand) -> Bytes
-
 fn get_section_names(File) -> Array[Bytes]
 
 fn get_segment_names(File) -> Array[Bytes]
-
-fn get_supported_architectures(FatFile) -> Array[Cpu]
 
 fn has_flag(File, UInt) -> Bool
 
@@ -113,12 +91,6 @@ fn is_32bit(File) -> Bool
 fn is_64bit(File) -> Bool
 
 fn is_fat(UInt) -> Bool
-
-fn is_universal_binary(Bytes) -> Bool raise
-
-fn is_valid_magic(UInt) -> Bool
-
-fn is_valid_reloc_type(Int, Cpu) -> Bool
 
 let magic_32 : UInt
 
@@ -148,8 +120,6 @@ fn parse_relocations(Bytes, Int, UInt, ByteOrder) -> Array[Reloc] raise
 
 fn parse_rpath_cmd(Bytes, ByteOrder) -> Rpath raise
 
-fn parse_section_with_relocations(Section, Bytes, ByteOrder) -> Section raise
-
 fn parse_segment_32(Bytes, ByteOrder) -> (Segment, Array[Section]) raise
 
 fn parse_segment_64(Bytes, ByteOrder) -> (Segment, Array[Section]) raise
@@ -167,8 +137,6 @@ fn read_bytes(Bytes, Int, Int) -> Bytes raise
 fn read_uint(Bytes, Int, ByteOrder) -> UInt raise
 
 fn read_uint64(Bytes, Int, ByteOrder) -> UInt64 raise
-
-fn reloc_length_bytes(Int) -> Int
 
 // Errors
 type BufferOverflowError
