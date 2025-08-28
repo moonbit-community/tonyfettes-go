@@ -40,6 +40,18 @@ pub fn RelocTypeGeneric::from_int(value : Int) -> RelocTypeGeneric? {
 }
 
 ///|
+pub fn RelocTypeGeneric::to_string(self : RelocTypeGeneric) -> String {
+  match self {
+    Vanilla => "Vanilla"
+    Pair => "Pair"
+    Sectdiff => "Sectdiff"
+    PbLaPtr => "PbLaPtr"
+    LocalSectdiff => "LocalSectdiff"
+    Tlv => "Tlv"
+  }
+}
+
+///|
 /// x86_64 architecture relocation types
 pub enum RelocTypeX86_64 {
   Unsigned // 0
@@ -84,6 +96,22 @@ pub fn RelocTypeX86_64::from_int(value : Int) -> RelocTypeX86_64? {
     8 => Some(Signed4)
     9 => Some(Tlv)
     _ => None
+  }
+}
+
+///|
+pub fn RelocTypeX86_64::to_string(self : RelocTypeX86_64) -> String {
+  match self {
+    Unsigned => "Unsigned"
+    Signed => "Signed"
+    Branch => "Branch"
+    GotLoad => "GotLoad"
+    Got => "Got"
+    Subtractor => "Subtractor"
+    Signed1 => "Signed1"
+    Signed2 => "Signed2"
+    Signed4 => "Signed4"
+    Tlv => "Tlv"
   }
 }
 
@@ -136,6 +164,22 @@ pub fn RelocTypeARM::from_int(value : Int) -> RelocTypeARM? {
 }
 
 ///|
+pub fn RelocTypeARM::to_string(self : RelocTypeARM) -> String {
+  match self {
+    Vanilla => "Vanilla"
+    Pair => "Pair"
+    Sectdiff => "Sectdiff"
+    LocalSectdiff => "LocalSectdiff"
+    PbLaPtr => "PbLaPtr"
+    Br24 => "Br24"
+    ThumbBr22 => "ThumbBr22"
+    Thumb32BitBranch => "Thumb32BitBranch"
+    Half => "Half"
+    HalfSectdiff => "HalfSectdiff"
+  }
+}
+
+///|
 /// ARM64 architecture relocation types
 pub enum RelocTypeARM64 {
   Unsigned = 0
@@ -183,5 +227,22 @@ pub fn RelocTypeARM64::from_int(value : Int) -> RelocTypeARM64? {
     9 => Some(TlvpLoadPageoff12)
     10 => Some(Addend)
     _ => None
+  }
+}
+
+///|
+pub fn RelocTypeARM64::to_string(self : RelocTypeARM64) -> String {
+  match self {
+    Unsigned => "Unsigned"
+    Subtractor => "Subtractor"
+    Branch26 => "Branch26"
+    Page21 => "Page21"
+    Pageoff12 => "Pageoff12"
+    GotLoadPage21 => "GotLoadPage21"
+    GotLoadPageoff12 => "GotLoadPageoff12"
+    PointerToGot => "PointerToGot"
+    TlvpLoadPage21 => "TlvpLoadPage21"
+    TlvpLoadPageoff12 => "TlvpLoadPageoff12"
+    Addend => "Addend"
   }
 }

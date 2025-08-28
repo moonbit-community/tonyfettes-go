@@ -237,7 +237,7 @@ type LoadBytes Array[Byte]
 struct SegmentHeader {
   cmd : LoadCmd
   len : UInt
-  name : String
+  name : Bytes
   addr : UInt64
   memsz : UInt64
   offset : UInt64
@@ -256,8 +256,8 @@ struct Segment {
 
 // Section header
 struct SectionHeader {
-  name : String
-  seg : String
+  name : Bytes
+  seg : Bytes
   addr : UInt64
   size : UInt64
   offset : UInt
@@ -287,7 +287,7 @@ struct Section {
 // Dynamic library
 struct Dylib {
   load_bytes : LoadBytes
-  name : String
+  name : Bytes
   time : UInt
   current_version : UInt
   compat_version : UInt
@@ -310,12 +310,12 @@ struct Dysymtab {
 // Rpath
 struct Rpath {
   load_bytes : LoadBytes
-  path : String
+  path : Bytes
 }
 
 // Symbol
 struct Symbol {
-  name : String
+  name : Bytes
   type_ : Byte
   sect : Byte
   desc : UInt16
@@ -457,11 +457,11 @@ pub fn open_fat(name : String) -> FatFile raise FormatError
 
 // Methods for File
 pub fn File::close(self : File) -> Unit raise
-pub fn File::segment(self : File, name : String) -> Segment?
-pub fn File::section(self : File, name : String) -> Section?
+pub fn File::segment(self : File, name : Bytes) -> Segment?
+pub fn File::section(self : File, name : Bytes) -> Section?
 pub fn File::dwarf(self : File) -> @dwarf.Data!
-pub fn File::imported_symbols(self : File) -> Array[String] raise FormatError
-pub fn File::imported_libraries(self : File) -> Array[String] raise
+pub fn File::imported_symbols(self : File) -> Array[Bytes] raise FormatError
+pub fn File::imported_libraries(self : File) -> Array[Bytes] raise
 
 // Methods for Segment
 pub fn Segment::data(self : Segment) -> Array[Byte] raise

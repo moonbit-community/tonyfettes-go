@@ -48,6 +48,17 @@ pub fn Type::to_uint(self : Type) -> UInt {
 }
 
 ///|
+pub fn Type::to_string(self : Type) -> String {
+  match self {
+    Object => "Object"
+    Exec => "Executable"
+    Dylib => "Dynamic Library"
+    Bundle => "Bundle"
+    Unknown(val) => "Unknown(" + val.to_string() + ")"
+  }
+}
+
+///|
 pub enum Cpu {
   I386
   Amd64
@@ -81,6 +92,19 @@ pub fn Cpu::to_uint(self : Cpu) -> UInt {
     Ppc => 18_U
     Ppc64 => 18_U | cpu_arch_64
     Unknown(val) => val
+  }
+}
+
+///|
+pub fn Cpu::to_string(self : Cpu) -> String {
+  match self {
+    I386 => "i386"
+    Amd64 => "x86_64"
+    Arm => "arm"
+    Arm64 => "arm64"
+    Ppc => "ppc"
+    Ppc64 => "ppc64"
+    Unknown(val) => "unknown(" + val.to_string() + ")"
   }
 }
 
@@ -127,6 +151,22 @@ pub fn LoadCmd::to_uint(self : LoadCmd) -> UInt {
     Segment64 => 0x19_U
     Rpath => 0x8000001c_U
     Unknown(val) => val
+  }
+}
+
+///|
+pub fn LoadCmd::to_string(self : LoadCmd) -> String {
+  match self {
+    Segment => "Segment"
+    Symtab => "Symtab"
+    Thread => "Thread"
+    UnixThread => "UnixThread"
+    Dysymtab => "Dysymtab"
+    Dylib => "Dylib"
+    Dylinker => "Dylinker"
+    Segment64 => "Segment64"
+    Rpath => "Rpath"
+    Unknown(val) => "Unknown(" + val.to_string() + ")"
   }
 }
 

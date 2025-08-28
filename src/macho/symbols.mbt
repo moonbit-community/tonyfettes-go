@@ -87,9 +87,9 @@ pub fn parse_dynamic_symbol_indices(
 }
 
 ///|
-pub fn get_imported_symbols(file : File) -> Array[Bytes] {
-  let imported = Array::new()
-  match (file.symtab, file.dysymtab) {
+pub fn File::imported_symbols(self : File) -> Array[Bytes] {
+  let imported : Array[Bytes] = []
+  match (self.symtab, self.dysymtab) {
     (Some(st), Some(dt)) => {
       let start_index = dt.iundefsym.reinterpret_as_int()
       let count = dt.nundefsym.reinterpret_as_int()
@@ -110,9 +110,9 @@ pub fn get_imported_symbols(file : File) -> Array[Bytes] {
 }
 
 ///|
-pub fn get_imported_libraries(file : File) -> Array[Bytes] {
+pub fn File::imported_libraries(self : File) -> Array[Bytes] {
   let libraries = Array::new()
-  for load_cmd in file.loads {
+  for load_cmd in self.loads {
     match load_cmd {
       LoadCommand::Dylib(dylib) => libraries.push(dylib.name)
       _ => ()
@@ -122,8 +122,8 @@ pub fn get_imported_libraries(file : File) -> Array[Bytes] {
 }
 
 ///|
-pub fn find_segment(file : File, name : Bytes) -> Segment? {
-  for load_cmd in file.loads {
+pub fn File::segment(self : File, name : Bytes) -> Segment? {
+  for load_cmd in self.loads {
     match load_cmd {
       LoadCommand::Segment(segment) =>
         if segment.header.name == name {
@@ -136,8 +136,8 @@ pub fn find_segment(file : File, name : Bytes) -> Segment? {
 }
 
 ///|
-pub fn find_section(file : File, name : Bytes) -> Section? {
-  for section in file.sections {
+pub fn File::section(self : File, name : Bytes) -> Section? {
+  for section in self.sections {
     if section.header.name == name {
       return Some(section)
     }

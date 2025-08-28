@@ -12,10 +12,6 @@ let file_header_size_32 : Int
 
 let file_header_size_64 : Int
 
-fn find_section(File, Bytes) -> Section?
-
-fn find_segment(File, Bytes) -> Segment?
-
 let flag_all_mods_bound : UInt
 
 let flag_allow_stack_execution : UInt
@@ -74,10 +70,6 @@ fn get_architecture(File) -> String
 
 fn get_file_type(File) -> String
 
-fn get_imported_libraries(File) -> Array[Bytes]
-
-fn get_imported_symbols(File) -> Array[Bytes]
-
 fn get_section_names(File) -> Array[Bytes]
 
 fn get_segment_names(File) -> Array[Bytes]
@@ -134,6 +126,7 @@ fn parse_thread_state(Bytes, Cpu, ByteOrder) -> ThreadState raise
 type BufferOverflowError
 
 type FormatError
+fn FormatError::to_string(Self) -> String
 
 type InvalidDataError
 
@@ -157,6 +150,7 @@ pub enum Cpu {
   Unknown(UInt)
 }
 fn Cpu::from_uint(UInt) -> Self
+fn Cpu::to_string(Self) -> String
 fn Cpu::to_uint(Self) -> UInt
 impl Eq for Cpu
 impl Show for Cpu
@@ -178,6 +172,7 @@ pub struct Dylib {
 }
 impl Eq for Dylib
 impl Show for Dylib
+impl Load for Dylib
 
 pub struct DylibCmd {
   cmd : UInt
@@ -214,6 +209,7 @@ pub struct Dysymtab {
 }
 impl Eq for Dysymtab
 impl Show for Dysymtab
+impl Load for Dysymtab
 
 pub struct DysymtabCmd {
   cmd : UInt
@@ -273,6 +269,10 @@ pub struct File {
   dysymtab : Dysymtab?
 }
 fn File::dwarf(Self, Bytes) -> DwarfData? raise
+fn File::imported_libraries(Self) -> Array[Bytes]
+fn File::imported_symbols(Self) -> Array[Bytes]
+fn File::section(Self, Bytes) -> Section?
+fn File::segment(Self, Bytes) -> Segment?
 impl Show for File
 
 pub struct FileHeader {
@@ -292,6 +292,7 @@ pub struct LoadBytes {
 }
 impl Eq for LoadBytes
 impl Show for LoadBytes
+impl Load for LoadBytes
 
 pub enum LoadCmd {
   Segment
@@ -306,6 +307,7 @@ pub enum LoadCmd {
   Unknown(UInt)
 }
 fn LoadCmd::from_uint(UInt) -> Self
+fn LoadCmd::to_string(Self) -> String
 fn LoadCmd::to_uint(Self) -> UInt
 impl Eq for LoadCmd
 impl Show for LoadCmd
@@ -320,6 +322,7 @@ pub enum LoadCommand {
   Thread(Thread)
 }
 impl Show for LoadCommand
+impl Load for LoadCommand
 
 pub struct Nlist32 {
   name : UInt
@@ -401,61 +404,65 @@ impl Eq for Reloc
 impl Show for Reloc
 
 pub enum RelocTypeARM {
-  ARM_RELOC_VANILLA
-  ARM_RELOC_PAIR
-  ARM_RELOC_SECTDIFF
-  ARM_RELOC_LOCAL_SECTDIFF
-  ARM_RELOC_PB_LA_PTR
-  ARM_RELOC_BR24
-  ARM_THUMB_RELOC_BR22
-  ARM_THUMB_32BIT_BRANCH
-  ARM_RELOC_HALF
-  ARM_RELOC_HALF_SECTDIFF
+  Vanilla
+  Pair
+  Sectdiff
+  LocalSectdiff
+  PbLaPtr
+  Br24
+  ThumbBr22
+  Thumb32BitBranch
+  Half
+  HalfSectdiff
 }
 fn RelocTypeARM::from_int(Int) -> Self?
 fn RelocTypeARM::to_int(Self) -> Int
+fn RelocTypeARM::to_string(Self) -> String
 
 pub enum RelocTypeARM64 {
-  ARM64_RELOC_UNSIGNED
-  ARM64_RELOC_SUBTRACTOR
-  ARM64_RELOC_BRANCH26
-  ARM64_RELOC_PAGE21
-  ARM64_RELOC_PAGEOFF12
-  ARM64_RELOC_GOT_LOAD_PAGE21
-  ARM64_RELOC_GOT_LOAD_PAGEOFF12
-  ARM64_RELOC_POINTER_TO_GOT
-  ARM64_RELOC_TLVP_LOAD_PAGE21
-  ARM64_RELOC_TLVP_LOAD_PAGEOFF12
-  ARM64_RELOC_ADDEND
+  Unsigned
+  Subtractor
+  Branch26
+  Page21
+  Pageoff12
+  GotLoadPage21
+  GotLoadPageoff12
+  PointerToGot
+  TlvpLoadPage21
+  TlvpLoadPageoff12
+  Addend
 }
 fn RelocTypeARM64::from_int(Int) -> Self?
 fn RelocTypeARM64::to_int(Self) -> Int
+fn RelocTypeARM64::to_string(Self) -> String
 
 pub enum RelocTypeGeneric {
-  GENERIC_RELOC_VANILLA
-  GENERIC_RELOC_PAIR
-  GENERIC_RELOC_SECTDIFF
-  GENERIC_RELOC_PB_LA_PTR
-  GENERIC_RELOC_LOCAL_SECTDIFF
-  GENERIC_RELOC_TLV
+  Vanilla
+  Pair
+  Sectdiff
+  PbLaPtr
+  LocalSectdiff
+  Tlv
 }
 fn RelocTypeGeneric::from_int(Int) -> Self?
 fn RelocTypeGeneric::to_int(Self) -> Int
+fn RelocTypeGeneric::to_string(Self) -> String
 
 pub enum RelocTypeX86_64 {
-  X86_64_RELOC_UNSIGNED
-  X86_64_RELOC_SIGNED
-  X86_64_RELOC_BRANCH
-  X86_64_RELOC_GOT_LOAD
-  X86_64_RELOC_GOT
-  X86_64_RELOC_SUBTRACTOR
-  X86_64_RELOC_SIGNED_1
-  X86_64_RELOC_SIGNED_2
-  X86_64_RELOC_SIGNED_4
-  X86_64_RELOC_TLV
+  Unsigned
+  Signed
+  Branch
+  GotLoad
+  Got
+  Subtractor
+  Signed1
+  Signed2
+  Signed4
+  Tlv
 }
 fn RelocTypeX86_64::from_int(Int) -> Self?
 fn RelocTypeX86_64::to_int(Self) -> Int
+fn RelocTypeX86_64::to_string(Self) -> String
 
 pub struct Rpath {
   load_bytes : LoadBytes
@@ -463,6 +470,7 @@ pub struct Rpath {
 }
 impl Eq for Rpath
 impl Show for Rpath
+impl Load for Rpath
 
 pub struct RpathCmd {
   cmd : UInt
@@ -536,6 +544,7 @@ pub struct Segment {
 fn Segment::data(Self, Bytes) -> Bytes raise
 impl Eq for Segment
 impl Show for Segment
+impl Load for Segment
 
 pub struct Segment32 {
   cmd : UInt
@@ -605,6 +614,7 @@ pub struct Symtab {
 }
 impl Eq for Symtab
 impl Show for Symtab
+impl Load for Symtab
 
 pub struct SymtabCmd {
   cmd : UInt
@@ -624,6 +634,7 @@ pub struct Thread {
 }
 impl Eq for Thread
 impl Show for Thread
+impl Load for Thread
 
 pub enum ThreadState {
   I386(Regs386)
@@ -640,6 +651,7 @@ pub enum Type {
   Unknown(UInt)
 }
 fn Type::from_uint(UInt) -> Self
+fn Type::to_string(Self) -> String
 fn Type::to_uint(Self) -> UInt
 impl Eq for Type
 impl Show for Type

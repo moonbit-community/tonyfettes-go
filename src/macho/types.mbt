@@ -32,7 +32,7 @@ pub enum LoadCommand {
 } derive(Show)
 
 ///|
-impl Load for LoadCommand with raw(self) {
+pub impl Load for LoadCommand with raw(self) {
   match self {
     LoadBytes(load_bytes) => load_bytes.raw()
     Segment(segment) => segment.raw()
@@ -50,7 +50,7 @@ pub struct LoadBytes {
 } derive(Eq, Show)
 
 ///|
-impl Load for LoadBytes with raw(self) {
+pub impl Load for LoadBytes with raw(self) {
   self.data
 }
 
@@ -77,7 +77,7 @@ pub struct Segment {
 } derive(Eq, Show)
 
 ///|
-impl Load for Segment with raw(self) {
+pub impl Load for Segment with raw(self) {
   self.load_bytes.data
 }
 
@@ -158,7 +158,7 @@ pub struct Dylib {
 } derive(Eq, Show)
 
 ///|
-impl Load for Dylib with raw(self) {
+pub impl Load for Dylib with raw(self) {
   self.load_bytes.data
 }
 
@@ -182,7 +182,7 @@ pub struct Symtab {
 } derive(Eq, Show)
 
 ///|
-impl Load for Symtab with raw(self) {
+pub impl Load for Symtab with raw(self) {
   self.load_bytes.data
 }
 
@@ -211,7 +211,7 @@ pub struct Dysymtab {
 } derive(Eq, Show)
 
 ///|
-impl Load for Dysymtab with raw(self) {
+pub impl Load for Dysymtab with raw(self) {
   self.load_bytes.data
 }
 
@@ -222,7 +222,7 @@ pub struct Rpath {
 } derive(Eq, Show)
 
 ///|
-impl Load for Rpath with raw(self) {
+pub impl Load for Rpath with raw(self) {
   self.load_bytes.data
 }
 
@@ -234,7 +234,7 @@ pub struct Thread {
 } derive(Eq, Show)
 
 ///|
-impl Load for Thread with raw(self) {
+pub impl Load for Thread with raw(self) {
   self.load_bytes.data
 }
 
@@ -254,6 +254,28 @@ suberror FormatError {
   FileTooSmall(actual_size~ : Int, required_size~ : Int)
   InvalidHeader(offset~ : Int64, message~ : String)
   CommandDataOverflow(offset~ : Int64, size~ : UInt, file_size~ : Int)
+}
+
+///|
+pub fn FormatError::to_string(self : FormatError) -> String {
+  match self {
+    InvalidMagic(magic~) => "Invalid magic number: 0x" + magic.to_string()
+    FileTooSmall(actual_size~, required_size~) =>
+      "File too small: got " +
+      actual_size.to_string() +
+      " bytes, need " +
+      required_size.to_string() +
+      " bytes"
+    InvalidHeader(offset~, message~) =>
+      "Invalid header at offset " + offset.to_string() + ": " + message
+    CommandDataOverflow(offset~, size~, file_size~) =>
+      "Command data overflow at offset " +
+      offset.to_string() +
+      ": size " +
+      size.to_string() +
+      " exceeds file size " +
+      file_size.to_string()
+  }
 }
 
 ///|
