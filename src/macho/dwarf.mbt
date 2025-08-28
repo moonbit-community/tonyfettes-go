@@ -14,17 +14,38 @@ pub struct DwarfData {
 ///|
 /// Extract DWARF debug information from a Mach-O file
 /// Returns DwarfData containing all DWARF sections found in the file
-pub fn File::dwarf(self : File, file_data : Bytes) -> DwarfData? {
+pub fn File::dwarf(self : File, file_data : Bytes) -> DwarfData? raise {
+  fn decompress_section_data(
+    section : Section,
+    file_data : Bytes,
+  ) -> Bytes raise {
+    let data = section.data(file_data)
+
+    // Check if this is a ZLIB-compressed section by examining first 4 bytes
+    if data.length() >= 12 && data is [.. "ZLIB", ..] {
+      decompress_zlib_section(data)
+    } else {
+      data
+    }
+  }
+
+  fn decompress_zlib_section(data : Bytes) -> Bytes raise {
+    // Extract uncompressed size (8 bytes, big-endian)
+    let dlen = read_uint64_be(data, 4)
+
+    // For now, return a simple error indicating ZLIB decompression is not fully implemented
+    // TODO: Implement proper ZLIB decompression using @zlib package once API is stable
+    ...
+  }
+
   let sections = Map::new()
 
   // Look for DWARF sections in all file sections
   for section in self.sections {
     let suffix = dwarf_suffix(section)
     if suffix != "" {
-      match decompress_section_data(section, file_data) {
-        Ok(data) => sections[suffix] = data
-        Err(_) => continue // Skip sections that can't be decompressed
-      }
+      let data = decompress_section_data(section, file_data)
+      sections[suffix] = data
     }
   }
   if sections.is_empty() {
@@ -72,47 +93,6 @@ fn expand_dwarf_section_name_bytes(suffix : Bytes) -> Bytes {
   } else {
     suffix
   }
-}
-
-///|
-/// Decompress section data, handling ZLIB-compressed sections
-/// Returns the decompressed data or original data if not compressed
-fn decompress_section_data(
-  section : Section,
-  file_data : Bytes,
-) -> Result[Bytes, String] {
-  // Get the raw section data
-  try {
-    let data = section.data(file_data)
-
-    // Check if this is a ZLIB-compressed section by examining first 4 bytes
-    if data.length() >= 12 &&
-      data.op_get(0) == b'Z' &&
-      data.op_get(1) == b'L' &&
-      data.op_get(2) == b'I' &&
-      data.op_get(3) == b'B' {
-      decompress_zlib_section(data)
-    } else {
-      Ok(data)
-    }
-  } catch {
-    e => Err("Failed to read section data: " + e.to_string())
-  }
-}
-
-///|
-/// Decompress a ZLIB-compressed DWARF section
-/// Format: "ZLIB" + 8-byte big-endian uncompressed size + compressed data
-fn decompress_zlib_section(data : Bytes) -> Result[Bytes, String] {
-  // Extract uncompressed size (8 bytes, big-endian)
-  let dlen = read_uint64_be(data, 4)
-
-  // For now, return a simple error indicating ZLIB decompression is not fully implemented
-  // TODO: Implement proper ZLIB decompression using @zlib package once API is stable
-  Err(
-    "ZLIB decompression not yet fully implemented - expected size: " +
-    dlen.to_string(),
-  )
 }
 
 ///|
