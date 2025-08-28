@@ -98,18 +98,25 @@ test "zlib decompression" {
   // This tests the core decompression functionality
   let uncompressed_data = b"Hello, DWARF World!"
   let uncompressed_size = uncompressed_data.length()
-  
+
   // Create a mock ZLIB compressed DWARF section header
   // ZLIB magic (4 bytes) + uncompressed_size (8 bytes big-endian) + compressed_data
   let zlib_magic = b"ZLIB"
   let size_bytes = Bytes::from_array([
-    0, 0, 0, 0, 0, 0, 0, uncompressed_size.to_byte()
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    uncompressed_size.to_byte(),
   ])
-  
+
   // For testing, we'll create a mock compressed section with minimal ZLIB compression
   // This is just a basic test of the decompression path
   let test_data = DwarfData::{ sections: Map::new() }
-  
+
   // Test the DwarfData methods
   assert_false(test_data.has_section(b"test"))
   assert_eq(test_data.get_section_names().length(), 0)
@@ -125,7 +132,7 @@ test "section name expansion" {
   assert_eq(expand_dwarf_section_name_bytes(b"pubnames"), b"pubnames")
   assert_eq(expand_dwarf_section_name_bytes(b"pubtypes"), b"pubtypes")
   assert_eq(expand_dwarf_section_name_bytes(b"rnglists"), b"rnglists")
-  
+
   // Test that unknown suffixes pass through unchanged
   assert_eq(expand_dwarf_section_name_bytes(b"info"), b"info")
   assert_eq(expand_dwarf_section_name_bytes(b"unknown"), b"unknown")
