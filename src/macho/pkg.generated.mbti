@@ -76,8 +76,6 @@ type BufferOverflowError
 type FormatError
 fn FormatError::to_string(Self) -> String
 
-type InvalidDataError
-
 type ParseError
 
 // Types and methods

@@ -64,29 +64,6 @@ fn parse_single_symbol(
 }
 
 ///|
-fn parse_dynamic_symbol_indices(
-  data : Bytes,
-  nindirectsyms : UInt,
-  byte_order : ByteOrder,
-) -> Array[UInt] raise {
-  let indices = Array::new()
-  let expected_size = nindirectsyms.reinterpret_as_int() * 4
-  if data.length() < expected_size {
-    raise ParseError::MissingData(
-      offset=0L,
-      expected="Dynamic symbol indices data (" +
-        expected_size.to_string() +
-        " bytes)",
-    )
-  }
-  for i = 0; i < nindirectsyms.reinterpret_as_int(); i = i + 1 {
-    let index = read_uint(data, i * 4, byte_order)
-    indices.push(index)
-  }
-  indices
-}
-
-///|
 pub fn File::imported_symbols(self : File) -> Array[Bytes] {
   let imported : Array[Bytes] = []
   match (self.symtab, self.dysymtab) {

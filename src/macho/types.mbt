@@ -252,7 +252,6 @@ pub struct File {
 suberror FormatError {
   InvalidMagic(magic~ : UInt)
   FileTooSmall(actual_size~ : Int, required_size~ : Int)
-  InvalidHeader(offset~ : Int64, message~ : String)
   CommandDataOverflow(offset~ : Int64, size~ : UInt, file_size~ : Int)
 }
 
@@ -266,8 +265,6 @@ pub fn FormatError::to_string(self : FormatError) -> String {
       " bytes, need " +
       required_size.to_string() +
       " bytes"
-    InvalidHeader(offset~, message~) =>
-      "Invalid header at offset " + offset.to_string() + ": " + message
     CommandDataOverflow(offset~, size~, file_size~) =>
       "Command data overflow at offset " +
       offset.to_string() +
@@ -297,10 +294,8 @@ suberror BufferOverflowError {
 }
 
 ///|
-suberror InvalidDataError {
+priv suberror InvalidDataError {
   InvalidOffset(offset~ : Int, max_offset~ : Int, context~ : String)
-  InvalidIndex(index~ : Int, max_index~ : Int, context~ : String)
-  MalformedString(offset~ : Int, context~ : String)
 }
 
 ///|
