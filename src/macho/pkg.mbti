@@ -19,7 +19,7 @@ enum Type {
   Bundle
 }
 
-// Mach-O CPU type
+// Mach-O CPU type  
 enum Cpu {
   Cpu386
   CpuAmd64
@@ -450,25 +450,25 @@ pub let flag_app_extension_safe : UInt
 pub let err_not_fat : FormatError
 
 // Functions
-pub fn open(name : String) -> File!FormatError
-pub fn new_file(r : @io.ReaderAt) -> File!FormatError
-pub fn new_fat_file(r : @io.ReaderAt) -> FatFile!FormatError
-pub fn open_fat(name : String) -> FatFile!FormatError
+pub fn open(name : String) -> File raise FormatError
+pub fn new_file(r : @io.ReaderAt) -> File raise FormatError
+pub fn new_fat_file(r : @io.ReaderAt) -> FatFile raise FormatError
+pub fn open_fat(name : String) -> FatFile raise FormatError
 
 // Methods for File
-pub fn File::close(self : File) -> Unit!
+pub fn File::close(self : File) -> Unit raise
 pub fn File::segment(self : File, name : String) -> Segment?
 pub fn File::section(self : File, name : String) -> Section?
 pub fn File::dwarf(self : File) -> @dwarf.Data!
-pub fn File::imported_symbols(self : File) -> Array[String]!FormatError
-pub fn File::imported_libraries(self : File) -> Array[String]!
+pub fn File::imported_symbols(self : File) -> Array[String] raise FormatError
+pub fn File::imported_libraries(self : File) -> Array[String] raise
 
 // Methods for Segment
-pub fn Segment::data(self : Segment) -> Array[Byte]!
+pub fn Segment::data(self : Segment) -> Array[Byte] raise
 pub fn Segment::open(self : Segment) -> @io.ReadSeeker
 
 // Methods for Section
-pub fn Section::data(self : Section) -> Array[Byte]!
+pub fn Section::data(self : Section) -> Array[Byte] raise
 pub fn Section::open(self : Section) -> @io.ReadSeeker
 
 // Methods for FatFile
