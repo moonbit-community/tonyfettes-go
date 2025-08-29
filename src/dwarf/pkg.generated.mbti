@@ -502,10 +502,26 @@ fn CommonType::size(Self) -> Int64
 impl Show for CommonType
 
 pub struct Data {
+  abbrev : Bytes
+  aranges : Bytes
+  frame : Bytes
+  info : Bytes
+  line : Bytes
+  pubnames : Bytes
+  ranges : Bytes
+  str : Bytes
+  mut addr : Bytes
+  mut line_str : Bytes
+  mut str_offsets : Bytes
+  mut rng_lists : Bytes
   big_endian : Bool
+  order : ByteOrder
 }
-fn Data::big_endian(Self) -> Bool
-fn Data::new(Bool) -> Self
+fn Data::add_section_simple(Self, Bytes, Bytes) -> Bool
+fn Data::get_byte_order(Self) -> ByteOrder
+fn Data::get_section(Self, Bytes) -> Bytes
+fn Data::is_big_endian(Self) -> Bool
+fn Data::new_minimal(Bytes, Bytes, Bytes) -> Self?
 impl Show for Data
 
 pub enum DataFormatRef {
@@ -672,6 +688,20 @@ fn QualType::new(CommonType, String, DwarfTypeRef?) -> Self
 fn QualType::qual(Self) -> String
 fn QualType::qual_type(Self) -> DwarfTypeRef?
 impl Show for QualType
+
+pub struct SimpleUnit {
+  base : Int64
+  off : Int64
+  data : Bytes
+  asize : Int
+  vers : Int
+  is64 : Bool
+}
+fn SimpleUnit::addrsize(Self) -> Int
+fn SimpleUnit::is_dwarf64(Self) -> Bool
+fn SimpleUnit::new(Int64, Int64, Bytes, Int, Int, Bool) -> Self
+fn SimpleUnit::version(Self) -> Int
+impl Show for SimpleUnit
 
 pub struct StructField {
   name : String

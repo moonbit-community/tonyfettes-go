@@ -40,23 +40,7 @@ impl DataFormat for UnknownFormat with addrsize(_) {
 }
 
 ///|
-/// Forward declaration of Data type
-pub struct Data {
-  big_endian : Bool
-  // Will be filled in data.mbt
-} derive(Show)
-
-///|
-/// Constructor for Data
-pub fn Data::new(big_endian : Bool) -> Data {
-  { big_endian, }
-}
-
-///|
-/// Get whether data is big endian
-pub fn Data::big_endian(self : Data) -> Bool {
-  self.big_endian
-}
+// Data struct is now defined in data.mbt
 
 ///|
 /// Data buffer being decoded.
@@ -116,7 +100,7 @@ pub fn make_buf(
   data : Bytes,
 ) -> Buffer {
   let order = match d {
-    Some(data) => if data.big_endian() { BigEndian } else { LittleEndian }
+    Some(data) => if data.big_endian { BigEndian } else { LittleEndian }
     None => LittleEndian
   }
   { dwarf: d, order, format, name, off, data, err: None }
@@ -150,7 +134,7 @@ pub fn DecodeError::to_string(self : DecodeError) -> String {
 /// Read a uint8
 pub fn Buffer::uint8(self : Buffer) -> UInt {
   if self.data.length() < 1 {
-    self.error("underflow")
+    ignore(self.error("underflow"))
     return 0U
   }
   let val = self.data[0].to_uint()
@@ -168,7 +152,7 @@ pub fn Buffer::uint8(self : Buffer) -> UInt {
 /// Read n bytes
 pub fn Buffer::bytes(self : Buffer, n : Int) -> Bytes {
   if n < 0 || self.data.length() < n {
-    self.error("underflow")
+    ignore(self.error("underflow"))
     return b""
   }
   // Copy requested bytes
@@ -189,9 +173,10 @@ pub fn Buffer::bytes(self : Buffer, n : Int) -> Bytes {
 }
 
 ///|
-/// Skip n bytes
+/// Skip n bytes  
 pub fn Buffer::skip(self : Buffer, n : Int) -> Unit {
-  ignore(self.bytes(n))
+  let _discarded = self.bytes(n)
+
 }
 
 ///|
@@ -205,7 +190,7 @@ pub fn Buffer::string(self : Buffer) -> String {
     }
   }
   if i < 0 {
-    self.error("underflow")
+    ignore(self.error("underflow"))
     return ""
   }
   let s = self.data[:i].to_string()
@@ -350,7 +335,7 @@ pub fn Buffer::addr(self : Buffer) -> UInt64 {
     4 => self.uint32().to_uint64()
     8 => self.uint64()
     _ => {
-      self.error("unknown address size")
+      ignore(self.error("unknown address size"))
       0UL
     }
   }
@@ -365,7 +350,7 @@ pub fn Buffer::unit_length(self : Buffer) -> (Offset, Bool) {
     dwarf64 = true
     length = self.uint64().reinterpret_as_int64()
   } else if length >= 0xfffffff0L {
-    self.error("unit length has reserved value")
+    ignore(self.error("unit length has reserved value"))
   }
   (length, dwarf64)
 }
@@ -373,7 +358,7 @@ pub fn Buffer::unit_length(self : Buffer) -> (Offset, Bool) {
 ///|
 /// Set error
 pub fn Buffer::error(self : Buffer, s : String) -> Unit {
-  if self.err.is_empty() {
+  if self.err is None {
     self.data = b""
     self.err = Some(DecodeError::new(self.name, self.off, s))
   }
