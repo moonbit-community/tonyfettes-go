@@ -20,9 +20,9 @@ fn FileHeader::parse(
   magic : UInt,
 ) -> FileHeader raise {
   let header_size = if magic == Magic64 {
-    file_header_size_64
+    FileHeaderSize64
   } else {
-    file_header_size_32
+    FileHeaderSize32
   }
   if data.length() < header_size {
     raise FormatError::FileTooSmall(
@@ -46,9 +46,9 @@ fn parse_file_with_header(
   byte_order : ByteOrder,
 ) -> File raise {
   let header_size = if header.magic == Magic64 {
-    file_header_size_64
+    FileHeaderSize64
   } else {
-    file_header_size_32
+    FileHeaderSize32
   }
   if header_size.reinterpret_as_uint() + header.cmdsz >
     data.length().reinterpret_as_uint() {

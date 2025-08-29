@@ -1,20 +1,20 @@
 ///|
-let file_header_size_32 : Int = 7 * 4
+const FileHeaderSize32 : Int = 7 * 4
 
 ///|
-let file_header_size_64 : Int = 8 * 4
+const FileHeaderSize64 : Int = 8 * 4
 
 ///|
-pub const Magic32 : UInt = 0xfeedface_U
+pub const Magic32 : UInt = 0xfeedface
 
 ///|
-pub const Magic64 : UInt = 0xfeedfacf_U
+pub const Magic64 : UInt = 0xfeedfacf
 
 ///|
-pub const MagicFat : UInt = 0xcafebabe_U
+pub const MagicFat : UInt = 0xcafebabe
 
 ///|
-let cpu_arch_64 : UInt = 0x01000000_U
+const CpuArch64 : UInt = 0x01000000
 
 ///|
 pub enum Type {
@@ -72,12 +72,12 @@ pub enum Cpu {
 ///|
 pub fn Cpu::from_uint(value : UInt) -> Cpu {
   match value {
-    7_U => I386
-    0x1000007_U => Amd64
-    12_U => Arm
-    0x100000c_U => Arm64
-    18_U => Ppc
-    0x1000012_U => Ppc64
+    7 => I386
+    0x1000007 => Amd64
+    12 => Arm
+    0x100000c => Arm64
+    18 => Ppc
+    0x1000012 => Ppc64
     _ => Unknown(value)
   }
 }
@@ -85,12 +85,12 @@ pub fn Cpu::from_uint(value : UInt) -> Cpu {
 ///|
 pub fn Cpu::to_uint(self : Cpu) -> UInt {
   match self {
-    I386 => 7_U
-    Amd64 => 7_U | cpu_arch_64
-    Arm => 12_U
-    Arm64 => 12_U | cpu_arch_64
-    Ppc => 18_U
-    Ppc64 => 18_U | cpu_arch_64
+    I386 => 7
+    Amd64 => 7 | CpuArch64
+    Arm => 12
+    Arm64 => 12 | CpuArch64
+    Ppc => 18
+    Ppc64 => 18 | CpuArch64
     Unknown(val) => val
   }
 }
@@ -125,15 +125,15 @@ pub enum LoadCmd {
 ///|
 pub fn LoadCmd::from_uint(value : UInt) -> LoadCmd {
   match value {
-    0x1_U => Segment
-    0x2_U => Symtab
-    0x4_U => Thread
-    0x5_U => UnixThread
-    0xb_U => Dysymtab
-    0xc_U => Dylib
-    0xf_U => Dylinker
-    0x19_U => Segment64
-    0x8000001c_U => Rpath
+    0x1 => Segment
+    0x2 => Symtab
+    0x4 => Thread
+    0x5 => UnixThread
+    0xb => Dysymtab
+    0xc => Dylib
+    0xf => Dylinker
+    0x19 => Segment64
+    0x8000001c => Rpath
     _ => Unknown(value)
   }
 }
@@ -141,15 +141,15 @@ pub fn LoadCmd::from_uint(value : UInt) -> LoadCmd {
 ///|
 pub fn LoadCmd::to_uint(self : LoadCmd) -> UInt {
   match self {
-    Segment => 0x1_U
-    Symtab => 0x2_U
-    Thread => 0x4_U
-    UnixThread => 0x5_U
-    Dysymtab => 0xb_U
-    Dylib => 0xc_U
-    Dylinker => 0xf_U
-    Segment64 => 0x19_U
-    Rpath => 0x8000001c_U
+    Segment => 0x1
+    Symtab => 0x2
+    Thread => 0x4
+    UnixThread => 0x5
+    Dysymtab => 0xb
+    Dylib => 0xc
+    Dylinker => 0xf
+    Segment64 => 0x19
+    Rpath => 0x8000001c
     Unknown(val) => val
   }
 }
@@ -171,79 +171,79 @@ pub fn LoadCmd::to_string(self : LoadCmd) -> String {
 }
 
 ///|
-pub let flag_no_undefs : UInt = 0x1_U
+pub const FlagNoUndefs : UInt = 0x1
 
 ///|
-pub let flag_incr_link : UInt = 0x2_U
+pub const FlagIncrLink : UInt = 0x2
 
 ///|
-pub let flag_dyld_link : UInt = 0x4_U
+pub const FlagDyldLink : UInt = 0x4
 
 ///|
-pub let flag_bind_at_load : UInt = 0x8_U
+pub const FlagBindAtLoad : UInt = 0x8
 
 ///|
-pub let flag_prebound : UInt = 0x10_U
+pub const FlagPrebound : UInt = 0x10
 
 ///|
-pub let flag_split_segs : UInt = 0x20_U
+pub const FlagSplitSegs : UInt = 0x20
 
 ///|
-pub let flag_lazy_init : UInt = 0x40_U
+pub const FlagLazyInit : UInt = 0x40
 
 ///|
-pub let flag_two_level : UInt = 0x80_U
+pub const FlagTwoLevel : UInt = 0x80
 
 ///|
-pub let flag_force_flat : UInt = 0x100_U
+pub const FlagForceFlat : UInt = 0x100
 
 ///|
-pub let flag_no_multi_defs : UInt = 0x200_U
+pub const FlagNoMultiDefs : UInt = 0x200
 
 ///|
-pub let flag_no_fix_prebinding : UInt = 0x400_U
+pub const FlagNoFixPrebinding : UInt = 0x400
 
 ///|
-pub let flag_prebindable : UInt = 0x800_U
+pub const FlagPrebindable : UInt = 0x800
 
 ///|
-pub let flag_all_mods_bound : UInt = 0x1000_U
+pub const FlagAllModsBound : UInt = 0x1000
 
 ///|
-pub let flag_subsections_via_symbols : UInt = 0x2000_U
+pub const FlagSubsectionsViaSymbols : UInt = 0x2000
 
 ///|
-pub let flag_canonical : UInt = 0x4000_U
+pub const FlagCanonical : UInt = 0x4000
 
 ///|
-pub let flag_weak_defines : UInt = 0x8000_U
+pub const FlagWeakDefines : UInt = 0x8000
 
 ///|
-pub let flag_binds_to_weak : UInt = 0x10000_U
+pub const FlagBindsToWeak : UInt = 0x10000
 
 ///|
-pub let flag_allow_stack_execution : UInt = 0x20000_U
+pub const FlagAllowStackExecution : UInt = 0x20000
 
 ///|
-pub let flag_root_safe : UInt = 0x40000_U
+pub const FlagRootSafe : UInt = 0x40000
 
 ///|
-pub let flag_setuid_safe : UInt = 0x80000_U
+pub const FlagSetuidSafe : UInt = 0x80000
 
 ///|
-pub let flag_no_reexported_dylibs : UInt = 0x100000_U
+pub const FlagNoReexportedDylibs : UInt = 0x100000
 
 ///|
-pub let flag_pie : UInt = 0x200000_U
+pub const FlagPIE : UInt = 0x200000
 
 ///|
-pub let flag_dead_strippable_dylib : UInt = 0x400000_U
+pub const FlagDeadStrippableDylib : UInt = 0x400000
 
 ///|
-pub let flag_has_tlv_descriptors : UInt = 0x800000_U
+pub const FlagHasTLVDescriptors : UInt = 0x800000
 
 ///|
-pub let flag_no_heap_execution : UInt = 0x1000000_U
+pub const FlagNoHeapExecution : UInt = 0x1000000
 
 ///|
-pub let flag_app_extension_safe : UInt = 0x2000000_U
+pub const FlagAppExtensionSafe : UInt = 0x2000000

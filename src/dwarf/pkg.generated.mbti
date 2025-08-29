@@ -1,0 +1,834 @@
+// Generated using `moon info`, DON'T EDIT IT
+package "tonyfettes/debugo/dwarf"
+
+// Values
+fn data_format_ref_addrsize(DataFormatRef) -> Int
+
+fn data_format_ref_dwarf64(DataFormatRef) -> (Bool, Bool)
+
+fn data_format_ref_version(DataFormatRef) -> Int
+
+fn dwarf_type_ref_common(DwarfTypeRef) -> CommonType
+
+fn dwarf_type_ref_size(DwarfTypeRef) -> Int64
+
+fn dwarf_type_ref_to_string(DwarfTypeRef) -> String
+
+let enc_address : UInt
+
+let enc_ascii : UInt
+
+let enc_boolean : UInt
+
+let enc_complex_float : UInt
+
+let enc_decimal_float : UInt
+
+let enc_edited : UInt
+
+let enc_float : UInt
+
+let enc_imaginary_float : UInt
+
+let enc_numeric_string : UInt
+
+let enc_packed_decimal : UInt
+
+let enc_signed : UInt
+
+let enc_signed_char : UInt
+
+let enc_signed_fixed : UInt
+
+let enc_ucs : UInt
+
+let enc_unsigned : UInt
+
+let enc_unsigned_char : UInt
+
+let enc_unsigned_fixed : UInt
+
+let enc_utf : UInt
+
+let lle_base_address : UInt
+
+let lle_base_addressx : UInt
+
+let lle_default_location : UInt
+
+let lle_end_of_list : UInt
+
+let lle_offset_pair : UInt
+
+let lle_start_end : UInt
+
+let lle_start_length : UInt
+
+let lle_startx_endx : UInt
+
+let lle_startx_length : UInt
+
+let lnct_directory_index : UInt
+
+let lnct_md5 : UInt
+
+let lnct_path : UInt
+
+let lnct_size : UInt
+
+let lnct_timestamp : UInt
+
+let lne_define_file : UInt
+
+let lne_end_sequence : UInt
+
+let lne_set_address : UInt
+
+let lne_set_discriminator : UInt
+
+let lns_advance_line : UInt
+
+let lns_advance_pc : UInt
+
+let lns_const_add_pc : UInt
+
+let lns_copy : UInt
+
+let lns_fixed_advance_pc : UInt
+
+let lns_negate_stmt : UInt
+
+let lns_set_basic_block : UInt
+
+let lns_set_column : UInt
+
+let lns_set_epilogue_begin : UInt
+
+let lns_set_file : UInt
+
+let lns_set_isa : UInt
+
+let lns_set_prologue_end : UInt
+
+fn make_buf(Data?, DataFormatRef, String, Int64, Bytes) -> Buffer
+
+let op_abs : UInt
+
+let op_addr : UInt
+
+let op_addrx : UInt
+
+let op_and : UInt
+
+let op_bit_piece : UInt
+
+let op_bra : UInt
+
+let op_breg0 : UInt
+
+let op_bregx : UInt
+
+let op_call2 : UInt
+
+let op_call4 : UInt
+
+let op_call_frame_cfa : UInt
+
+let op_call_ref : UInt
+
+let op_const1s : UInt
+
+let op_const1u : UInt
+
+let op_const2s : UInt
+
+let op_const2u : UInt
+
+let op_const4s : UInt
+
+let op_const4u : UInt
+
+let op_const8s : UInt
+
+let op_const8u : UInt
+
+let op_const_type : UInt
+
+let op_consts : UInt
+
+let op_constu : UInt
+
+let op_constx : UInt
+
+let op_convert : UInt
+
+let op_deref : UInt
+
+let op_deref_size : UInt
+
+let op_deref_type : UInt
+
+let op_div : UInt
+
+let op_drop : UInt
+
+let op_dup : UInt
+
+let op_entry_value : UInt
+
+let op_eq : UInt
+
+let op_fbreg : UInt
+
+let op_form_tls_address : UInt
+
+let op_ge : UInt
+
+let op_gt : UInt
+
+let op_implicit_pointer : UInt
+
+let op_implicit_value : UInt
+
+let op_le : UInt
+
+let op_lit0 : UInt
+
+let op_lt : UInt
+
+let op_minus : UInt
+
+let op_mod : UInt
+
+let op_mul : UInt
+
+let op_ne : UInt
+
+let op_neg : UInt
+
+let op_nop : UInt
+
+let op_not : UInt
+
+let op_or : UInt
+
+let op_over : UInt
+
+let op_pick : UInt
+
+let op_piece : UInt
+
+let op_plus : UInt
+
+let op_plus_uconst : UInt
+
+let op_push_obj_addr : UInt
+
+let op_reg0 : UInt
+
+let op_regval_type : UInt
+
+let op_regx : UInt
+
+let op_reinterpret : UInt
+
+let op_rot : UInt
+
+let op_shl : UInt
+
+let op_shr : UInt
+
+let op_shra : UInt
+
+let op_skip : UInt
+
+let op_stack_value : UInt
+
+let op_swap : UInt
+
+let op_xderef : UInt
+
+let op_xderef_size : UInt
+
+let op_xderef_type : UInt
+
+let op_xor : UInt
+
+let rle_base_address : UInt
+
+let rle_base_addressx : UInt
+
+let rle_end_of_list : UInt
+
+let rle_offset_pair : UInt
+
+let rle_start_end : UInt
+
+let rle_start_length : UInt
+
+let rle_startx_endx : UInt
+
+let rle_startx_length : UInt
+
+let ut_compile : UInt
+
+let ut_partial : UInt
+
+let ut_skeleton : UInt
+
+let ut_split_compile : UInt
+
+let ut_split_type : UInt
+
+let ut_type : UInt
+
+// Errors
+
+// Types and methods
+pub struct ArrayType {
+  common : CommonType
+  array_type : DwarfTypeRef?
+  stride_size : Int64
+  count : Int64
+}
+fn ArrayType::array_type(Self) -> DwarfTypeRef?
+fn ArrayType::count(Self) -> Int64
+fn ArrayType::new(CommonType, DwarfTypeRef?, Int64, Int64) -> Self
+fn ArrayType::stride_size(Self) -> Int64
+impl Show for ArrayType
+
+pub enum Attr {
+  AttrSibling
+  AttrLocation
+  AttrName
+  AttrOrdering
+  AttrByteSize
+  AttrBitOffset
+  AttrBitSize
+  AttrStmtList
+  AttrLowpc
+  AttrHighpc
+  AttrLanguage
+  AttrDiscr
+  AttrDiscrValue
+  AttrVisibility
+  AttrImport
+  AttrStringLength
+  AttrCommonRef
+  AttrCompDir
+  AttrConstValue
+  AttrContainingType
+  AttrDefaultValue
+  AttrInline
+  AttrIsOptional
+  AttrLowerBound
+  AttrProducer
+  AttrPrototyped
+  AttrReturnAddr
+  AttrStartScope
+  AttrStrideSize
+  AttrUpperBound
+  AttrAbstractOrigin
+  AttrAccessibility
+  AttrAddrClass
+  AttrArtificial
+  AttrBaseTypes
+  AttrCalling
+  AttrCount
+  AttrDataMemberLoc
+  AttrDeclColumn
+  AttrDeclFile
+  AttrDeclLine
+  AttrDeclaration
+  AttrDiscrList
+  AttrEncoding
+  AttrExternal
+  AttrFrameBase
+  AttrFriend
+  AttrIdentifierCase
+  AttrMacroInfo
+  AttrNamelistItem
+  AttrPriority
+  AttrSegment
+  AttrSpecification
+  AttrStaticLink
+  AttrType
+  AttrUseLocation
+  AttrVarParam
+  AttrVirtuality
+  AttrVtableElemLoc
+  AttrAllocated
+  AttrAssociated
+  AttrDataLocation
+  AttrStride
+  AttrEntrypc
+  AttrUseUTF8
+  AttrExtension
+  AttrRanges
+  AttrTrampoline
+  AttrCallColumn
+  AttrCallFile
+  AttrCallLine
+  AttrDescription
+  AttrBinaryScale
+  AttrDecimalScale
+  AttrSmall
+  AttrDecimalSign
+  AttrDigitCount
+  AttrPictureString
+  AttrMutable
+  AttrThreadsScaled
+  AttrExplicit
+  AttrObjectPointer
+  AttrEndianity
+  AttrElemental
+  AttrPure
+  AttrRecursive
+  AttrSignature
+  AttrMainSubprogram
+  AttrDataBitOffset
+  AttrConstExpr
+  AttrEnumClass
+  AttrLinkageName
+  AttrStringLengthBitSize
+  AttrStringLengthByteSize
+  AttrRank
+  AttrStrOffsetsBase
+  AttrAddrBase
+  AttrRnglistsBase
+  AttrDwoName
+  AttrReference
+  AttrRvalueReference
+  AttrMacros
+  AttrCallAllCalls
+  AttrCallAllSourceCalls
+  AttrCallAllTailCalls
+  AttrCallReturnPC
+  AttrCallValue
+  AttrCallOrigin
+  AttrCallParameter
+  AttrCallPC
+  AttrCallTailCall
+  AttrCallTarget
+  AttrCallTargetClobbered
+  AttrCallDataLocation
+  AttrCallDataValue
+  AttrNoreturn
+  AttrAlignment
+  AttrExportSymbols
+  AttrDeleted
+  AttrDefaulted
+  AttrLoclistsBase
+}
+fn Attr::from_uint(UInt) -> Self?
+fn Attr::to_uint(Self) -> UInt
+impl Eq for Attr
+impl Show for Attr
+
+pub struct BasicType {
+  common : CommonType
+  bit_size : Int64
+  bit_offset : Int64
+  data_bit_offset : Int64
+}
+fn BasicType::bit_offset(Self) -> Int64
+fn BasicType::bit_size(Self) -> Int64
+fn BasicType::data_bit_offset(Self) -> Int64
+fn BasicType::new(CommonType, Int64, Int64, Int64) -> Self
+impl Show for BasicType
+
+pub struct Buffer {
+  dwarf : Data?
+  order : ByteOrder
+  format : DataFormatRef
+  name : String
+  mut off : Int64
+  mut data : Bytes
+  mut err : DecodeError?
+}
+fn Buffer::addr(Self) -> UInt64
+fn Buffer::bytes(Self, Int) -> Bytes
+fn Buffer::error(Self, String) -> Unit
+fn Buffer::get_error(Self) -> DecodeError?
+fn Buffer::has_error(Self) -> Bool
+fn Buffer::int(Self) -> Int64
+fn Buffer::length(Self) -> Int
+fn Buffer::offset(Self) -> Int64
+fn Buffer::skip(Self, Int) -> Unit
+fn Buffer::string(Self) -> String
+fn Buffer::uint(Self) -> UInt64
+fn Buffer::uint16(Self) -> UInt
+fn Buffer::uint24(Self) -> UInt
+fn Buffer::uint32(Self) -> UInt
+fn Buffer::uint64(Self) -> UInt64
+fn Buffer::uint8(Self) -> UInt
+fn Buffer::unit_length(Self) -> (Int64, Bool)
+fn Buffer::varint(Self) -> (UInt64, UInt)
+impl Show for Buffer
+
+pub enum ByteOrder {
+  LittleEndian
+  BigEndian
+}
+impl Eq for ByteOrder
+impl Show for ByteOrder
+
+pub enum Class {
+  ClassAddress
+  ClassBlock
+  ClassConstant
+  ClassFlag
+  ClassReference
+  ClassReferenceSig
+  ClassString
+  ClassExprLoc
+  ClassLinePtr
+  ClassLocListPtr
+  ClassMacPtr
+  ClassRangeListPtr
+  ClassUnknown
+}
+impl Eq for Class
+impl Show for Class
+
+pub struct CommonType {
+  byte_size : Int64
+  name : String
+}
+fn CommonType::byte_size(Self) -> Int64
+fn CommonType::name(Self) -> String
+fn CommonType::new(Int64, String) -> Self
+fn CommonType::size(Self) -> Int64
+impl Show for CommonType
+
+pub struct Data {
+  big_endian : Bool
+}
+fn Data::big_endian(Self) -> Bool
+fn Data::new(Bool) -> Self
+impl Show for Data
+
+pub enum DataFormatRef {
+  UnknownFormatRef(UnknownFormat)
+}
+impl Show for DataFormatRef
+
+pub struct DecodeError {
+  name : String
+  offset : Int64
+  err : String
+}
+fn DecodeError::new(String, Int64, String) -> Self
+fn DecodeError::to_string(Self) -> String
+impl Show for DecodeError
+
+pub enum DwarfTypeRef {
+  BasicTypeRef(BasicType)
+  QualTypeRef(QualType)
+  ArrayTypeRef(ArrayType)
+  VoidTypeRef(VoidType)
+  PtrTypeRef(PtrType)
+  StructTypeRef(StructType)
+  UnionTypeRef(UnionType)
+  EnumTypeRef(EnumType)
+  FuncTypeRef(FuncType)
+  TypedefTypeRef(TypedefType)
+  UnsupportedTypeRef(UnsupportedType)
+}
+impl Show for DwarfTypeRef
+
+pub struct Entry {
+  offset : Int64
+  tag : Tag
+  children : Bool
+  fields : Array[Field]
+}
+fn Entry::add_field(Self, Field) -> Unit
+fn Entry::attr_field(Self, Attr) -> Field?
+fn Entry::children(Self) -> Bool
+fn Entry::fields(Self) -> Array[Field]
+fn Entry::new(Int64, Tag, Bool) -> Self
+fn Entry::offset(Self) -> Int64
+fn Entry::tag(Self) -> Tag
+fn Entry::val(Self, Attr) -> FieldValue?
+impl Show for Entry
+
+pub struct EnumType {
+  common : CommonType
+  enum_name : String
+  vals : Array[EnumValue]
+}
+fn EnumType::add_val(Self, EnumValue) -> Unit
+fn EnumType::enum_name(Self) -> String
+fn EnumType::new(CommonType, String) -> Self
+fn EnumType::vals(Self) -> Array[EnumValue]
+impl Show for EnumType
+
+pub struct EnumValue {
+  name : String
+  val : Int64
+}
+fn EnumValue::name(Self) -> String
+fn EnumValue::new(String, Int64) -> Self
+fn EnumValue::val(Self) -> Int64
+impl Show for EnumValue
+
+pub struct Field {
+  attr : Attr
+  val : FieldValue
+  class : Class
+}
+fn Field::attr(Self) -> Attr
+fn Field::class(Self) -> Class
+fn Field::new(Attr, FieldValue, Class) -> Self
+fn Field::val(Self) -> FieldValue
+impl Show for Field
+
+pub enum FieldValue {
+  VUInt64(UInt64)
+  VBytes(Bytes)
+  VBool(Bool)
+  VInt64(Int64)
+  VString(String)
+  VOffset(Int64)
+}
+impl Show for FieldValue
+
+pub enum Format {
+  FormAddr
+  FormDwarfBlock2
+  FormDwarfBlock4
+  FormData2
+  FormData4
+  FormData8
+  FormString
+  FormDwarfBlock
+  FormDwarfBlock1
+  FormData1
+  FormFlag
+  FormSdata
+  FormStrp
+  FormUdata
+  FormRefAddr
+  FormRef1
+  FormRef2
+  FormRef4
+  FormRef8
+  FormRefUdata
+  FormIndirect
+  FormSecOffset
+  FormExprloc
+  FormFlagPresent
+  FormRefSig8
+  FormStrx
+  FormAddrx
+  FormRefSup4
+  FormStrpSup
+  FormData16
+  FormLineStrp
+  FormImplicitConst
+  FormLoclistx
+  FormRnglistx
+  FormRefSup8
+  FormStrx1
+  FormStrx2
+  FormStrx3
+  FormStrx4
+  FormAddrx1
+  FormAddrx2
+  FormAddrx3
+  FormAddrx4
+  FormGnuRefAlt
+  FormGnuStrpAlt
+}
+impl Eq for Format
+impl Show for Format
+
+pub struct FuncType {
+  common : CommonType
+  return_type : DwarfTypeRef?
+  param_types : Array[DwarfTypeRef]
+}
+fn FuncType::add_param_type(Self, DwarfTypeRef) -> Unit
+fn FuncType::new(CommonType, DwarfTypeRef?) -> Self
+fn FuncType::param_types(Self) -> Array[DwarfTypeRef]
+fn FuncType::return_type(Self) -> DwarfTypeRef?
+impl Show for FuncType
+
+pub struct PtrType {
+  common : CommonType
+  ptr_type : DwarfTypeRef?
+}
+fn PtrType::new(CommonType, DwarfTypeRef?) -> Self
+fn PtrType::ptr_type(Self) -> DwarfTypeRef?
+impl Show for PtrType
+
+pub struct QualType {
+  common : CommonType
+  qual : String
+  qual_type : DwarfTypeRef?
+}
+fn QualType::new(CommonType, String, DwarfTypeRef?) -> Self
+fn QualType::qual(Self) -> String
+fn QualType::qual_type(Self) -> DwarfTypeRef?
+impl Show for QualType
+
+pub struct StructField {
+  name : String
+  struct_type : DwarfTypeRef?
+  byte_offset : Int64
+  byte_size : Int64
+  bit_offset : Int64
+  data_bit_offset : Int64
+  bit_size : Int64
+}
+fn StructField::byte_offset(Self) -> Int64
+fn StructField::name(Self) -> String
+fn StructField::new(String, DwarfTypeRef?, Int64) -> Self
+fn StructField::struct_type(Self) -> DwarfTypeRef?
+impl Show for StructField
+
+pub struct StructType {
+  common : CommonType
+  struct_name : String
+  kind : String
+  fields : Array[StructField]
+  incomplete : Bool
+}
+fn StructType::add_field(Self, StructField) -> Unit
+fn StructType::fields(Self) -> Array[StructField]
+fn StructType::incomplete(Self) -> Bool
+fn StructType::kind(Self) -> String
+fn StructType::new(CommonType, String, String, Bool) -> Self
+fn StructType::struct_name(Self) -> String
+impl Show for StructType
+
+pub enum Tag {
+  TagArrayType
+  TagClassType
+  TagEntryPoint
+  TagEnumerationType
+  TagFormalParameter
+  TagImportedDeclaration
+  TagLabel
+  TagLexDwarfBlock
+  TagMember
+  TagPointerType
+  TagReferenceType
+  TagCompileUnit
+  TagStringType
+  TagStructType
+  TagSubroutineType
+  TagTypedef
+  TagUnionType
+  TagUnspecifiedParameters
+  TagVariant
+  TagCommonDwarfBlock
+  TagCommonInclusion
+  TagInheritance
+  TagInlinedSubroutine
+  TagModule
+  TagPtrToMemberType
+  TagSetType
+  TagSubrangeType
+  TagWithStmt
+  TagAccessDeclaration
+  TagBaseType
+  TagCatchDwarfBlock
+  TagConstType
+  TagConstant
+  TagEnumerator
+  TagFileType
+  TagFriend
+  TagNamelist
+  TagNamelistItem
+  TagPackedType
+  TagSubprogram
+  TagTemplateTypeParameter
+  TagTemplateValueParameter
+  TagThrownType
+  TagTryDwarfBlock
+  TagVariantPart
+  TagVariable
+  TagVolatileType
+  TagDwarfProcedure
+  TagRestrictType
+  TagInterfaceType
+  TagNamespace
+  TagImportedModule
+  TagUnspecifiedType
+  TagPartialUnit
+  TagImportedUnit
+  TagMutableType
+  TagCondition
+  TagSharedType
+  TagTypeUnit
+  TagRvalueReferenceType
+  TagTemplateAlias
+  TagCoarrayType
+  TagGenericSubrange
+  TagDynamicType
+  TagAtomicType
+  TagCallSite
+  TagCallSiteParameter
+  TagSkeletonUnit
+  TagImmutableType
+}
+fn Tag::to_uint(Self) -> UInt
+impl Eq for Tag
+impl Show for Tag
+
+pub struct TypedefType {
+  common : CommonType
+  typedef_type : DwarfTypeRef?
+}
+fn TypedefType::new(CommonType, DwarfTypeRef?) -> Self
+fn TypedefType::typedef_type(Self) -> DwarfTypeRef?
+impl Show for TypedefType
+
+pub struct UnionType {
+  common : CommonType
+  union_name : String
+  fields : Array[StructField]
+}
+fn UnionType::add_field(Self, StructField) -> Unit
+fn UnionType::fields(Self) -> Array[StructField]
+fn UnionType::new(CommonType, String) -> Self
+fn UnionType::union_name(Self) -> String
+impl Show for UnionType
+
+pub struct UnknownFormat {
+}
+fn UnknownFormat::new() -> Self
+impl Show for UnknownFormat
+
+pub struct UnsupportedType {
+  common : CommonType
+  tag : Tag
+}
+fn UnsupportedType::new(CommonType, Tag) -> Self
+fn UnsupportedType::tag(Self) -> Tag
+impl Show for UnsupportedType
+
+pub struct VoidType {
+  common : CommonType
+}
+fn VoidType::new(CommonType) -> Self
+impl Show for VoidType
+
+// Type aliases
+pub typealias Int64 as Offset
+
+// Traits
+pub trait DataFormat {
+  version(Self) -> Int
+  dwarf64(Self) -> (Bool, Bool)
+  addrsize(Self) -> Int
+}
+
+pub trait DwarfType {
+  common(Self) -> CommonType
+  size(Self) -> Int64
+  to_string(Self) -> String
+}
+

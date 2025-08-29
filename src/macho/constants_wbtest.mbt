@@ -7,8 +7,8 @@ test "magic number constants" {
 
 ///|
 test "file header sizes" {
-  assert_eq(file_header_size_32, 28)
-  assert_eq(file_header_size_64, 32)
+  assert_eq(FileHeaderSize32, 28)
+  assert_eq(FileHeaderSize64, 32)
 }
 
 ///|

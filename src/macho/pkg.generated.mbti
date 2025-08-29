@@ -2,11 +2,63 @@
 package "tonyfettes/debugo/macho"
 
 // Values
-const Magic32 : UInt = 0xfeedface_
+const FlagAllModsBound : UInt = 0x1000
 
-const Magic64 : UInt = 0xfeedfacf_
+const FlagAllowStackExecution : UInt = 0x20000
 
-const MagicFat : UInt = 0xcafebabe_
+const FlagAppExtensionSafe : UInt = 0x2000000
+
+const FlagBindAtLoad : UInt = 0x8
+
+const FlagBindsToWeak : UInt = 0x10000
+
+const FlagCanonical : UInt = 0x4000
+
+const FlagDeadStrippableDylib : UInt = 0x400000
+
+const FlagDyldLink : UInt = 0x4
+
+const FlagForceFlat : UInt = 0x100
+
+const FlagHasTLVDescriptors : UInt = 0x800000
+
+const FlagIncrLink : UInt = 0x2
+
+const FlagLazyInit : UInt = 0x40
+
+const FlagNoFixPrebinding : UInt = 0x400
+
+const FlagNoHeapExecution : UInt = 0x1000000
+
+const FlagNoMultiDefs : UInt = 0x200
+
+const FlagNoReexportedDylibs : UInt = 0x100000
+
+const FlagNoUndefs : UInt = 0x1
+
+const FlagPIE : UInt = 0x200000
+
+const FlagPrebindable : UInt = 0x800
+
+const FlagPrebound : UInt = 0x10
+
+const FlagRootSafe : UInt = 0x40000
+
+const FlagSetuidSafe : UInt = 0x80000
+
+const FlagSplitSegs : UInt = 0x20
+
+const FlagSubsectionsViaSymbols : UInt = 0x2000
+
+const FlagTwoLevel : UInt = 0x80
+
+const FlagWeakDefines : UInt = 0x8000
+
+const Magic32 : UInt = 0xfeedface
+
+const Magic64 : UInt = 0xfeedfacf
+
+const MagicFat : UInt = 0xcafebabe
 
 fn extract_thread_state(Thread, Cpu, ByteOrder) -> ThreadState raise
 
@@ -14,67 +66,11 @@ let fat_arch_size : Int
 
 let fat_header_size : Int
 
-let flag_all_mods_bound : UInt
-
-let flag_allow_stack_execution : UInt
-
-let flag_app_extension_safe : UInt
-
-let flag_bind_at_load : UInt
-
-let flag_binds_to_weak : UInt
-
-let flag_canonical : UInt
-
-let flag_dead_strippable_dylib : UInt
-
-let flag_dyld_link : UInt
-
-let flag_force_flat : UInt
-
-let flag_has_tlv_descriptors : UInt
-
-let flag_incr_link : UInt
-
-let flag_lazy_init : UInt
-
-let flag_no_fix_prebinding : UInt
-
-let flag_no_heap_execution : UInt
-
-let flag_no_multi_defs : UInt
-
-let flag_no_reexported_dylibs : UInt
-
-let flag_no_undefs : UInt
-
-let flag_pie : UInt
-
-let flag_prebindable : UInt
-
-let flag_prebound : UInt
-
-let flag_root_safe : UInt
-
-let flag_setuid_safe : UInt
-
-let flag_split_segs : UInt
-
-let flag_subsections_via_symbols : UInt
-
-let flag_two_level : UInt
-
-let flag_weak_defines : UInt
-
 fn open_file(String) -> File raise
 
 // Errors
-type BufferOverflowError
-
 type FormatError
 fn FormatError::to_string(Self) -> String
-
-type ParseError
 
 // Types and methods
 pub enum ByteOrder {
@@ -270,13 +266,7 @@ pub enum LoadCommand {
 impl Show for LoadCommand
 impl Load for LoadCommand
 
-pub struct Nlist32 {
-  name : UInt
-  type_ : Byte
-  sect : Byte
-  desc : UInt
-  value : UInt
-}
+type Nlist32
 impl Eq for Nlist32
 impl Show for Nlist32
 
@@ -418,11 +408,7 @@ impl Eq for Rpath
 impl Show for Rpath
 impl Load for Rpath
 
-pub struct RpathCmd {
-  cmd : UInt
-  len : UInt
-  path : UInt
-}
+type RpathCmd
 impl Eq for RpathCmd
 impl Show for RpathCmd
 
