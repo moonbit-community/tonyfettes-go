@@ -1,0 +1,39 @@
+// Generated using `moon info`, DON'T EDIT IT
+package "tonyfettes/debugo/io"
+
+import(
+  "moonbitlang/core/bytes"
+)
+
+// Values
+
+// Errors
+pub suberror Eof
+
+type SeekError
+
+// Types and methods
+type SectionReader
+fn SectionReader::new(&ReaderAt, Int64, Int64) -> Self
+fn SectionReader::read(Self, @bytes.View) -> Int raise
+fn SectionReader::read_at(Self, @bytes.View, Int64) -> Int raise
+fn SectionReader::seek(Self, Int64, SeekWhence) -> Int64 raise SeekError
+fn SectionReader::size(Self) -> Int64
+
+pub(all) enum SeekWhence {
+  Start
+  Current
+  End
+}
+
+// Type aliases
+
+// Traits
+pub(open) trait Closer {
+  close() -> Unit raise
+}
+
+pub(open) trait ReaderAt {
+  read_at(Self, @bytes.View, Int64) -> Int raise
+}
+
