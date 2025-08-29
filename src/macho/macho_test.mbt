@@ -140,7 +140,7 @@ test "validate_sections" {
   inspect(macho.sections.length() > 0, content="true")
   for section in macho.sections {
     // Basic sanity checks
-    inspect(section.header.size >= 0_UL, content="true")
+    inspect(section.header.size >= 0, content="true")
 
     // Section names should be valid (not empty for most sections)
     let name = section.header.name.to_string()
@@ -168,7 +168,7 @@ test "validate_symbols" {
         inspect(name.length() >= 0, content="true")
 
         // Values should be reasonable
-        inspect(symbol.value >= 0_UL, content="true")
+        inspect(symbol.value >= 0, content="true")
       }
     }
     None => () // Some files might not have symbol tables
@@ -178,46 +178,46 @@ test "validate_symbols" {
 ///|
 test "test_cpu_types" {
   // Test CPU type detection and conversion
-  let arm64_cpu = @macho.Cpu::from_uint(0x100000c_U)
+  let arm64_cpu = @macho.Cpu::from_uint(0x100000c)
   inspect(arm64_cpu, content="Arm64")
   inspect(arm64_cpu.to_uint(), content="16777228")
   inspect(arm64_cpu.to_string(), content="arm64")
-  let amd64_cpu = @macho.Cpu::from_uint(0x1000007_U)
+  let amd64_cpu = @macho.Cpu::from_uint(0x1000007)
   inspect(amd64_cpu, content="Amd64")
   inspect(amd64_cpu.to_string(), content="x86_64")
-  let unknown_cpu = @macho.Cpu::from_uint(999_U)
+  let unknown_cpu = @macho.Cpu::from_uint(999)
   inspect(unknown_cpu, content="Unknown(999)")
 }
 
 ///|
 test "test_file_types" {
   // Test file type detection and conversion
-  let object_type = @macho.Type::from_uint(1_U)
+  let object_type = @macho.Type::from_uint(1)
   inspect(object_type, content="Object")
   inspect(object_type.to_string(), content="Object")
-  let exec_type = @macho.Type::from_uint(2_U)
+  let exec_type = @macho.Type::from_uint(2)
   inspect(exec_type, content="Exec")
   inspect(exec_type.to_string(), content="Executable")
-  let dylib_type = @macho.Type::from_uint(6_U)
+  let dylib_type = @macho.Type::from_uint(6)
   inspect(dylib_type, content="Dylib")
   inspect(dylib_type.to_string(), content="Dynamic Library")
-  let unknown_type = @macho.Type::from_uint(99_U)
+  let unknown_type = @macho.Type::from_uint(99)
   inspect(unknown_type, content="Unknown(99)")
 }
 
 ///|
 test "test_load_command_types" {
   // Test load command type detection
-  let segment_cmd = @macho.LoadCmd::from_uint(0x1_U)
+  let segment_cmd = @macho.LoadCmd::from_uint(0x1)
   inspect(segment_cmd, content="Segment")
   inspect(segment_cmd.to_string(), content="Segment")
-  let segment64_cmd = @macho.LoadCmd::from_uint(0x19_U)
+  let segment64_cmd = @macho.LoadCmd::from_uint(0x19)
   inspect(segment64_cmd, content="Segment64")
   inspect(segment64_cmd.to_string(), content="Segment64")
-  let symtab_cmd = @macho.LoadCmd::from_uint(0x2_U)
+  let symtab_cmd = @macho.LoadCmd::from_uint(0x2)
   inspect(symtab_cmd, content="Symtab")
   inspect(symtab_cmd.to_string(), content="Symtab")
-  let unknown_cmd = @macho.LoadCmd::from_uint(0xFFFF_U)
+  let unknown_cmd = @macho.LoadCmd::from_uint(0xFFFF)
   inspect(unknown_cmd, content="Unknown(65535)")
 }
 
@@ -244,7 +244,7 @@ test "parse_file_with_error_handling" {
 
   // Test that invalid magic would be detected
   // We can't easily create an invalid file here, but we can test the constants
-  let invalid_magic = 0x12345678_U
+  let invalid_magic : UInt = 0x12345678
   inspect(invalid_magic != @macho.Magic32, content="true")
   inspect(invalid_magic != @macho.Magic64, content="true")
   inspect(invalid_magic != @macho.MagicFat, content="true")
@@ -296,17 +296,17 @@ test "validate_file_structure_consistency" {
   match macho.symtab {
     Some(symtab) => {
       // Symbol count should be reasonable
-      inspect(symtab.nsyms >= 0_U, content="true")
+      inspect(symtab.nsyms >= 0, content="true")
 
       // String table size should be reasonable
-      inspect(symtab.strsize >= 0_U, content="true")
+      inspect(symtab.strsize >= 0, content="true")
     }
     None => ()
   }
 
   // All sections should have reasonable values
   for section in macho.sections {
-    inspect(section.header.size >= 0_UL, content="true")
-    inspect(section.header.offset >= 0_U, content="true")
+    inspect(section.header.size >= 0, content="true")
+    inspect(section.header.offset >= 0, content="true")
   }
 }
