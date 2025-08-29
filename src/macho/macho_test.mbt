@@ -269,9 +269,7 @@ test "verify_specific_symbols" {
         symbol_names.push(symbol_name)
       }
       @json.inspect(symbol_names, content=[
-        "__mh_execute_header\u0000_add_numbers\u0000_get_greeting\u0000_main\u0000_printf\u0000\u0000",
-        "_add_numbers\u0000_get_greeting\u0000_main\u0000_printf\u0000\u0000", "_get_greeting\u0000_main\u0000_printf\u0000\u0000",
-        "_main\u0000_printf\u0000\u0000", "_printf\u0000\u0000",
+        "__mh_execute_header", "_add_numbers", "_get_greeting", "_main", "_printf",
       ])
     }
     None => fail("Expected symbol table to be present")

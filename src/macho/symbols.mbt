@@ -46,11 +46,7 @@ fn parse_single_symbol(
     read_uint(symdata, offset + 8, byte_order).to_uint64()
   }
   let name : Bytes = if name_index.reinterpret_as_int() < strtab.length() {
-    let name_data = read_bytes(
-      strtab,
-      name_index.reinterpret_as_int(),
-      strtab.length() - name_index.reinterpret_as_int(),
-    )
+    let name_data = read_cstring(strtab, name_index.reinterpret_as_int())
     let raw_name = name_data
     if raw_name.length() > 0 && raw_name[0] == '_' && raw_name.contains('.') {
       [..raw_name[1:]]

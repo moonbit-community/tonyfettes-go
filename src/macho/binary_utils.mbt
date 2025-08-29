@@ -69,6 +69,23 @@ fn determine_byte_order(magic : UInt) -> ByteOrder? {
 }
 
 ///|
+fn read_cstring(data : Bytes, offset : Int) -> Bytes raise {
+  if offset >= data.length() {
+    raise BufferOverflowError::ReadOverflow(
+      offset~,
+      length=1,
+      buffer_size=data.length(),
+      operation="read_cstring",
+    )
+  }
+  let mut end = offset
+  while end < data.length() && data[end] != 0 {
+    end = end + 1
+  }
+  [..data[offset:end]]
+}
+
+///|
 fn Bytes::contains(self : Bytes, byte : Byte) -> Bool {
   loop self[:] {
     [b, ..] if b == byte => true

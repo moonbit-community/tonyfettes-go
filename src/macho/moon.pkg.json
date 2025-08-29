@@ -6,7 +6,6 @@
     "gmlewis/flate"
   ],
   "test-import": [
-    "gmlewis/flate/encoder",
     "moonbitlang/x/encoding"
   ]
 }
