@@ -8,7 +8,7 @@ fn Segment32::parse(
   }
   let cmd = LoadCmd::from_uint(read_uint(data, 0, byte_order))
   let len = read_uint(data, 4, byte_order)
-  let name : Bytes = [..data[8:24]]
+  let name : Bytes = read_cstring(data, 8)
   let addr = read_uint(data, 24, byte_order).to_uint64()
   let memsz = read_uint(data, 28, byte_order).to_uint64()
   let offset = read_uint(data, 32, byte_order).to_uint64()
@@ -57,7 +57,7 @@ fn Segment64::parse(
   }
   let cmd = LoadCmd::from_uint(read_uint(data, 0, byte_order))
   let len = read_uint(data, 4, byte_order)
-  let name : Bytes = [..data[8:24]]
+  let name : Bytes = read_cstring(data, 8)
   let addr = read_uint64(data, 24, byte_order)
   let memsz = read_uint64(data, 32, byte_order)
   let offset = read_uint64(data, 40, byte_order)
@@ -101,8 +101,8 @@ fn Section32::parse(data : Bytes, byte_order : ByteOrder) -> Section raise {
   if data.length() < 68 {
     raise ParseError::MissingData(offset=0L, expected="Section32 (68 bytes)")
   }
-  let name : Bytes = [..data[0:16]]
-  let seg : Bytes = [..data[16:32]]
+  let name : Bytes = read_cstring(data, 0)
+  let seg : Bytes = read_cstring(data, 16)
   let addr = read_uint(data, 32, byte_order).to_uint64()
   let size = read_uint(data, 36, byte_order).to_uint64()
   let offset = read_uint(data, 40, byte_order)
@@ -129,8 +129,8 @@ fn Section64::parse(data : Bytes, byte_order : ByteOrder) -> Section raise {
   if data.length() < 80 {
     raise ParseError::MissingData(offset=0L, expected="Section64 (80 bytes)")
   }
-  let name : Bytes = [..data[0:16]]
-  let seg : Bytes = [..data[16:32]]
+  let name : Bytes = read_cstring(data, 0)
+  let seg : Bytes = read_cstring(data, 16)
   let addr = read_uint64(data, 32, byte_order)
   let size = read_uint64(data, 40, byte_order)
   let offset = read_uint(data, 48, byte_order)
@@ -227,12 +227,7 @@ fn DylibCmd::parse(data : Bytes, byte_order : ByteOrder) -> Dylib raise {
       context="dylib name offset",
     )
   }
-  let name_data = read_bytes(
-    data,
-    name_offset.reinterpret_as_int(),
-    data.length() - name_offset.reinterpret_as_int(),
-  )
-  let name = name_data
+  let name = read_cstring(data, name_offset.reinterpret_as_int())
   { load_bytes: { data, }, name, time, current_version, compat_version }
 }
 
@@ -249,11 +244,6 @@ fn RpathCmd::parse(data : Bytes, byte_order : ByteOrder) -> Rpath raise {
       context="rpath path offset",
     )
   }
-  let path_data = read_bytes(
-    data,
-    path_offset.reinterpret_as_int(),
-    data.length() - path_offset.reinterpret_as_int(),
-  )
-  let path = path_data
+  let path = read_cstring(data, path_offset.reinterpret_as_int())
   { load_bytes: { data, }, path }
 }
