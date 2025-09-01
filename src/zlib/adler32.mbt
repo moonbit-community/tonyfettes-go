@@ -36,6 +36,15 @@ pub fn Adler32::write_bytes(self : Adler32, data : Bytes) -> Unit {
 }
 
 ///|
+/// Update the checksum with new data from a FixedArray
+pub fn Adler32::write_fixedarray(self : Adler32, data : FixedArray[Byte]) -> Unit {
+  for i = 0; i < data.length(); i = i + 1 {
+    self.a = (self.a + data[i].to_uint()) % mod_adler
+    self.b = (self.b + self.a) % mod_adler
+  }
+}
+
+///|
 /// Update the checksum with new data from an Array
 pub fn Adler32::write_array(self : Adler32, data : Array[Byte]) -> Unit {
   for i = 0; i < data.length(); i = i + 1 {
@@ -75,8 +84,8 @@ pub fn checksum(data : @bytes.View) -> UInt {
 
 ///|
 /// Compute Adler32 checksum of data in one go (Array)
-pub fn checksum_array(data : Array[Byte]) -> UInt {
+pub fn checksum_array(data : FixedArray[Byte]) -> UInt {
   let adler = Adler32::new()
-  adler.write_array(data)
+  adler.write_fixedarray(data)
   adler.sum32()
 }

@@ -31,11 +31,12 @@ pub struct Reader {
 ///|
 /// Writer for writing zlib-compressed data
 pub struct Writer {
-  mut output : Bytes
+  mut w : &@io.Writer
   digest : Adler32 // Has reference semantics, no mut needed
   mut dict : Bytes
   scratch : FixedArray[Byte] // Has reference semantics, no mut needed
   mut header_written : Bool
+  mut err : Error? // Store any write errors
 } derive(Show)
 
 ///|
@@ -57,19 +58,20 @@ pub fn Reader::new_dict(data : Bytes, _dict : Bytes) -> Reader {
 }
 
 ///|
-/// Create a new ZLIB writer
-pub fn Writer::new() -> Writer {
-  Writer::new_dict([])
+/// Create a new ZLIB writer that writes compressed data to w
+pub fn Writer::new(w : &@io.Writer) -> Writer {
+  Writer::new_dict(w, [])
 }
 
 ///|
-/// Create a new ZLIB writer with a preset dictionary
-pub fn Writer::new_dict(dict : Bytes) -> Writer {
+/// Create a new ZLIB writer with a preset dictionary that writes compressed data to w
+pub fn Writer::new_dict(w : &@io.Writer, dict : Bytes) -> Writer {
   {
-    output: [],
+    w,
     digest: Adler32::new(),
     dict,
     scratch: FixedArray::make(4, 0),
     header_written: false,
+    err: None,
   }
 }

@@ -11,8 +11,8 @@ pub(open) trait Reader {
 /// write writes bytes.length() bytes from bytes to the underlying data stream.
 /// It returns the number of bytes written from bytes (0 <= n <= bytes.length())
 /// and any error encountered that caused the write to stop early.
-pub(open) trait Writer {
-  write(self : Self, bytes : Bytes) -> Int raise
+pub(open) trait Writer: Show {
+  write(self : Self, bytes : @bytes.View) -> Int raise
 }
 
 ///|
