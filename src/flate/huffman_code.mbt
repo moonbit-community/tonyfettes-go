@@ -30,8 +30,8 @@ priv struct LevelInfo {
   level : Int // Our level for better printing
   last_freq : Int // The frequency of the last node at this level
   next_char_freq : Int // The frequency of the next character to add to this level
-  next_pair_freq : Int // The frequency of the next pair (from level below) to add to this level
-  needed : Int // The number of chains remaining to generate for this level
+  mut next_pair_freq : Int // The frequency of the next pair (from level below) to add to this level
+  mut needed : Int // The number of chains remaining to generate for this level
 } derive(Show)
 
 ///|
@@ -205,109 +205,153 @@ fn partition(
 }
 
 ///|
-/// Implementation of the Package-Merge algorithm to calculate optimal bit lengths
-/// This method calculates the optimal bit count distribution for Huffman codes
-/// given a list of nodes sorted by frequency and a maximum bit limit.
+/// bitCounts computes the number of literals assigned to each bit size in the Huffman encoding.
+/// It is only called when list.length >= 3.
+/// The cases of 0, 1, and 2 literals are handled by special case code.
+///
+/// list is an array of the literals with non-zero frequencies
+/// and their associated frequencies. The array is in order of increasing
+/// frequency and has as its last element a special element with frequency
+/// MaxInt32.
+///
+/// maxBits is the maximum number of bits that should be used to encode any literal.
+/// It must be less than 16.
+///
+/// bitCounts returns an integer slice in which slice[i] indicates the number of literals
+/// that should be encoded in i bits.
 fn HuffmanEncoder::bit_counts(
   h : HuffmanEncoder,
   list : Array[LiteralNode],
   max_bits : Int,
 ) -> Array[Int] {
-  if list.length() <= 1 {
-    return h.bit_count
+  if max_bits >= max_bits_limit {
+    abort("flate: maxBits too large")
+  }
+  let n = list.length()
+  // In Go: list = list[0 : n+1] - we need to extend the list
+  // list[n] = maxNode()
+  list.push(max_node())
+
+  // The tree can't have greater depth than n - 1, no matter what. This
+  // saves a little bit of work in some small cases
+  let mut max_bits = max_bits
+  if max_bits > n - 1 {
+    max_bits = n - 1
   }
 
-  // Clear the bit count array
-  for i = 0; i < h.bit_count.length(); i = i + 1 {
-    h.bit_count[i] = 0
+  // Create information about each of the levels.
+  // A bogus "Level 0" whose sole purpose is so that
+  // level1.prev.needed==0.  This makes level1.nextPairFreq
+  // be a legitimate value that never gets chosen.
+  let levels = Array::makei(max_bits_limit, _ => LevelInfo::{
+    level: 0,
+    last_freq: 0,
+    next_char_freq: 0,
+    next_pair_freq: 0,
+    needed: 0,
+  })
+  // leafCounts[i] counts the number of literals at the left
+  // of ancestors of the rightmost node at level i.
+  // leafCounts[i][j] is the number of literals at the left
+  // of the level j ancestor.
+  let leaf_counts = Array::make(max_bits_limit, Array::make(max_bits_limit, 0))
+  for level = 1; level <= max_bits; level = level + 1 {
+    // For every level, the first two items are the first two characters.
+    // We initialize the levels as if we had already figured this out.
+    levels[level] = LevelInfo::{
+      level,
+      last_freq: list[1].freq,
+      next_char_freq: list[2].freq,
+      next_pair_freq: list[0].freq + list[1].freq,
+      needed: 0,
+    }
+    leaf_counts[level][level] = 2
+    if level == 1 {
+      levels[level].next_pair_freq = @int.max_value
+    }
   }
 
-  // The Package-Merge algorithm for calculating optimal bit lengths
-  // We need to maintain level information for each depth
-  let levels : Array[Array[LiteralNode]] = Array::new()
+  // We need a total of 2*n - 2 items at top level and have already generated 2.
+  levels[max_bits].needed = 2 * n - 4
+  let mut level = max_bits
+  for {
+    let l = levels[level]
+    if l.next_pair_freq == 0x7FFFFFFF && l.next_char_freq == 0x7FFFFFFF {
+      // We've run out of both leaves and pairs.
+      // End all calculations for this level.
+      // To make sure we never come back to this level or any lower level,
+      // set nextPairFreq impossibly large.
+      levels[level].needed = 0
+      levels[level + 1].next_pair_freq = 0x7FFFFFFF
+      level += 1
+      continue
+    }
+    let prev_freq = l.last_freq
+    if l.next_char_freq < l.next_pair_freq {
+      // The next item on this row is a leaf node.
+      let n = leaf_counts[level][level] + 1
+      levels[level] = LevelInfo::{
+        ..l,
+        last_freq: l.next_char_freq,
+        next_char_freq: list[n].freq,
+      }
+      // Lower leafCounts are the same of the previous node.
+      leaf_counts[level][level] = n
+    } else {
+      // The next item on this row is a pair from the previous row.
+      // nextPairFreq isn't valid until we generate two
+      // more values in the level below
+      levels[level] = LevelInfo::{ ..l, last_freq: l.next_pair_freq }
+      // Take leaf counts from the lower level, except counts[level] remains the same.
+      for i = 0; i < level; i = i + 1 {
+        leaf_counts[level][i] = leaf_counts[level - 1][i]
+      }
+      levels[l.level - 1] = LevelInfo::{ ..levels[l.level - 1], needed: 2 }
+    }
+    let new_needed = l.needed - 1
+    levels[level] = LevelInfo::{ ..levels[level], needed: new_needed }
+    if new_needed == 0 {
+      // We've done everything we need to do for this level.
+      // Continue calculating one level up. Fill in nextPairFreq
+      // of that level with the sum of the two nodes we've just calculated on
+      // this level.
+      if l.level == max_bits {
+        // All done!
+        break
+      }
+      levels[l.level + 1] = LevelInfo::{
+        ..levels[l.level + 1],
+        next_pair_freq: prev_freq + levels[level].last_freq,
+      }
+      level = level + 1
+    } else {
+      // If we stole from below, move down temporarily to replenish it.
+      while levels[level - 1].needed > 0 {
+        level = level - 1
+      }
+    }
+  }
+
+  // Somethings is wrong if at the end, the top level is null or hasn't used
+  // all of the leaves.
+  if leaf_counts[max_bits][max_bits] != n {
+    abort("leafCounts[maxBits][maxBits] != n")
+  }
+  let bit_count = Array::make(max_bits + 1, 0)
+  let mut bits = 1
+  let counts = leaf_counts[max_bits]
+  for level = max_bits; level > 0; level = level - 1 {
+    // chain.leafCount gives the number of literals requiring at least "bits"
+    // bits to encode.
+    bit_count[bits] = counts[level] - counts[level - 1]
+    bits = bits + 1
+  }
+
+  // Copy to h.bit_count
   for i = 0; i <= max_bits; i = i + 1 {
-    levels.push(Array::new())
+    h.bit_count[i] = bit_count[i]
   }
-
-  // Start by copying the original list to level 0
-  for i = 0; i < list.length(); i = i + 1 {
-    levels[0].push(list[i])
-  }
-
-  // For each level, merge pairs to create the next level
-  for level = 1; level <= max_bits; level = level + 1 {
-    // Merge adjacent pairs from the previous level and add individual nodes
-    let prev_level = levels[level - 1]
-    let current_level = levels[level]
-
-    // Add all individual nodes from the previous level
-    for i = 0; i < prev_level.length(); i = i + 1 {
-      current_level.push(prev_level[i])
-    }
-
-    // Create merged pairs
-    let mut i = 0
-    while i + 1 < prev_level.length() {
-      let node1 = prev_level[i]
-      let node2 = prev_level[i + 1]
-      // Create a merged node with combined frequency
-      let merged = LiteralNode::{
-        literal: 0, // Don't care about literal for merged nodes
-        freq: node1.freq + node2.freq,
-      }
-      current_level.push(merged)
-      i = i + 2
-    }
-
-    // Sort current level by frequency
-    quicksort(current_level, by_frequency)
-
-    // Keep only the smallest N-1 elements where N is the number of original symbols
-    if current_level.length() > list.length() - 1 {
-      let new_level = Array::new()
-      for i = 0; i < list.length() - 1; i = i + 1 {
-        new_level.push(current_level[i])
-      }
-      levels[level] = new_level
-    }
-  }
-
-  // Count how many times each original symbol appears in each level
-  for level = 1; level <= max_bits; level = level + 1 {
-    let current_level = levels[level]
-    for node in current_level {
-      // Find the corresponding original symbol
-      for i = 0; i < list.length(); i = i + 1 {
-        if list[i].literal == node.literal && list[i].freq == node.freq {
-          h.bit_count[level] = h.bit_count[level] + 1
-          break
-        }
-      }
-    }
-  }
-
-  // Simplistic approach for now - assign bit lengths based on frequency
-  // This is not the complete Package-Merge algorithm but provides a working implementation
-  let bit_length = Array::make(list.length(), 0)
-
-  // Calculate bit lengths based on frequency ranks
-  for i = 0; i < list.length(); i = i + 1 {
-    let freq = list[i].freq
-    let mut length = 1
-
-    // Higher frequency gets shorter codes
-    let mut threshold = list.length() / 2
-    while threshold > 0 && i >= threshold && length < max_bits {
-      length = length + 1
-      threshold = threshold / 2
-    }
-    if length > max_bits {
-      length = max_bits
-    }
-    bit_length[i] = length
-    h.bit_count[length] = h.bit_count[length] + 1
-  }
-  h.bit_count
+  bit_count
 }
 
 ///|
