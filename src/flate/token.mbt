@@ -55,49 +55,49 @@ let offset_codes : FixedArray[UInt] = [
 
 ///|
 /// Token represents a literal or match token
-struct Token {
+priv struct Token {
   value : UInt
-} derive(Eq, Show)
+} derive(Show)
 
 ///|
 /// Convert a literal into a literal token
-pub fn literal_token(literal : UInt) -> Token {
+fn literal_token(literal : UInt) -> Token {
   Token::{ value: LiteralType + literal }
 }
 
 ///|
 /// Convert a <xlength, xoffset> pair into a match token
-pub fn match_token(xlength : UInt, xoffset : UInt) -> Token {
+fn match_token(xlength : UInt, xoffset : UInt) -> Token {
   Token::{ value: MatchType + (xlength << LengthShift) + xoffset }
 }
 
 ///|
 /// Returns the literal of a literal token
-pub fn Token::literal(self : Token) -> UInt {
+fn Token::literal(self : Token) -> UInt {
   self.value - LiteralType
 }
 
 ///|
 /// Returns the extra offset of a match token
-pub fn Token::offset(self : Token) -> UInt {
+fn Token::offset(self : Token) -> UInt {
   self.value & OffsetMask
 }
 
 ///|
 /// Returns the length of a match token
-pub fn Token::length(self : Token) -> UInt {
+fn Token::length(self : Token) -> UInt {
   (self.value - MatchType) >> LengthShift
 }
 
 ///|
 /// Returns the length code for a given length
-pub fn length_code(len : UInt) -> UInt {
+fn length_code(len : UInt) -> UInt {
   length_codes[len.reinterpret_as_int()]
 }
 
 ///|
 /// Returns the offset code corresponding to a specific offset
-pub fn offset_code(off : UInt) -> UInt {
+fn offset_code(off : UInt) -> UInt {
   if off < length_codes.length().reinterpret_as_uint() {
     offset_codes[off.reinterpret_as_int()]
   } else if off >> 7 < offset_codes.length().reinterpret_as_uint() {

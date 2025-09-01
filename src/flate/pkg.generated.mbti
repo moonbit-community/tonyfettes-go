@@ -17,10 +17,6 @@ const HuffmanOnly : Int = -2
 
 const NoCompression : Int = 0
 
-fn generate_fixed_literal_encoding() -> HuffmanEncoder
-
-fn generate_fixed_offset_encoding() -> HuffmanEncoder
-
 fn length_code(UInt) -> UInt
 
 fn literal_token(UInt) -> Token

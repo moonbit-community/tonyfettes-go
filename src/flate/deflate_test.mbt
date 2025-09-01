@@ -10,18 +10,6 @@ fn DummyTestWriter::new() -> DummyTestWriter {
 }
 
 ///|
-test "test_token_creation" {
-  // Test literal token creation
-  let lit_token = literal_token(65) // 'A'
-  inspect(lit_token.literal(), content="65")
-
-  // Test match token creation
-  let match_tok = match_token(10, 5)
-  inspect(match_tok.length(), content="10")
-  inspect(match_tok.offset(), content="5")
-}
-
-///|
 test "test_writer_creation" {
   // Test that we can create a writer with a simple dummy writer
   let dummy_writer = DummyTestWriter::new()

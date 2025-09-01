@@ -455,7 +455,7 @@ pub fn HuffmanBitWriter::write_dynamic_header(
 
 ///|
 /// Index tokens and update frequency tables
-pub fn HuffmanBitWriter::index_tokens(
+fn HuffmanBitWriter::index_tokens(
   self : HuffmanBitWriter,
   tokens : Array[Token],
 ) -> (Int, Int) {
@@ -514,7 +514,7 @@ pub fn HuffmanBitWriter::index_tokens(
 
 ///|
 /// Write tokens using provided literal and offset codes
-pub fn HuffmanBitWriter::write_tokens(
+fn HuffmanBitWriter::write_tokens(
   self : HuffmanBitWriter,
   tokens : Array[Token],
   le_codes : Array[HCode],
@@ -560,7 +560,7 @@ pub fn HuffmanBitWriter::write_tokens(
 /// writeBlockHuff encodes and writes the given bytes as either
 /// Huffman encoded literals or uncompressed bytes if the
 /// results only gains very little from compression.
-pub fn HuffmanBitWriter::write_block_huff(
+fn HuffmanBitWriter::write_block_huff(
   self : HuffmanBitWriter,
   eof : Bool,
   input : Array[Byte],
