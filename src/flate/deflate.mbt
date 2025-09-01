@@ -69,7 +69,7 @@ const SkipNever : Int = 2147483647 // math.MaxInt32
 
 ///|
 /// Compression level configuration
-struct CompressionLevel {
+priv struct CompressionLevel {
   level : Int
   good : Int
   lazy_ : Int
@@ -510,21 +510,12 @@ fn Compressor::write_stored_block(
 }
 
 ///|
-/// Public write method for Writer
-pub fn Writer::write(self : Writer, bytes : @bytes.View) -> Int raise {
+pub impl @io.Writer for Writer with write(self : Writer, bytes : @bytes.View) -> Int raise {
   let array_bytes = Array::new()
   for i = 0; i < bytes.length(); i = i + 1 {
     array_bytes.push(bytes[i])
   }
   self.d.write(array_bytes)
-}
-
-///|
-/// Write method for Writer implementing io.Writer trait
-pub impl @io.Writer for Writer with write(self, bytes) {
-  self.write(bytes) catch {
-    _ => 0
-  }
 }
 
 ///|
@@ -552,7 +543,7 @@ fn Compressor::write(self : Compressor, b : Array[Byte]) -> Int raise {
 
 ///|
 /// Close method for Writer
-impl @io.Closer for Writer with close(self) {
+pub impl @io.Closer for Writer with close(self) {
   self.d.close()
 }
 

@@ -15,7 +15,7 @@
 ///   the distance. Since LZ77 uses forward copies, that situation is used to
 ///   perform a form of run-length encoding on repeated runs of symbols.
 ///   The write_copy and try_write_copy are used to implement this command.
-struct DictDecoder {
+priv struct DictDecoder {
   mut hist : Array[Byte] // Sliding window history
   // Invariant: 0 <= rd_pos <= wr_pos <= hist.length()
   mut wr_pos : Int // Current output position in buffer
@@ -25,7 +25,7 @@ struct DictDecoder {
 
 ///|
 /// Create a new DictDecoder
-pub fn DictDecoder::new() -> DictDecoder {
+fn DictDecoder::new() -> DictDecoder {
   DictDecoder::{ hist: Array::new(), wr_pos: 0, rd_pos: 0, full: false }
 }
 
@@ -33,7 +33,7 @@ pub fn DictDecoder::new() -> DictDecoder {
 /// Initialize DictDecoder to have a sliding window dictionary of the given
 /// size. If a preset dict is provided, it will initialize the dictionary with
 /// the contents of dict.
-pub fn DictDecoder::init(
+fn DictDecoder::init(
   self : DictDecoder,
   size : Int,
   dict : Array[Byte],
@@ -64,7 +64,7 @@ pub fn DictDecoder::init(
 
 ///|
 /// Reports the total amount of historical data in the dictionary
-pub fn DictDecoder::hist_size(self : DictDecoder) -> Int {
+fn DictDecoder::hist_size(self : DictDecoder) -> Int {
   if self.full {
     self.hist.length()
   } else {
@@ -74,34 +74,34 @@ pub fn DictDecoder::hist_size(self : DictDecoder) -> Int {
 
 ///|
 /// Reports the number of bytes that can be flushed by read_flush
-pub fn DictDecoder::avail_read(self : DictDecoder) -> Int {
+fn DictDecoder::avail_read(self : DictDecoder) -> Int {
   self.wr_pos - self.rd_pos
 }
 
 ///|
 /// Reports the available amount of output buffer space
-pub fn DictDecoder::avail_write(self : DictDecoder) -> Int {
+fn DictDecoder::avail_write(self : DictDecoder) -> Int {
   self.hist.length() - self.wr_pos
 }
 
 ///|
 /// Returns a mutable reference to the historical buffer for writing
 /// The caller should write only up to avail_write() bytes
-pub fn DictDecoder::write_slice(self : DictDecoder) -> Array[Byte] {
+fn DictDecoder::write_slice(self : DictDecoder) -> Array[Byte] {
   self.hist
 }
 
 ///|
 /// Advances the writer pointer by cnt
 /// This invariant must be kept: 0 <= cnt <= avail_write()
-pub fn DictDecoder::write_mark(self : DictDecoder, cnt : Int) -> Unit {
+fn DictDecoder::write_mark(self : DictDecoder, cnt : Int) -> Unit {
   self.wr_pos += cnt
 }
 
 ///|
 /// Writes a single byte to the dictionary
 /// This invariant must be kept: 0 < avail_write()
-pub fn DictDecoder::write_byte(self : DictDecoder, c : Byte) -> Unit {
+fn DictDecoder::write_byte(self : DictDecoder, c : Byte) -> Unit {
   self.hist[self.wr_pos] = c
   self.wr_pos += 1
 }
@@ -111,11 +111,7 @@ pub fn DictDecoder::write_byte(self : DictDecoder, c : Byte) -> Unit {
 /// This returns the number of bytes copied and may be less than the requested
 /// length if the available space in the output buffer is too small.
 /// This invariant must be kept: 0 < dist <= hist_size()
-pub fn DictDecoder::write_copy(
-  self : DictDecoder,
-  dist : Int,
-  length : Int,
-) -> Int {
+fn DictDecoder::write_copy(self : DictDecoder, dist : Int, length : Int) -> Int {
   let dst_base = self.wr_pos
   let mut dst_pos = dst_base
   let mut src_pos = dst_pos - dist
@@ -166,7 +162,7 @@ pub fn DictDecoder::write_copy(
 /// Tries to copy a string at a given (distance, length) to the
 /// output. This specialized version is optimized for short distances.
 /// This invariant must be kept: 0 < dist <= hist_size()
-pub fn DictDecoder::try_write_copy(
+fn DictDecoder::try_write_copy(
   self : DictDecoder,
   dist : Int,
   length : Int,
@@ -200,7 +196,7 @@ pub fn DictDecoder::try_write_copy(
 /// Returns the data from the historical buffer that is ready to be
 /// emitted to the user. The data returned by read_flush must be fully consumed
 /// before calling any other DictDecoder methods.
-pub fn DictDecoder::read_flush(self : DictDecoder) -> Array[Byte] {
+fn DictDecoder::read_flush(self : DictDecoder) -> Array[Byte] {
   let to_read = Array::new()
   for i = self.rd_pos; i < self.wr_pos; i = i + 1 {
     to_read.push(self.hist[i])

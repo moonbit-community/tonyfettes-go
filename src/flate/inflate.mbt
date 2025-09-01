@@ -51,16 +51,16 @@ impl Show for InternalError with output(self, logger) {
 
 ///|
 /// HuffmanDecoder represents a Huffman decoding table
-struct HuffmanDecoder {
+priv struct HuffmanDecoder {
   mut min : Int // the minimum code length
   chunks : Array[UInt] // chunks as described in algorithm
-  mut links : Array[Array[UInt]] // overflow links 
+  mut links : Array[Array[UInt]] // overflow links
   mut link_mask : UInt // mask the width of the link table
 } derive(Show)
 
 ///|
 /// Create a new HuffmanDecoder
-pub fn HuffmanDecoder::new() -> HuffmanDecoder {
+fn HuffmanDecoder::new() -> HuffmanDecoder {
   HuffmanDecoder::{
     min: 0,
     chunks: Array::make(HuffmanNumChunks, 0),
@@ -75,10 +75,7 @@ pub fn HuffmanDecoder::new() -> HuffmanDecoder {
 /// tree (i.e., neither over-subscribed nor under-subscribed). The exception is a
 /// degenerate case where the tree has only a single symbol with length 1. Empty
 /// trees are permitted.
-pub fn HuffmanDecoder::init(
-  self : HuffmanDecoder,
-  lengths : Array[Int],
-) -> Bool {
+fn HuffmanDecoder::init(self : HuffmanDecoder, lengths : Array[Int]) -> Bool {
   if self.min != 0 {
     // Reset the decoder
     self.min = 0

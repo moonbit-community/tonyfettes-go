@@ -1,20 +1,20 @@
 ///|
 /// HCode represents a Huffman code with a bit code and bit length
-struct HCode {
+priv struct HCode {
   code : UInt
   len : UInt
 } derive(Eq, Show)
 
 ///|
 /// Set the code and length of an HCode
-pub fn HCode::set(self : HCode, code : UInt, length : UInt) -> Unit {
+fn HCode::set(self : HCode, code : UInt, length : UInt) -> Unit {
   // Note: MoonBit structs are immutable by default, so we need a mutable reference
   // This will need to be addressed when used with mutable data structures
 }
 
 ///|
 /// LiteralNode represents a node with a literal and frequency
-struct LiteralNode {
+priv struct LiteralNode {
   literal : UInt
   freq : Int
 } derive(Eq, Show)
@@ -27,7 +27,7 @@ fn max_node() -> LiteralNode {
 
 ///|
 /// LevelInfo describes the state of the constructed tree for a given depth
-struct LevelInfo {
+priv struct LevelInfo {
   level : Int // Our level for better printing
   last_freq : Int // The frequency of the last node at this level
   next_char_freq : Int // The frequency of the next character to add to this level
@@ -40,7 +40,7 @@ let max_bits_limit = 16
 
 ///|
 /// HuffmanEncoder represents a Huffman encoder
-struct HuffmanEncoder {
+priv struct HuffmanEncoder {
   codes : Array[HCode]
   freq_cache : Array[LiteralNode]
   bit_count : Array[Int]
@@ -49,7 +49,7 @@ struct HuffmanEncoder {
 
 ///|
 /// Create a new Huffman encoder with specified size
-pub fn HuffmanEncoder::new(size : Int) -> HuffmanEncoder {
+fn HuffmanEncoder::new(size : Int) -> HuffmanEncoder {
   HuffmanEncoder::{
     codes: Array::make(size, HCode::{ code: 0, len: 0 }),
     freq_cache: Array::new(),
@@ -59,10 +59,7 @@ pub fn HuffmanEncoder::new(size : Int) -> HuffmanEncoder {
 
 ///|
 /// Calculate bit length for given frequencies
-pub fn HuffmanEncoder::bit_length(
-  self : HuffmanEncoder,
-  freq : Array[Int],
-) -> Int {
+fn HuffmanEncoder::bit_length(self : HuffmanEncoder, freq : Array[Int]) -> Int {
   let mut total = 0
   for i = 0; i < freq.length(); i = i + 1 {
     let f = freq[i]

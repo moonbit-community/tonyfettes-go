@@ -29,49 +29,10 @@ type InvalidCompressionLevel
 pub suberror WriterClosed
 
 // Types and methods
-type CompressionLevel
-impl Show for CompressionLevel
-
-type DictDecoder
-fn DictDecoder::avail_read(Self) -> Int
-fn DictDecoder::avail_write(Self) -> Int
-fn DictDecoder::hist_size(Self) -> Int
-fn DictDecoder::init(Self, Int, Array[Byte]) -> Unit
-fn DictDecoder::new() -> Self
-fn DictDecoder::read_flush(Self) -> Array[Byte]
-fn DictDecoder::try_write_copy(Self, Int, Int) -> Int
-fn DictDecoder::write_byte(Self, Byte) -> Unit
-fn DictDecoder::write_copy(Self, Int, Int) -> Int
-fn DictDecoder::write_mark(Self, Int) -> Unit
-fn DictDecoder::write_slice(Self) -> Array[Byte]
-impl Show for DictDecoder
-
-type HCode
-fn HCode::set(Self, UInt, UInt) -> Unit
-impl Eq for HCode
-impl Show for HCode
-
-type HuffmanDecoder
-fn HuffmanDecoder::init(Self, Array[Int]) -> Bool
-fn HuffmanDecoder::new() -> Self
-impl Show for HuffmanDecoder
-
-type HuffmanEncoder
-fn HuffmanEncoder::bit_length(Self, Array[Int]) -> Int
-fn HuffmanEncoder::new(Int) -> Self
-impl Show for HuffmanEncoder
-
-type LevelInfo
-impl Show for LevelInfo
-
-type LiteralNode
-impl Eq for LiteralNode
-impl Show for LiteralNode
-
 type Writer
 fn Writer::flush(Self) -> Unit raise
-fn Writer::write(Self, @bytes.View) -> Int raise
 impl Show for Writer
+impl @io.Closer for Writer
 impl @io.Writer for Writer
 
 // Type aliases
