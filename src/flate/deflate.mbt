@@ -53,16 +53,16 @@ const MaxFlateBlockTokens : Int = 1 << 14
 const MaxStoreBlockSize : Int = 65535
 
 ///|
-let hashBits : Int = 17 // After 17 performance degrades
+const HashBits : Int = 17 // After 17 performance degrades
 
 ///|
-let hashSize : Int = 1 << hashBits
+const HashSize : Int = 1 << HashBits
 
 ///|
-let hashMask : Int = (1 << hashBits) - 1
+const HashMask : Int = (1 << HashBits) - 1
 
 ///|
-let maxHashOffset : Int = 1 << 24
+const MaxHashOffset : Int = 1 << 24
 
 ///|
 const SkipNever : Int = 2147483647 // math.MaxInt32
@@ -208,7 +208,7 @@ fn hash4(b : Array[Byte]) -> UInt {
     ) *
     Hashmul
   ) >>
-  (32 - hashBits)
+  (32 - HashBits)
 }
 
 ///|
@@ -221,11 +221,11 @@ fn bulk_hash4(b : Array[Byte], dst : Array[UInt]) -> Unit {
     (b[2].to_uint() << 8) |
     (b[1].to_uint() << 16) |
     (b[0].to_uint() << 24)
-  dst[0] = (hb * Hashmul) >> (32 - hashBits)
+  dst[0] = (hb * Hashmul) >> (32 - HashBits)
   let end = b.length() - MinMatchLength + 1
   for i = 1; i < end; i = i + 1 {
     hb = (hb << 8) | b[i + 3].to_uint()
-    dst[i] = (hb * Hashmul) >> (32 - hashBits)
+    dst[i] = (hb * Hashmul) >> (32 - HashBits)
   }
 }
 
@@ -281,7 +281,7 @@ fn Compressor::new(w : &@io.Writer) -> Compressor {
     step: Compressor::store,
     best_speed: DeflateFast::new(),
     chain_head: -1,
-    hash_head: Array::make(hashSize, 0),
+    hash_head: Array::make(HashSize, 0),
     hash_prev: Array::make(WindowSize, 0),
     hash_offset: 1,
     index: 0,
@@ -300,7 +300,7 @@ fn Compressor::new(w : &@io.Writer) -> Compressor {
 }
 
 ///|
-suberror InvalidCompressionLevel Int
+priv suberror InvalidCompressionLevel Int
 
 ///|
 /// Initialize compressor with writer and level
@@ -385,7 +385,7 @@ fn Compressor::fill_deflate(self : Compressor, b : Array[Byte]) -> Int {
       self.block_start = 2147483647 // math.MaxInt32
     }
     self.hash_offset += WindowSize
-    if self.hash_offset > maxHashOffset {
+    if self.hash_offset > MaxHashOffset {
       let delta = self.hash_offset - 1
       self.hash_offset -= delta
       self.chain_head -= delta

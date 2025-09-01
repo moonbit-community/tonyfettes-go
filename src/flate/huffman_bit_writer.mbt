@@ -94,6 +94,103 @@ fn HuffmanBitWriter::new(w : &@io.Writer) -> HuffmanBitWriter {
 }
 
 ///|
+/// Write block using optimal encoding (stored, fixed, or dynamic)
+/// writeBlock encodes and writes the given tokens using the most efficient
+/// encoding method. This method chooses between stored, fixed Huffman, and
+/// dynamic Huffman encoding based on size comparison.
+fn HuffmanBitWriter::write_block(
+  self : HuffmanBitWriter,
+  tokens : Array[Token],
+  eof : Bool,
+  input : @bytes.View,
+) -> Unit raise {
+  if self.err is Some(_) {
+    return
+  }
+
+  // Add end-of-block marker token (literal 256)
+  let tokens_with_eof = Array::new()
+  for i = 0; i < tokens.length(); i = i + 1 {
+    tokens_with_eof.push(tokens[i])
+  }
+  tokens_with_eof.push(literal_token(256))
+  let (num_literals, num_offsets) = self.index_tokens(tokens_with_eof)
+  let mut extra_bits = 0
+  let (stored_size, storable) = self.stored_size(input)
+  if storable {
+    // We only bother calculating the costs of the extra bits required by
+    // the length of offset fields (which will be the same for both fixed
+    // and dynamic encoding), if we need to compare those two encodings
+    // against stored encoding.
+    for length_code = LengthCodesStart + 8
+        length_code < num_literals
+        length_code = length_code + 1 {
+      // First eight length codes have extra size = 0.
+      extra_bits += self.literal_freq[length_code] *
+        length_extra_bits[length_code - LengthCodesStart]
+    }
+    for offset_code = 4
+        offset_code < num_offsets
+        offset_code = offset_code + 1 {
+      // First four offset codes have extra size = 0.
+      extra_bits += self.offset_freq[offset_code] *
+        offset_extra_bits[offset_code]
+    }
+  }
+
+  // Figure out smallest code.
+  // Fixed Huffman baseline.
+  let mut literal_encoding = fixed_literal_encoding
+  let mut offset_encoding = fixed_offset_encoding
+  let mut size = self.fixed_size(extra_bits)
+
+  // Dynamic Huffman?
+  let mut num_codegens = 0
+
+  // Generate codegen and codegenFrequencies, which indicates how to encode
+  // the literalEncoding and the offsetEncoding.
+  self.generate_codegen(
+    num_literals,
+    num_offsets,
+    self.literal_encoding,
+    self.offset_encoding,
+  )
+  self.codegen_encoding.generate(self.codegen_freq, 7)
+  let (dynamic_size, num_codegens_calc) = self.dynamic_size(
+    self.literal_encoding,
+    self.offset_encoding,
+    extra_bits,
+  )
+  num_codegens = num_codegens_calc
+  if dynamic_size < size {
+    size = dynamic_size
+    literal_encoding = self.literal_encoding
+    offset_encoding = self.offset_encoding
+  }
+
+  // Stored bytes?
+  if storable && stored_size < size {
+    self.write_stored_header(input.length(), eof)
+    self.write_bytes(input)
+    return
+  }
+
+  // Huffman.
+  if literal_encoding == fixed_literal_encoding {
+    self.write_fixed_header(eof)
+  } else {
+    self.write_dynamic_header(num_literals, num_offsets, num_codegens, eof)
+  }
+
+  // Write the tokens.
+  self.write_tokens(
+    tokens_with_eof,
+    literal_encoding.codes,
+    offset_encoding.codes,
+  )
+}
+
+///|
 /// Write block using dynamic Huffman encoding
 /// writeBlockDynamic encodes and writes the given tokens as dynamic
 /// Huffman encoded data. If input is supplied and the compression savings
@@ -114,61 +211,40 @@ fn HuffmanBitWriter::write_block_dynamic(
     tokens_with_eof.push(tokens[i])
   }
   tokens_with_eof.push(literal_token(256))
-
-  // Index tokens to get frequency counts
   let (num_literals, num_offsets) = self.index_tokens(tokens_with_eof)
 
-  // Generate codegen and frequency tables for dynamic encoding
+  // Generate codegen and codegenFrequencies, which indicates how to encode
+  // the literalEncoding and the offsetEncoding.
   self.generate_codegen(
     num_literals,
     num_offsets,
     self.literal_encoding,
     self.offset_encoding,
   )
+  self.codegen_encoding.generate(self.codegen_freq, 7)
+  let (size, num_codegens) = self.dynamic_size(
+    self.literal_encoding,
+    self.offset_encoding,
+    0,
+  )
 
-  // For now, we use simplified size estimation
-  // TODO: Implement proper dynamic size calculation
-  let dynamic_size = self.estimate_dynamic_size(tokens_with_eof)
-
-  // Check if stored encoding would be better
-  let (stored_size, storable) = self.stored_size(input)
-  if storable && stored_size < dynamic_size + (dynamic_size >> 4) {
+  // Store bytes, if we don't get a reasonable improvement.
+  let (ssize, storable) = self.stored_size(input)
+  if storable && ssize < size + (size >> 4) {
     self.write_stored_header(input.length(), eof)
     self.write_bytes(input)
     return
   }
 
-  // For now, fall back to fixed Huffman encoding since we don't have
-  // full dynamic Huffman generation implemented yet
-  // TODO: Implement full dynamic Huffman tree generation and encoding
-  self.write_fixed_header(eof)
+  // Write Huffman table.
+  self.write_dynamic_header(num_literals, num_offsets, num_codegens, eof)
+
+  // Write the tokens.
   self.write_tokens(
     tokens_with_eof,
-    fixed_literal_encoding.codes,
-    fixed_offset_encoding.codes,
+    self.literal_encoding.codes,
+    self.offset_encoding.codes,
   )
-}
-
-///|
-/// Estimate dynamic encoding size (simplified version)
-fn HuffmanBitWriter::estimate_dynamic_size(
-  self : HuffmanBitWriter,
-  tokens : Array[Token],
-) -> Int {
-  // Simplified estimation - in practice this would use proper Huffman tree generation
-  // For now, assume it's roughly equivalent to fixed encoding
-  let mut size = 0
-  for i = 0; i < tokens.length(); i = i + 1 {
-    let token = tokens[i]
-    if (token.value & TypeMask) < MatchType {
-      // Literal token - assume 8 bits on average
-      size += 8
-    } else {
-      // Match token - assume 12 bits for length + 12 bits for offset on average
-      size += 24
-    }
-  }
-  size
 }
 
 ///|
@@ -580,10 +656,8 @@ fn HuffmanBitWriter::index_tokens(
   }
 
   // Generate encodings
-  // Note: These methods need to be implemented in HuffmanEncoder
-  // self.literal_encoding.generate(self.literal_freq, 15)
-  // self.offset_encoding.generate(self.offset_freq, 15)
-
+  self.literal_encoding.generate(self.literal_freq, 15)
+  self.offset_encoding.generate(self.offset_freq, 15)
   (num_literals, num_offsets)
 }
 

@@ -44,7 +44,7 @@ priv struct HuffmanEncoder {
   freq_cache : Array[LiteralNode]
   bit_count : Array[Int]
   // We don't need sorting helpers in MoonBit since we can use built-in sorting
-} derive(Show)
+} derive(Show, Eq)
 
 ///|
 /// Create a new Huffman encoder with specified size
