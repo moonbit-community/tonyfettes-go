@@ -17,15 +17,7 @@ const HuffmanOnly : Int = -2
 
 const NoCompression : Int = 0
 
-fn length_code(UInt) -> UInt
-
-fn literal_token(UInt) -> Token
-
-fn match_token(UInt, UInt) -> Token
-
 fn new_writer(&@io.Writer, Int) -> Writer raise
-
-fn offset_code(UInt) -> UInt
 
 // Errors
 pub suberror CorruptInputError Int64
@@ -75,25 +67,6 @@ fn HCode::set(Self, UInt, UInt) -> Unit
 impl Eq for HCode
 impl Show for HCode
 
-type HuffmanBitWriter
-fn HuffmanBitWriter::dynamic_size(Self, HuffmanEncoder, HuffmanEncoder, Int) -> (Int, Int)
-fn HuffmanBitWriter::fixed_size(Self, Int) -> Int
-fn HuffmanBitWriter::flush(Self) -> Unit
-fn HuffmanBitWriter::generate_codegen(Self, Int, Int, HuffmanEncoder, HuffmanEncoder) -> Unit
-fn HuffmanBitWriter::index_tokens(Self, Array[Token]) -> (Int, Int)
-fn HuffmanBitWriter::new(&@io.Writer) -> Self
-fn HuffmanBitWriter::reset(Self, &@io.Writer) -> Unit
-fn HuffmanBitWriter::stored_size(Self, Array[Byte]) -> (Int, Bool)
-fn HuffmanBitWriter::write_bits(Self, Int, UInt) -> Unit
-fn HuffmanBitWriter::write_block_huff(Self, Bool, Array[Byte]) -> Unit
-fn HuffmanBitWriter::write_bytes(Self, Array[Byte]) -> Unit
-fn HuffmanBitWriter::write_code(Self, HCode) -> Unit
-fn HuffmanBitWriter::write_dynamic_header(Self, Int, Int, Int, Bool) -> Unit
-fn HuffmanBitWriter::write_fixed_header(Self, Bool) -> Unit
-fn HuffmanBitWriter::write_stored_header(Self, Int, Bool) -> Unit
-fn HuffmanBitWriter::write_tokens(Self, Array[Token], Array[HCode], Array[HCode]) -> Unit
-impl Show for HuffmanBitWriter
-
 type HuffmanDecoder
 fn HuffmanDecoder::init(Self, Array[Int]) -> Bool
 fn HuffmanDecoder::new() -> Self
@@ -110,13 +83,6 @@ impl Show for LevelInfo
 type LiteralNode
 impl Eq for LiteralNode
 impl Show for LiteralNode
-
-type Token
-fn Token::length(Self) -> UInt
-fn Token::literal(Self) -> UInt
-fn Token::offset(Self) -> UInt
-impl Eq for Token
-impl Show for Token
 
 pub struct Writer {
   d : Compressor

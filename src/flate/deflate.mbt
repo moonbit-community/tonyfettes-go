@@ -155,7 +155,7 @@ impl Show for WriterClosed with output(self, logger) {
 
 ///|
 /// Compressor struct matching Go's compressor
-struct Compressor {
+priv struct Compressor {
   mut compression_level : CompressionLevel
   mut w : HuffmanBitWriter
   mut bulk_hasher : (Array[Byte], Array[UInt]) -> Unit
@@ -248,7 +248,7 @@ fn match_len(a : Array[Byte], b : Array[Byte], max : Int) -> Int {
 ///|
 /// A Writer takes data written to it and writes the compressed
 /// form of that data to an underlying writer (see NewWriter).
-pub struct Writer {
+struct Writer {
   d : Compressor
   dict : Array[Byte]
 } derive(Show)
@@ -274,7 +274,7 @@ pub fn new_writer(w : &@io.Writer, level : Int) -> Writer raise {
 
 ///|
 /// Create a new Compressor
-pub fn Compressor::new(w : &@io.Writer) -> Compressor {
+fn Compressor::new(w : &@io.Writer) -> Compressor {
   Compressor::{
     compression_level: levels[0], // default to no compression initially
     w: HuffmanBitWriter::new(w),
@@ -305,7 +305,7 @@ suberror InvalidCompressionLevel Int
 
 ///|
 /// Initialize compressor with writer and level
-pub fn Compressor::init(
+fn Compressor::init(
   d : Compressor,
   w : &@io.Writer,
   level : Int,
@@ -346,7 +346,7 @@ pub fn Compressor::init(
 
 ///|
 /// Initialize deflate state
-pub fn Compressor::init_deflate(self : Compressor) -> Unit {
+fn Compressor::init_deflate(self : Compressor) -> Unit {
   self.window = Array::make(2 * WindowSize, 0)
   self.hash_offset = 1
   self.tokens = Array::make(MaxFlateBlockTokens + 1, literal_token(0))
@@ -360,7 +360,7 @@ pub fn Compressor::init_deflate(self : Compressor) -> Unit {
 
 ///|
 /// Store fill function
-pub fn Compressor::fill_store(self : Compressor, b : Array[Byte]) -> Int {
+fn Compressor::fill_store(self : Compressor, b : Array[Byte]) -> Int {
   let available = self.window.length() - self.window_end
   let n = if b.length() < available { b.length() } else { available }
   for i = 0; i < n; i = i + 1 {
@@ -372,7 +372,7 @@ pub fn Compressor::fill_store(self : Compressor, b : Array[Byte]) -> Int {
 
 ///|
 /// Deflate fill function
-pub fn Compressor::fill_deflate(self : Compressor, b : Array[Byte]) -> Int {
+fn Compressor::fill_deflate(self : Compressor, b : Array[Byte]) -> Int {
   if self.index >= 2 * WindowSize - (MinMatchLength + MaxMatchLength) {
     // shift the window by windowSize
     for i = 0; i < WindowSize; i = i + 1 {
@@ -421,7 +421,7 @@ pub fn Compressor::fill_deflate(self : Compressor, b : Array[Byte]) -> Int {
 
 ///|
 /// Store step function
-pub fn Compressor::store(self : Compressor) -> Unit {
+fn Compressor::store(self : Compressor) -> Unit {
   if self.window_end > 0 && (self.window_end == MaxStoreBlockSize || self.sync) {
     let window_slice = Array::new()
     for i = 0; i < self.window_end; i = i + 1 {
@@ -434,7 +434,7 @@ pub fn Compressor::store(self : Compressor) -> Unit {
 
 ///|
 /// Store huffman step function  
-pub fn Compressor::store_huff(self : Compressor) -> Unit {
+fn Compressor::store_huff(self : Compressor) -> Unit {
   if (self.window_end < self.window.length() && !self.sync) ||
     self.window_end == 0 {
     return
@@ -450,24 +450,21 @@ pub fn Compressor::store_huff(self : Compressor) -> Unit {
 
 ///|
 /// Encode speed step function
-pub fn Compressor::enc_speed(self : Compressor) -> Unit {
+fn Compressor::enc_speed(self : Compressor) -> Unit {
   // TODO: implement when DeflateFast is available
   self.store_huff()
 }
 
 ///|
 /// Deflate step function
-pub fn Compressor::deflate_step(self : Compressor) -> Unit {
+fn Compressor::deflate_step(self : Compressor) -> Unit {
   // TODO: implement full deflate algorithm
   self.store_huff()
 }
 
 ///|
 /// Write stored block
-pub fn Compressor::write_stored_block(
-  self : Compressor,
-  buf : Array[Byte],
-) -> Bool {
+fn Compressor::write_stored_block(self : Compressor, buf : Array[Byte]) -> Bool {
   self.w.write_stored_header(buf.length(), false)
   if self.w.err {
     return true
@@ -496,7 +493,7 @@ pub impl @io.Writer for Writer with write(self, bytes) {
 
 ///|
 /// Write method for Compressor
-pub fn Compressor::write(self : Compressor, b : Array[Byte]) -> Int raise {
+fn Compressor::write(self : Compressor, b : Array[Byte]) -> Int raise {
   if self.err {
     raise WriterClosed("writer closed")
   }
@@ -525,7 +522,7 @@ impl @io.Closer for Writer with close(self) {
 
 ///|
 /// Close method for Compressor
-pub fn Compressor::close(self : Compressor) -> Unit raise {
+fn Compressor::close(self : Compressor) -> Unit raise {
   if self.err {
     return
   }
@@ -553,7 +550,7 @@ pub fn Writer::flush(self : Writer) -> Unit raise {
 
 ///|
 /// Sync flush for Compressor
-pub fn Compressor::sync_flush(self : Compressor) -> Unit raise {
+fn Compressor::sync_flush(self : Compressor) -> Unit raise {
   if self.err {
     raise WriterClosed("writer closed")
   }

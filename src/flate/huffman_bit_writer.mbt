@@ -57,7 +57,7 @@ let codegen_order : Array[UInt] = [
 
 ///|
 /// HuffmanBitWriter writes DEFLATE Huffman encoded data
-struct HuffmanBitWriter {
+priv struct HuffmanBitWriter {
   mut writer : &@io.Writer
   mut bits : UInt64 // Data waiting to be written
   mut nbits : UInt // Number of bits in bits field
@@ -75,7 +75,7 @@ struct HuffmanBitWriter {
 
 ///|
 /// Create a new HuffmanBitWriter
-pub fn HuffmanBitWriter::new(w : &@io.Writer) -> HuffmanBitWriter {
+fn HuffmanBitWriter::new(w : &@io.Writer) -> HuffmanBitWriter {
   HuffmanBitWriter::{
     writer: w,
     bits: 0,
@@ -95,7 +95,7 @@ pub fn HuffmanBitWriter::new(w : &@io.Writer) -> HuffmanBitWriter {
 
 ///|
 /// Reset the writer with a new output writer
-pub fn HuffmanBitWriter::reset(
+fn HuffmanBitWriter::reset(
   self : HuffmanBitWriter,
   writer : &@io.Writer,
 ) -> Unit {
@@ -108,7 +108,7 @@ pub fn HuffmanBitWriter::reset(
 
 ///|
 /// Flush any pending bits and bytes to the output
-pub fn HuffmanBitWriter::flush(self : HuffmanBitWriter) -> Unit {
+fn HuffmanBitWriter::flush(self : HuffmanBitWriter) -> Unit {
   if self.err {
     self.nbits = 0
     return
@@ -145,7 +145,7 @@ fn HuffmanBitWriter::write_bytes_internal(
 
 ///|
 /// Write raw bytes to output
-pub fn HuffmanBitWriter::write_bytes(
+fn HuffmanBitWriter::write_bytes(
   self : HuffmanBitWriter,
   bytes : Array[Byte],
 ) -> Unit {
@@ -174,7 +174,7 @@ pub fn HuffmanBitWriter::write_bytes(
 
 ///|
 /// Write bits to the output stream
-pub fn HuffmanBitWriter::write_bits(
+fn HuffmanBitWriter::write_bits(
   self : HuffmanBitWriter,
   b : Int,
   nb : UInt,
@@ -208,7 +208,7 @@ pub fn HuffmanBitWriter::write_bits(
 
 ///|
 /// Write a Huffman code to the output
-pub fn HuffmanBitWriter::write_code(self : HuffmanBitWriter, c : HCode) -> Unit {
+fn HuffmanBitWriter::write_code(self : HuffmanBitWriter, c : HCode) -> Unit {
   if self.err {
     return
   }
@@ -239,7 +239,7 @@ pub fn HuffmanBitWriter::write_code(self : HuffmanBitWriter, c : HCode) -> Unit 
 
 ///|
 /// Generate codegen for encoding literal and offset lengths
-pub fn HuffmanBitWriter::generate_codegen(
+fn HuffmanBitWriter::generate_codegen(
   self : HuffmanBitWriter,
   num_literals : Int,
   num_offsets : Int,
@@ -323,7 +323,7 @@ pub fn HuffmanBitWriter::generate_codegen(
 
 ///|
 /// Calculate the size of dynamic encoding
-pub fn HuffmanBitWriter::dynamic_size(
+fn HuffmanBitWriter::dynamic_size(
   self : HuffmanBitWriter,
   lit_enc : HuffmanEncoder,
   off_enc : HuffmanEncoder,
@@ -353,7 +353,7 @@ pub fn HuffmanBitWriter::dynamic_size(
 
 ///|
 /// Calculate the size of fixed encoding
-pub fn HuffmanBitWriter::fixed_size(
+fn HuffmanBitWriter::fixed_size(
   self : HuffmanBitWriter,
   extra_bits : Int,
 ) -> Int {
@@ -365,7 +365,7 @@ pub fn HuffmanBitWriter::fixed_size(
 
 ///|
 /// Calculate stored size including header
-pub fn HuffmanBitWriter::stored_size(
+fn HuffmanBitWriter::stored_size(
   self : HuffmanBitWriter,
   input : Array[Byte],
 ) -> (Int, Bool) {
@@ -378,7 +378,7 @@ pub fn HuffmanBitWriter::stored_size(
 
 ///|
 /// Write stored block header
-pub fn HuffmanBitWriter::write_stored_header(
+fn HuffmanBitWriter::write_stored_header(
   self : HuffmanBitWriter,
   length : Int,
   is_eof : Bool,
@@ -395,7 +395,7 @@ pub fn HuffmanBitWriter::write_stored_header(
 
 ///|
 /// Write fixed Huffman header
-pub fn HuffmanBitWriter::write_fixed_header(
+fn HuffmanBitWriter::write_fixed_header(
   self : HuffmanBitWriter,
   is_eof : Bool,
 ) -> Unit {
@@ -408,7 +408,7 @@ pub fn HuffmanBitWriter::write_fixed_header(
 
 ///|
 /// Write dynamic Huffman header
-pub fn HuffmanBitWriter::write_dynamic_header(
+fn HuffmanBitWriter::write_dynamic_header(
   self : HuffmanBitWriter,
   num_literals : Int,
   num_offsets : Int,
