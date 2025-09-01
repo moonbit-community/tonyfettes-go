@@ -68,9 +68,6 @@ type LiteralNode
 impl Eq for LiteralNode
 impl Show for LiteralNode
 
-type TableEntry
-impl Show for TableEntry
-
 type Writer
 fn Writer::flush(Self) -> Unit raise
 fn Writer::write(Self, @bytes.View) -> Int raise

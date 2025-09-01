@@ -599,3 +599,23 @@ fn HuffmanBitWriter::write_block_huff(
   // Write the EOF marker
   self.write_code(fixed_literal_encoding.codes[256])
 }
+
+///|
+/// Write block using dynamic Huffman encoding
+/// writeBlockDynamic encodes and writes the given tokens as dynamic
+/// Huffman encoded data. If input is supplied and the compression savings
+/// are below 1/16th of the input size the block is stored.
+fn HuffmanBitWriter::write_block_dynamic(
+  self : HuffmanBitWriter,
+  tokens : Array[Token],
+  eof : Bool,
+  input : @bytes.View,
+) -> Unit raise {
+  if self.err is Some(_) {
+    return
+  }
+
+  // For now, we'll fall back to Huffman-only encoding
+  // TODO: Implement proper dynamic Huffman encoding
+  self.write_block_huff(eof, input)
+}

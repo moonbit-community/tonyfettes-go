@@ -29,7 +29,7 @@ const BufferReset : Int = 2147483647 - MaxStoreBlockSize * 2 // math.MaxInt32 - 
 
 ///|
 /// Load 32 bits from byte array at given position
-fn load32(b : Array[Byte], i : Int) -> UInt {
+fn load32(b : @bytes.View, i : Int) -> UInt {
   // Help the compiler eliminate bounds checks on the next line.
   let slice = Array::new()
   for idx = i; idx < i + 4 && idx < b.length(); idx = idx + 1 {
@@ -43,7 +43,7 @@ fn load32(b : Array[Byte], i : Int) -> UInt {
 
 ///|
 /// Load 64 bits from byte array at given position
-fn load64(b : Array[Byte], i : Int) -> UInt64 {
+fn load64(b : @bytes.View, i : Int) -> UInt64 {
   // Help the compiler eliminate bounds checks on the next line.
   let slice = Array::new()
   for idx = i; idx < i + 8 && idx < b.length(); idx = idx + 1 {
@@ -77,7 +77,7 @@ const MinNonLiteralBlockSize : Int = 1 + 1 + InputMargin
 
 ///|
 /// Table entry for hash table
-struct TableEntry {
+priv struct TableEntry {
   val : UInt // Value at destination
   offset : Int // Offset position
 } derive(Show)
@@ -87,7 +87,7 @@ struct TableEntry {
 /// and the previous byte block for cross block matching.
 priv struct DeflateFast {
   table : Array[TableEntry] // [tableSize]tableEntry
-  prev : Array[Byte] // Previous block, zero length if unknown.
+  mut prev : @bytes.View // Previous block, zero length if unknown.
   mut cur : Int // Current match offset.
 } derive(Show)
 
@@ -96,7 +96,7 @@ priv struct DeflateFast {
 fn DeflateFast::new() -> DeflateFast {
   DeflateFast::{
     table: Array::make(TableSize, TableEntry::{ val: 0, offset: 0 }),
-    prev: Array::new(), // make([]byte, 0, maxStoreBlockSize)
+    prev: Bytes::make(MaxStoreBlockSize, 0),
     cur: MaxStoreBlockSize,
   }
 }
@@ -107,8 +107,8 @@ fn DeflateFast::new() -> DeflateFast {
 fn DeflateFast::encode(
   self : DeflateFast,
   dst : Array[Token],
-  src : Array[Byte],
-) -> Array[Token] {
+  src : @bytes.View,
+) -> Unit {
   // Ensure that e.cur doesn't wrap.
   if self.cur >= BufferReset {
     self.shift_offsets()
@@ -118,22 +118,21 @@ fn DeflateFast::encode(
   // instead of the callee handles this case.
   if src.length() < MinNonLiteralBlockSize {
     self.cur += MaxStoreBlockSize
-    self.prev.clear()
+    self.prev = self.prev[:0]
     return emit_literal(dst, src)
   }
 
   // sLimit is when to stop looking for offset/length copies. The inputMargin
   // lets us use a fast path for emitLiteral in the main loop, while we are
   // looking for copies.
-  let sLimit = src.length() - InputMargin
+  let s_limit = src.length() - InputMargin
 
-  // nextEmit is where in src the next emitLiteral should start from.
-  let mut nextEmit = 0
+  // next_emit is where in src the next emitLiteral should start from.
+  let mut next_emit = 0
   let mut s = 0
   let mut cv = load32(src, s)
-  let mut nextHash = hash(cv).reinterpret_as_int()
-  let mut dst = dst
-  while s <= sLimit {
+  let mut next_hash = hash(cv).reinterpret_as_int()
+  while s <= s_limit {
     // Copied from the C++ snappy implementation:
     //
     // Heuristic match skipping: If 32 bytes are scanned with no matches
@@ -150,26 +149,26 @@ fn DeflateFast::encode(
     // the last match; dividing it by 32 (ie. right-shifting by five) gives
     // the number of bytes to move ahead for each iteration.
     let mut skip = 32
-    let mut nextS = s
+    let mut next_s = s
     let mut candidate = TableEntry::{ val: 0, offset: 0 }
 
     // Inner loop for finding matches
     let mut found_match = false
-    while nextS <= sLimit && not(found_match) {
-      s = nextS
+    while next_s <= s_limit && not(found_match) {
+      s = next_s
       let bytesBetweenHashLookups = skip >> 5
-      nextS = s + bytesBetweenHashLookups
+      next_s = s + bytesBetweenHashLookups
       skip += bytesBetweenHashLookups
-      if nextS > sLimit {
+      if next_s > s_limit {
         break
       }
-      candidate = self.table[nextHash & TableMask]
-      let now = load32(src, nextS)
-      self.table[nextHash & TableMask] = TableEntry::{
+      candidate = self.table[next_hash & TableMask]
+      let now = load32(src, next_s)
+      self.table[next_hash & TableMask] = TableEntry::{
         offset: s + self.cur,
         val: cv,
       }
-      nextHash = hash(now).reinterpret_as_int()
+      next_hash = hash(now).reinterpret_as_int()
       let offset = s - (candidate.offset - self.cur)
       if offset <= MaxMatchOffset && cv == candidate.val {
         // Found a match
@@ -181,30 +180,19 @@ fn DeflateFast::encode(
     }
     if not(found_match) {
       // Exit to emit remainder
-      if nextEmit < src.length() {
-        let remainder = Array::new()
-        for i = nextEmit; i < src.length(); i = i + 1 {
-          remainder.push(src[i])
-        }
-        dst = emit_literal(dst, remainder)
+      if next_emit < src.length() {
+        emit_literal(dst, src[next_emit:])
       }
       self.cur += src.length()
-      // Update prev buffer
-      self.prev.clear()
-      for i = 0; i < src.length() && i < MaxStoreBlockSize; i = i + 1 {
-        self.prev.push(src[i])
-      }
-      return dst
+      self.prev = self.prev[:src.length()]
+      ignore(copy(self.prev, src))
+      return
     }
 
     // A 4-byte match has been found. We'll later see if more than 4 bytes
     // match. But, prior to the match, src[nextEmit:s] are unmatched. Emit
     // them as literal bytes.
-    let literal_slice = Array::new()
-    for i = nextEmit; i < s; i = i + 1 {
-      literal_slice.push(src[i])
-    }
-    dst = emit_literal(dst, literal_slice)
+    emit_literal(dst, src[next_emit:s])
 
     // Call emitCopy, and then see if another emitCopy could be our next
     // move. Repeat until we find no match for the input immediately after
@@ -232,23 +220,16 @@ fn DeflateFast::encode(
         ),
       )
       s += l
-      nextEmit = s
-      if s >= sLimit {
+      next_emit = s
+      if s >= s_limit {
         // Exit to emit remainder
-        if nextEmit < src.length() {
-          let remainder = Array::new()
-          for i = nextEmit; i < src.length(); i = i + 1 {
-            remainder.push(src[i])
-          }
-          dst = emit_literal(dst, remainder)
+        if next_emit < src.length() {
+          emit_literal(dst, src[next_emit:])
         }
         self.cur += src.length()
-        // Update prev buffer
-        self.prev.clear()
-        for i = 0; i < src.length() && i < MaxStoreBlockSize; i = i + 1 {
-          self.prev.push(src[i])
-        }
-        return dst
+        self.prev = self.prev[:src.length()]
+        ignore(copy(self.prev, src))
+        return
       }
 
       // We could immediately start working at s now, but to improve
@@ -273,37 +254,35 @@ fn DeflateFast::encode(
       let offset = s - (candidate.offset - self.cur)
       if offset > MaxMatchOffset || x_shifted.to_uint() != candidate.val {
         cv = (x_shifted >> 8).to_uint()
-        nextHash = hash(cv).reinterpret_as_int()
+        next_hash = hash(cv).reinterpret_as_int()
         s += 1
         break
       }
     }
   }
-
-  // Emit any remaining literals
-  if nextEmit < src.length() {
-    let remainder = Array::new()
-    for i = nextEmit; i < src.length(); i = i + 1 {
-      remainder.push(src[i])
-    }
-    dst = emit_literal(dst, remainder)
+  if next_emit < src.length() {
+    emit_literal(dst, src[next_emit:])
   }
   self.cur += src.length()
-  // Update prev buffer
-  self.prev.clear()
-  for i = 0; i < src.length() && i < MaxStoreBlockSize; i = i + 1 {
-    self.prev.push(src[i])
+  self.prev = self.prev[:src.length()]
+  ignore(copy(self.prev, src))
+}
+
+///|
+fn copy(dst : @bytes.View, src : @bytes.View) -> Int {
+  let len = @cmp.minimum(dst.length(), src.length())
+  for i = 0; i < len; i = i + 1 {
+    dst[i] = src[i]
   }
-  dst
+  len
 }
 
 ///|
 /// Emit literal tokens for the given byte slice
-fn emit_literal(dst : Array[Token], lit : Array[Byte]) -> Array[Token] {
+fn emit_literal(dst : Array[Token], lit : @bytes.View) -> Unit {
   for i = 0; i < lit.length(); i = i + 1 {
     dst.push(literal_token(lit[i].to_uint()))
   }
-  dst
 }
 
 ///|
@@ -314,7 +293,7 @@ fn DeflateFast::match_len(
   self : DeflateFast,
   s : Int,
   t : Int,
-  src : Array[Byte],
+  src : @bytes.View,
 ) -> Int {
   let mut s1 = s + MaxMatchLength - 4
   if s1 > src.length() {
@@ -351,33 +330,12 @@ fn DeflateFast::match_len(
   }
 
   // Extend the match to be as long as possible.
-  let a = Array::new() // src[s:s1]
-  for i = s; i < s1; i = i + 1 {
-    a.push(src[i])
-  }
-  let mut b = Array::new() // e.prev[tp:]
-  for i = tp; i < self.prev.length(); i = i + 1 {
-    b.push(self.prev[i])
-  }
-  let mut min_len = if a.length() < b.length() {
-    a.length()
-  } else {
-    b.length()
-  }
+  let mut a = src[s:s1]
+  let mut b = self.prev[tp:]
   if b.length() > a.length() {
-    let new_b = Array::new()
-    for i = 0; i < a.length() && i < b.length(); i = i + 1 {
-      new_b.push(b[i])
-    }
-    b = new_b
+    b = b[:a.length()]
   }
-  let mut a = {
-    let new_a = Array::new()
-    for i = 0; i < b.length() && i < a.length(); i = i + 1 {
-      new_a.push(a[i])
-    }
-    new_a
-  }
+  a = a[:b.length()]
   for i = 0; i < b.length(); i = i + 1 {
     if a[i] != b[i] {
       return i
@@ -392,16 +350,8 @@ fn DeflateFast::match_len(
   }
 
   // Continue looking for more matches in the current block.
-  let new_a = Array::new() // src[s+n:s1]
-  for i = s + n; i < s1; i = i + 1 {
-    new_a.push(src[i])
-  }
-  a = new_a
-  let new_b = Array::new() // src[:len(a)]
-  for i = 0; i < a.length() && i < src.length(); i = i + 1 {
-    new_b.push(src[i])
-  }
-  b = new_b
+  let a = src[s + n:s1]
+  let b = src[:a.length()]
   for i = 0; i < a.length(); i = i + 1 {
     if a[i] != b[i] {
       return i + n
@@ -414,7 +364,7 @@ fn DeflateFast::match_len(
 /// Reset resets the encoding history.
 /// This ensures that no matches are made to the previous block.
 fn DeflateFast::reset(self : DeflateFast) -> Unit {
-  self.prev.clear()
+  self.prev = self.prev[:0]
   // Bump the offset, so all matches will fail distance check.
   // Nothing should be >= e.cur in the table.
   self.cur += MaxMatchOffset

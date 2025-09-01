@@ -15,9 +15,8 @@ test "DeflateFast::new" {
 test "DeflateFast encode empty" {
   let df = DeflateFast::new()
   let dst = Array::new()
-  let src = Array::new()
-  let result = df.encode(dst, src)
-  inspect(result.length(), content="0")
+  df.encode(dst, "")
+  inspect(dst.length(), content="0")
 }
 
 ///|
@@ -25,13 +24,9 @@ test "DeflateFast encode empty" {
 test "DeflateFast encode small input" {
   let df = DeflateFast::new()
   let dst = Array::new()
-  let src = Array::new()
-  src.push(b'a')
-  src.push(b'b')
-  src.push(b'c')
-  let result = df.encode(dst, src)
+  df.encode(dst, "abc")
   // Should emit literals for small input
-  inspect(result.length(), content="3")
+  inspect(dst.length(), content="3")
 }
 
 ///|
@@ -39,17 +34,13 @@ test "DeflateFast encode small input" {
 test "DeflateFast encode larger input" {
   let df = DeflateFast::new()
   let dst = Array::new()
-  let src : Array[Byte] = Array::new()
 
   // Create input with some repeated patterns
-  let text : Bytes = "Hello, World! This is a test string with some repeated patterns. Hello, World!"
-  for i = 0; i < text.length(); i = i + 1 {
-    src.push(text[i])
-  }
-  let result = df.encode(dst, src)
+  let src : @bytes.View = "Hello, World! This is a test string with some repeated patterns. Hello, World!"
+  df.encode(dst, src)
   // Should have some matches found
-  inspect(result.length() > 0, content="true")
-  inspect(result.length() <= src.length(), content="true") // Some compression or same size
+  inspect(dst.length() > 0, content="true")
+  inspect(dst.length() <= src.length(), content="true") // Some compression or same size
 }
 
 ///|
@@ -57,32 +48,34 @@ test "DeflateFast encode larger input" {
 test "DeflateFast encode repetitive input" {
   let df = DeflateFast::new()
   let dst = Array::new()
-  let src = Array::new()
+  let src = @buffer.new()
 
   // Create highly repetitive input
   for i = 0; i < 100; i = i + 1 {
-    src.push(b'a')
-    src.push(b'b')
-    src.push(b'c')
-    src.push(b'd')
+    src.write_byte(b'a')
+    src.write_byte(b'b')
+    src.write_byte(b'c')
+    src.write_byte(b'd')
   }
-  let result = df.encode(dst, src)
+  let src : Bytes = src.contents()
+  df.encode(dst, src)
   // Should find many matches
-  inspect(result.length() > 0, content="true")
-  inspect(result.length() <= src.length(), content="true") // Should compress well
+  inspect(dst.length() > 0, content="true")
+  inspect(dst.length() <= src.length(), content="true") // Should compress well
 }
 
 ///|
-/// Test DeflateFast reset functionality  
+/// Test DeflateFast reset functionality
 test "DeflateFast reset" {
   let df = DeflateFast::new()
   let dst = Array::new()
-  let src : Array[Byte] = Array::new()
+  let src = @buffer.new()
 
   // Add some data to prev buffer
   for i = 0; i < 20; i = i + 1 {
-    src.push(b'x')
+    src.write_byte(b'x')
   }
+  let src = src.contents()
   ignore(df.encode(dst, src))
 
   // Reset should clear previous data
@@ -95,21 +88,15 @@ test "DeflateFast reset" {
 /// Test emit_literal function
 test "emit_literal" {
   let dst = Array::new()
-  let lit = Array::new()
-  lit.push(b'H')
-  lit.push(b'i')
-  let result = emit_literal(dst, lit)
-  inspect(result.length(), content="2")
+  let lit : Bytes = "Hi"
+  emit_literal(dst, lit)
+  inspect(dst.length(), content="2")
 }
 
 ///|
 /// Test load32 function
 test "load32" {
-  let bytes : Array[Byte] = Array::new()
-  bytes.push(0x01_b)
-  bytes.push(0x02_b)
-  bytes.push(0x03_b)
-  bytes.push(0x04_b)
+  let bytes : Bytes = [0x01, 0x02, 0x03, 0x04]
   let result = load32(bytes, 0)
   // Little endian: 0x04030201
   inspect(result, content="6730591262168859")
@@ -118,10 +105,7 @@ test "load32" {
 ///|
 /// Test load64 function
 test "load64" {
-  let bytes = Array::new()
-  for i = 0; i < 8; i = i + 1 {
-    bytes.push((i + 1).to_byte())
-  }
+  let bytes : Bytes = [0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07, 0x08]
   let result = load64(bytes, 0)
   // Little endian: 0x0807060504030201
   inspect(result, content="578437695752307201")
@@ -145,13 +129,9 @@ test "hash function" {
 /// Test match_len function with various scenarios
 test "DeflateFast match_len" {
   let df = DeflateFast::new()
-  let src : Array[Byte] = Array::new()
 
   // Add test data
-  let text : Bytes = "abcdefghijklmnopqrstuvwxyz"
-  for i = 0; i < text.length(); i = i + 1 {
-    src.push(text[i])
-  }
+  let src : Bytes = "abcdefghijklmnopqrstuvwxyz"
 
   // Test match within current block
   let match_len1 = df.match_len(0, 0, src)
@@ -166,23 +146,17 @@ test "DeflateFast match_len" {
 /// Test DeflateFast with cross-block matching
 test "DeflateFast cross block matching" {
   let df = DeflateFast::new()
-  let dst = Array::new()
 
   // First block
-  let src1 : Array[Byte] = Array::new()
-  let pattern : Bytes = "pattern"
-  for i = 0; i < pattern.length(); i = i + 1 {
-    src1.push(pattern[i])
-  }
-  let result1 = df.encode(dst, src1)
+  let src1 : @bytes.View = "pattern"
+  let dst1 = []
+  df.encode(dst1, src1)
 
   // Second block with same pattern - should find matches in previous block
-  let src2 = Array::new()
-  for i = 0; i < pattern.length(); i = i + 1 {
-    src2.push(pattern[i])
-  }
-  let result2 = df.encode(result1, src2)
-  inspect(result2.length() > result1.length(), content="true")
+  let src2 : @bytes.View = "pattern"
+  let dst2 = []
+  df.encode(dst2, src2)
+  inspect(dst2.length() > dst1.length(), content="true")
 }
 
 ///|
@@ -231,12 +205,13 @@ test "DeflateFast shift_offsets" {
 test "DeflateFast minimum input size" {
   let df = DeflateFast::new()
   let dst = Array::new()
-  let src = Array::new()
+  let src = @buffer.new()
 
   // Create input exactly at minimum size
   for i = 0; i < MinNonLiteralBlockSize; i = i + 1 {
-    src.push((i % 256).to_byte())
+    src.write_byte((i % 256).to_byte())
   }
-  let result = df.encode(dst, src)
-  inspect(result.length() >= MinNonLiteralBlockSize, content="true")
+  let src = src.contents()
+  df.encode(dst, src)
+  inspect(dst.length() >= MinNonLiteralBlockSize, content="true")
 }

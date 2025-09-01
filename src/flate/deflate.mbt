@@ -444,38 +444,44 @@ fn Compressor::store_huff(d : Compressor) -> Unit {
 ///|
 /// Encode speed step function
 fn Compressor::enc_speed(d : Compressor) -> Unit {
-  // Fast encoding using DeflateFast encoder
-  if d.window_end == 0 && !d.sync {
-    return
-  }
-
-  // Get the input window data
-  let input = Array::new()
-  for i = 0; i < d.window_end; i = i + 1 {
-    input.push(d.window[i])
-  }
-  if input.length() > 0 {
-    // Use DeflateFast to encode the input
-    d.tokens = d.best_speed.encode(d.tokens, input)
-  }
-
-  // Add EOF token if we're syncing or have enough tokens
-  if d.sync || d.tokens.length() >= MaxFlateBlockTokens {
-    // Add EOF marker
-    d.tokens.push(literal_token(256))
-
-    // Write tokens using fixed Huffman encoding (fast)
-    try {
-      d.w.write_fixed_header(d.sync)
-      d.w.write_tokens(
-        d.tokens,
-        fixed_literal_encoding.codes,
-        fixed_offset_encoding.codes,
-      )
-    } catch {
-      err => d.err = Some(err)
+  // We only compress if we have MaxStoreBlockSize.
+  if d.window_end < MaxStoreBlockSize {
+    if !d.sync {
+      return
     }
-    d.tokens.clear()
+
+    // Handle small sizes.
+    if d.window_end < 128 {
+      match d.window_end {
+        0 => return
+        1..=16 =>
+          d.write_stored_block(d.window[:d.window_end]) catch {
+            err => d.err = Some(err)
+          }
+        _ =>
+          d.w.write_block_huff(false, d.window[:d.window_end]) catch {
+            err => d.err = Some(err)
+          }
+      }
+      d.window_end = 0
+      d.best_speed.reset()
+      return
+    }
+  }
+
+  // Encode the block.
+  d.tokens.clear()
+  d.best_speed.encode(d.tokens, d.window[:d.window_end])
+
+  // If we removed less than 1/16th, Huffman compress the block.
+  try {
+    if d.tokens.length() > d.window_end - (d.window_end >> 4) {
+      d.w.write_block_huff(false, d.window[:d.window_end])
+    } else {
+      d.w.write_block_dynamic(d.tokens, false, d.window[:d.window_end])
+    }
+  } catch {
+    err => d.err = Some(err)
   }
   d.window_end = 0
 }
