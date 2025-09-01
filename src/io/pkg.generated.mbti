@@ -6,10 +6,22 @@ import(
 )
 
 // Values
+fn[R : Reader, W : Writer] copy_n(W, R, Int64) -> Int64 raise
+
+fn limit_reader(&Reader, Int64) -> LimitedReader
+
+fn new_section_reader(&ReaderAt, Int64, Int64) -> SectionReader
+
+fn[R : Reader] read_at_least(R, @bytes.View, Int) -> Int raise
+
 fn[R : Reader] read_full(R, @bytes.View) -> Int raise
 
 // Errors
 pub suberror Eof
+
+pub suberror InvalidWrite
+
+pub suberror NoProgress
 
 type SeekError
 
@@ -20,6 +32,8 @@ pub suberror ShortWrite
 pub suberror UnexpectedEof
 
 // Types and methods
+type LimitedReader
+
 type SectionReader
 fn SectionReader::new(&ReaderAt, Int64, Int64) -> Self
 fn SectionReader::read(Self, @bytes.View) -> Int raise
@@ -44,11 +58,25 @@ pub(open) trait ByteWriter {
   write_byte(Self, Byte) -> Unit raise
 }
 
-pub(open) trait Closer {
-  close() -> Unit raise
+pub(open) trait Closer : Show {
+  close(Self) -> Unit raise
 }
 
 pub(open) trait ReadCloser : Reader + Closer {
+}
+
+pub(open) trait ReadSeeker : Reader {
+  seek(Self, Int64, SeekWhence) -> Int64 raise SeekError
+}
+
+pub(open) trait ReadWriteCloser : Reader + Writer + Closer {
+}
+
+pub(open) trait ReadWriteSeeker : Reader + Writer {
+  seek(Self, Int64, SeekWhence) -> Int64 raise SeekError
+}
+
+pub(open) trait ReadWriter : Reader + Writer {
 }
 
 pub(open) trait Reader {
@@ -59,10 +87,34 @@ pub(open) trait ReaderAt {
   read_at(Self, @bytes.View, Int64) -> Int raise
 }
 
+pub(open) trait ReaderFrom {
+  read_from(&Reader) -> Int64 raise
+}
+
+pub(open) trait Resetter {
+  reset(Self, &Reader) -> Unit raise
+}
+
+pub(open) trait StringWriter {
+  write_string(Self, String) -> Int raise
+}
+
 pub(open) trait WriteCloser : Writer + Closer {
+}
+
+pub(open) trait WriteSeeker : Writer {
+  seek(Self, Int64, SeekWhence) -> Int64 raise SeekError
+}
+
+pub(open) trait WriteTo {
+  write_to(&Writer) -> Int64 raise
 }
 
 pub(open) trait Writer : Show {
   write(Self, @bytes.View) -> Int raise
+}
+
+pub(open) trait WriterAt {
+  write_at(Self, @bytes.View, Int64) -> Int raise
 }
 

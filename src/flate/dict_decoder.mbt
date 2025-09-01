@@ -16,29 +16,28 @@
 ///   perform a form of run-length encoding on repeated runs of symbols.
 ///   The write_copy and try_write_copy are used to implement this command.
 struct DictDecoder {
-  mut hist : Array[Byte]  // Sliding window history
+  mut hist : Array[Byte] // Sliding window history
   // Invariant: 0 <= rd_pos <= wr_pos <= hist.length()
-  mut wr_pos : Int  // Current output position in buffer
-  mut rd_pos : Int  // Have emitted hist[:rd_pos] already
-  mut full : Bool   // Has a full window length been written yet?
+  mut wr_pos : Int // Current output position in buffer
+  mut rd_pos : Int // Have emitted hist[:rd_pos] already
+  mut full : Bool // Has a full window length been written yet?
 } derive(Show)
 
 ///|
 /// Create a new DictDecoder
 pub fn DictDecoder::new() -> DictDecoder {
-  DictDecoder::{
-    hist: Array::new(),
-    wr_pos: 0,
-    rd_pos: 0,
-    full: false
-  }
+  DictDecoder::{ hist: Array::new(), wr_pos: 0, rd_pos: 0, full: false }
 }
 
 ///|
 /// Initialize DictDecoder to have a sliding window dictionary of the given
 /// size. If a preset dict is provided, it will initialize the dictionary with
 /// the contents of dict.
-pub fn DictDecoder::init(self : DictDecoder, size : Int, dict : Array[Byte]) -> Unit {
+pub fn DictDecoder::init(
+  self : DictDecoder,
+  size : Int,
+  dict : Array[Byte],
+) -> Unit {
   // Resize history if needed
   if self.hist.length() < size {
     self.hist = Array::make(size, 0)
@@ -48,15 +47,13 @@ pub fn DictDecoder::init(self : DictDecoder, size : Int, dict : Array[Byte]) -> 
       self.hist[i] = 0
     }
   }
-  
+
   // Copy dictionary data
   let dict_size = if dict.length() > size { size } else { dict.length() }
   let start_offset = if dict.length() > size { dict.length() - size } else { 0 }
-  
   for i = 0; i < dict_size; i = i + 1 {
     self.hist[i] = dict[start_offset + i]
   }
-  
   self.wr_pos = dict_size
   if self.wr_pos == size {
     self.wr_pos = 0
@@ -114,12 +111,15 @@ pub fn DictDecoder::write_byte(self : DictDecoder, c : Byte) -> Unit {
 /// This returns the number of bytes copied and may be less than the requested
 /// length if the available space in the output buffer is too small.
 /// This invariant must be kept: 0 < dist <= hist_size()
-pub fn DictDecoder::write_copy(self : DictDecoder, dist : Int, length : Int) -> Int {
+pub fn DictDecoder::write_copy(
+  self : DictDecoder,
+  dist : Int,
+  length : Int,
+) -> Int {
   let dst_base = self.wr_pos
   let mut dst_pos = dst_base
   let mut src_pos = dst_pos - dist
   let mut end_pos = dst_pos + length
-  
   if end_pos > self.hist.length() {
     end_pos = self.hist.length()
   }
@@ -153,14 +153,11 @@ pub fn DictDecoder::write_copy(self : DictDecoder, dist : Int, length : Int) -> 
     } else {
       dst_pos - src_pos
     }
-    
     for i = 0; i < copy_len; i = i + 1 {
       self.hist[dst_pos + i] = self.hist[src_pos + i]
     }
-    
     dst_pos += copy_len
   }
-
   self.wr_pos = dst_pos
   dst_pos - dst_base
 }
@@ -169,14 +166,16 @@ pub fn DictDecoder::write_copy(self : DictDecoder, dist : Int, length : Int) -> 
 /// Tries to copy a string at a given (distance, length) to the
 /// output. This specialized version is optimized for short distances.
 /// This invariant must be kept: 0 < dist <= hist_size()
-pub fn DictDecoder::try_write_copy(self : DictDecoder, dist : Int, length : Int) -> Int {
+pub fn DictDecoder::try_write_copy(
+  self : DictDecoder,
+  dist : Int,
+  length : Int,
+) -> Int {
   let dst_pos = self.wr_pos
   let end_pos = dst_pos + length
-  
   if dst_pos < dist || end_pos > self.hist.length() {
     return 0
   }
-  
   let dst_base = dst_pos
   let mut current_dst = dst_pos
   let src_pos = dst_pos - dist
@@ -188,14 +187,11 @@ pub fn DictDecoder::try_write_copy(self : DictDecoder, dist : Int, length : Int)
     } else {
       current_dst - src_pos
     }
-    
     for i = 0; i < copy_len; i = i + 1 {
       self.hist[current_dst + i] = self.hist[src_pos + i]
     }
-    
     current_dst += copy_len
   }
-
   self.wr_pos = current_dst
   current_dst - dst_base
 }

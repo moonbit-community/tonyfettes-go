@@ -2,21 +2,24 @@
 package "tonyfettes/debugo/flate"
 
 import(
+  "moonbitlang/core/bytes"
   "tonyfettes/debugo/io"
 )
 
 // Values
-let best_compression : Int
+const BestCompression : Int = 9
 
-let best_speed : Int
+const BestSpeed : Int = 1
 
-let default_compression : Int
+const DefaultCompression : Int = -1
+
+const HuffmanOnly : Int = -2
+
+const NoCompression : Int = 0
 
 fn generate_fixed_literal_encoding() -> HuffmanEncoder
 
 fn generate_fixed_offset_encoding() -> HuffmanEncoder
-
-let huffman_only : Int
 
 fn length_code(UInt) -> UInt
 
@@ -24,15 +27,7 @@ fn literal_token(UInt) -> Token
 
 fn match_token(UInt, UInt) -> Token
 
-fn new_reader(&@io.Reader) -> Reader
-
-fn new_reader_dict(&@io.Reader, Array[Byte]) -> Reader
-
-fn new_writer(&@io.Writer, Int) -> Writer
-
-fn new_writer_dict(&@io.Writer, Int, Array[Byte]) -> Writer
-
-let no_compression : Int
+fn new_writer(&@io.Writer, Int) -> Writer raise
 
 fn offset_code(UInt) -> UInt
 
@@ -41,7 +36,30 @@ pub suberror CorruptInputError Int64
 
 pub suberror InternalError String
 
+type InvalidCompressionLevel
+
+pub suberror WriterClosed String
+
 // Types and methods
+type CompressionLevel
+impl Show for CompressionLevel
+
+type Compressor
+fn Compressor::close(Self) -> Unit raise
+fn Compressor::deflate_step(Self) -> Unit
+fn Compressor::enc_speed(Self) -> Unit
+fn Compressor::fill_deflate(Self, Array[Byte]) -> Int
+fn Compressor::fill_store(Self, Array[Byte]) -> Int
+fn Compressor::init(Self, &@io.Writer, Int) -> Unit raise InvalidCompressionLevel
+fn Compressor::init_deflate(Self) -> Unit
+fn Compressor::new(&@io.Writer) -> Self
+fn Compressor::store(Self) -> Unit
+fn Compressor::store_huff(Self) -> Unit
+fn Compressor::sync_flush(Self) -> Unit raise
+fn Compressor::write(Self, Array[Byte]) -> Int raise
+fn Compressor::write_stored_block(Self, Array[Byte]) -> Bool
+impl Show for Compressor
+
 type DictDecoder
 fn DictDecoder::avail_read(Self) -> Int
 fn DictDecoder::avail_write(Self) -> Int
@@ -61,6 +79,25 @@ fn HCode::set(Self, UInt, UInt) -> Unit
 impl Eq for HCode
 impl Show for HCode
 
+type HuffmanBitWriter
+fn HuffmanBitWriter::dynamic_size(Self, HuffmanEncoder, HuffmanEncoder, Int) -> (Int, Int)
+fn HuffmanBitWriter::fixed_size(Self, Int) -> Int
+fn HuffmanBitWriter::flush(Self) -> Unit
+fn HuffmanBitWriter::generate_codegen(Self, Int, Int, HuffmanEncoder, HuffmanEncoder) -> Unit
+fn HuffmanBitWriter::index_tokens(Self, Array[Token]) -> (Int, Int)
+fn HuffmanBitWriter::new(&@io.Writer) -> Self
+fn HuffmanBitWriter::reset(Self, &@io.Writer) -> Unit
+fn HuffmanBitWriter::stored_size(Self, Array[Byte]) -> (Int, Bool)
+fn HuffmanBitWriter::write_bits(Self, Int, UInt) -> Unit
+fn HuffmanBitWriter::write_block_huff(Self, Bool, Array[Byte]) -> Unit
+fn HuffmanBitWriter::write_bytes(Self, Array[Byte]) -> Unit
+fn HuffmanBitWriter::write_code(Self, HCode) -> Unit
+fn HuffmanBitWriter::write_dynamic_header(Self, Int, Int, Int, Bool) -> Unit
+fn HuffmanBitWriter::write_fixed_header(Self, Bool) -> Unit
+fn HuffmanBitWriter::write_stored_header(Self, Int, Bool) -> Unit
+fn HuffmanBitWriter::write_tokens(Self, Array[Token], Array[HCode], Array[HCode]) -> Unit
+impl Show for HuffmanBitWriter
+
 type HuffmanDecoder
 fn HuffmanDecoder::init(Self, Array[Int]) -> Bool
 fn HuffmanDecoder::new() -> Self
@@ -78,8 +115,6 @@ type LiteralNode
 impl Eq for LiteralNode
 impl Show for LiteralNode
 
-type Reader
-
 type Token
 fn Token::length(Self) -> UInt
 fn Token::literal(Self) -> UInt
@@ -87,8 +122,14 @@ fn Token::offset(Self) -> UInt
 impl Eq for Token
 impl Show for Token
 
-type Writer
-fn Writer::flush(Self) -> Unit
+pub struct Writer {
+  d : Compressor
+  dict : Array[Byte]
+}
+fn Writer::flush(Self) -> Unit raise
+fn Writer::write(Self, @bytes.View) -> Int raise
+impl Show for Writer
+impl @io.Writer for Writer
 
 // Type aliases
 

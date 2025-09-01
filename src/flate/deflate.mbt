@@ -30,27 +30,27 @@ const WindowMask : Int = WindowSize - 1
 /// 256 legitimate lengths: those in the range [3, 258]. This package's
 /// compressor uses a higher minimum match length, enabling optimizations
 /// such as finding matches via 32-bit loads and compares.
-let baseMatchLength : Int = 3 // The smallest match length per the RFC section 3.2.5
+const BaseMatchLength : Int = 3 // The smallest match length per the RFC section 3.2.5
 
 ///|
-let minMatchLength : Int = 4 // The smallest match length that the compressor actually emits
+const MinMatchLength : Int = 4 // The smallest match length that the compressor actually emits
 
 ///|
-let maxMatchLength : Int = 258 // The largest match length
+const MaxMatchLength : Int = 258 // The largest match length
 
 ///|
-let baseMatchOffset : Int = 1 // The smallest match offset
+const BaseMatchOffset : Int = 1 // The smallest match offset
 
 ///|
-let maxMatchOffset : Int = 1 << 15 // The largest match offset
+const MaxMatchOffset : Int = 1 << 15 // The largest match offset
 
 ///|
 /// The maximum number of tokens we put into a single flate block, just to
 /// stop things from getting too large.
-let maxFlateBlockTokens : Int = 1 << 14
+const MaxFlateBlockTokens : Int = 1 << 14
 
 ///|
-let maxStoreBlockSize : Int = 65535
+const MaxStoreBlockSize : Int = 65535
 
 ///|
 let hashBits : Int = 17 // After 17 performance degrades
@@ -216,7 +216,7 @@ fn hash4(b : Array[Byte]) -> UInt {
 ///|
 /// bulk_hash4 will compute hashes using the same algorithm as hash4.
 fn bulk_hash4(b : Array[Byte], dst : Array[UInt]) -> Unit {
-  if b.length() < minMatchLength {
+  if b.length() < MinMatchLength {
     return
   }
   let mut hb = b[3].to_uint() |
@@ -224,7 +224,7 @@ fn bulk_hash4(b : Array[Byte], dst : Array[UInt]) -> Unit {
     (b[1].to_uint() << 16) |
     (b[0].to_uint() << 24)
   dst[0] = (hb * hashmul) >> (32 - hashBits)
-  let end = b.length() - minMatchLength + 1
+  let end = b.length() - MinMatchLength + 1
   for i = 1; i < end; i = i + 1 {
     hb = (hb << 8) | b[i + 3].to_uint()
     dst[i] = (hb * hashmul) >> (32 - hashBits)
@@ -267,18 +267,17 @@ pub struct Writer {
 /// If level is in the range [-2, 9] then the error returned will be nil.
 /// Otherwise the error returned will be non-nil.
 pub fn new_writer(w : &@io.Writer, level : Int) -> Writer raise {
-  let dw = Writer::{ d: Compressor::new(), dict: Array::new() }
+  let dw = Writer::{ d: Compressor::new(w), dict: Array::new() }
   dw.d.init(w, level)
   dw
 }
 
 ///|
 /// Create a new Compressor
-pub fn Compressor::new() -> Compressor {
-  let dummy = DummyWriter::new()
+pub fn Compressor::new(w : &@io.Writer) -> Compressor {
   Compressor::{
     compression_level: levels[0], // default to no compression initially
-    w: HuffmanBitWriter::new(dummy),
+    w: HuffmanBitWriter::new(w),
     bulk_hasher: bulk_hash4,
     fill: Compressor::fill_store,
     step: Compressor::store,
@@ -293,26 +292,12 @@ pub fn Compressor::new() -> Compressor {
     byte_available: false,
     sync: false,
     tokens: Array::new(),
-    length: minMatchLength - 1,
+    length: MinMatchLength - 1,
     offset: 0,
     max_insert_index: 0,
     err: false,
-    hash_match: Array::make(maxMatchLength - 1, 0),
+    hash_match: Array::make(MaxMatchLength - 1, 0),
   }
-}
-
-///|
-/// Dummy Writer for initialization
-struct DummyWriter {} derive(Show)
-
-///|
-fn DummyWriter::new() -> DummyWriter {
-  DummyWriter::{  }
-}
-
-///|
-impl @io.Writer for DummyWriter with write(self, _bytes) {
-  0
 }
 
 ///|
@@ -324,26 +309,26 @@ pub fn Compressor::init(
   d : Compressor,
   w : &@io.Writer,
   level : Int,
-) -> Unit raise {
+) -> Unit raise InvalidCompressionLevel {
   d.w = HuffmanBitWriter::new(w)
   match level {
     NoCompression => {
-      d.window = Array::make(maxStoreBlockSize, 0)
+      d.window = Array::make(MaxStoreBlockSize, 0)
       d.fill = Compressor::fill_store
       d.step = Compressor::store
     }
     HuffmanOnly => {
-      d.window = Array::make(maxStoreBlockSize, 0)
+      d.window = Array::make(MaxStoreBlockSize, 0)
       d.fill = Compressor::fill_store
       d.step = Compressor::store_huff
     }
     BestSpeed => {
       d.compression_level = levels[level]
-      d.window = Array::make(maxStoreBlockSize, 0)
+      d.window = Array::make(MaxStoreBlockSize, 0)
       d.fill = Compressor::fill_store
       d.step = Compressor::enc_speed
       // self.best_speed = DeflateFast::new() // TODO: implement
-      d.tokens = Array::make(maxStoreBlockSize, literal_token(0))
+      d.tokens = Array::make(MaxStoreBlockSize, literal_token(0))
     }
     DefaultCompression => { // DefaultCompression
       d.init(w, 6)
@@ -364,8 +349,8 @@ pub fn Compressor::init(
 pub fn Compressor::init_deflate(self : Compressor) -> Unit {
   self.window = Array::make(2 * WindowSize, 0)
   self.hash_offset = 1
-  self.tokens = Array::make(maxFlateBlockTokens + 1, literal_token(0))
-  self.length = minMatchLength - 1
+  self.tokens = Array::make(MaxFlateBlockTokens + 1, literal_token(0))
+  self.length = MinMatchLength - 1
   self.offset = 0
   self.byte_available = false
   self.index = 0
@@ -388,7 +373,7 @@ pub fn Compressor::fill_store(self : Compressor, b : Array[Byte]) -> Int {
 ///|
 /// Deflate fill function
 pub fn Compressor::fill_deflate(self : Compressor, b : Array[Byte]) -> Int {
-  if self.index >= 2 * WindowSize - (minMatchLength + maxMatchLength) {
+  if self.index >= 2 * WindowSize - (MinMatchLength + MaxMatchLength) {
     // shift the window by windowSize
     for i = 0; i < WindowSize; i = i + 1 {
       self.window[i] = self.window[WindowSize + i]
@@ -437,7 +422,7 @@ pub fn Compressor::fill_deflate(self : Compressor, b : Array[Byte]) -> Int {
 ///|
 /// Store step function
 pub fn Compressor::store(self : Compressor) -> Unit {
-  if self.window_end > 0 && (self.window_end == maxStoreBlockSize || self.sync) {
+  if self.window_end > 0 && (self.window_end == MaxStoreBlockSize || self.sync) {
     let window_slice = Array::new()
     for i = 0; i < self.window_end; i = i + 1 {
       window_slice.push(self.window[i])
@@ -503,7 +488,7 @@ pub fn Writer::write(self : Writer, bytes : @bytes.View) -> Int raise {
 
 ///|
 /// Write method for Writer implementing io.Writer trait
-impl @io.Writer for Writer with write(self, bytes) {
+pub impl @io.Writer for Writer with write(self, bytes) {
   self.write(bytes) catch {
     _ => 0
   }

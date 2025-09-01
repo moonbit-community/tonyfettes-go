@@ -37,7 +37,10 @@ pub fn Adler32::write_bytes(self : Adler32, data : Bytes) -> Unit {
 
 ///|
 /// Update the checksum with new data from a FixedArray
-pub fn Adler32::write_fixedarray(self : Adler32, data : FixedArray[Byte]) -> Unit {
+pub fn Adler32::write_fixedarray(
+  self : Adler32,
+  data : FixedArray[Byte],
+) -> Unit {
   for i = 0; i < data.length(); i = i + 1 {
     self.a = (self.a + data[i].to_uint()) % mod_adler
     self.b = (self.b + self.a) % mod_adler

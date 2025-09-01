@@ -91,7 +91,7 @@ fn reverse_bits(number : UInt, bit_length : Int) -> UInt {
 
 ///|
 /// Generate fixed literal encoding
-pub fn generate_fixed_literal_encoding() -> HuffmanEncoder {
+fn generate_fixed_literal_encoding() -> HuffmanEncoder {
   let codes = Array::make(286, HCode::{ code: 0, len: 0 })
   for ch = 0; ch < 286; ch = ch + 1 {
     let (bits, size) = if ch < 144 {
@@ -121,7 +121,7 @@ pub fn generate_fixed_literal_encoding() -> HuffmanEncoder {
 
 ///|
 /// Generate fixed offset encoding
-pub fn generate_fixed_offset_encoding() -> HuffmanEncoder {
+fn generate_fixed_offset_encoding() -> HuffmanEncoder {
   let codes = Array::make(30, HCode::{ code: 0, len: 0 })
   for ch = 0; ch < codes.length(); ch = ch + 1 {
     codes[ch] = HCode::{
