@@ -32,22 +32,6 @@ pub suberror WriterClosed String
 type CompressionLevel
 impl Show for CompressionLevel
 
-type Compressor
-fn Compressor::close(Self) -> Unit raise
-fn Compressor::deflate_step(Self) -> Unit
-fn Compressor::enc_speed(Self) -> Unit
-fn Compressor::fill_deflate(Self, Array[Byte]) -> Int
-fn Compressor::fill_store(Self, Array[Byte]) -> Int
-fn Compressor::init(Self, &@io.Writer, Int) -> Unit raise InvalidCompressionLevel
-fn Compressor::init_deflate(Self) -> Unit
-fn Compressor::new(&@io.Writer) -> Self
-fn Compressor::store(Self) -> Unit
-fn Compressor::store_huff(Self) -> Unit
-fn Compressor::sync_flush(Self) -> Unit raise
-fn Compressor::write(Self, Array[Byte]) -> Int raise
-fn Compressor::write_stored_block(Self, Array[Byte]) -> Bool
-impl Show for Compressor
-
 type DictDecoder
 fn DictDecoder::avail_read(Self) -> Int
 fn DictDecoder::avail_write(Self) -> Int
@@ -84,10 +68,10 @@ type LiteralNode
 impl Eq for LiteralNode
 impl Show for LiteralNode
 
-pub struct Writer {
-  d : Compressor
-  dict : Array[Byte]
-}
+type TableEntry
+impl Show for TableEntry
+
+type Writer
 fn Writer::flush(Self) -> Unit raise
 fn Writer::write(Self, @bytes.View) -> Int raise
 impl Show for Writer

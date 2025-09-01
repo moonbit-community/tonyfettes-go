@@ -163,7 +163,7 @@ priv struct Compressor {
   // compression algorithm
   mut fill : (Compressor, Array[Byte]) -> Int // copy data to window
   mut step : (Compressor) -> Unit // process window
-  // best_speed : DeflateFast                 // Encoder for BestSpeed - TODO: implement
+  best_speed : DeflateFast // Encoder for BestSpeed
 
   // Input hash chains
   // hash_head[hashValue] contains the largest inputIndex with the specified hash value
@@ -281,6 +281,7 @@ fn Compressor::new(w : &@io.Writer) -> Compressor {
     bulk_hasher: bulk_hash4,
     fill: Compressor::fill_store,
     step: Compressor::store,
+    best_speed: DeflateFast::new(),
     chain_head: -1,
     hash_head: Array::make(hashSize, 0),
     hash_prev: Array::make(WindowSize, 0),
@@ -451,8 +452,37 @@ fn Compressor::store_huff(self : Compressor) -> Unit {
 ///|
 /// Encode speed step function
 fn Compressor::enc_speed(self : Compressor) -> Unit {
-  // TODO: implement when DeflateFast is available
-  self.store_huff()
+  // Fast encoding using DeflateFast encoder
+  if self.window_end == 0 && !self.sync {
+    return
+  }
+
+  // Get the input window data
+  let input = Array::new()
+  for i = 0; i < self.window_end; i = i + 1 {
+    input.push(self.window[i])
+  }
+  if input.length() > 0 {
+    // Use DeflateFast to encode the input
+    self.tokens = self.best_speed.encode(self.tokens, input)
+  }
+
+  // Add EOF token if we're syncing or have enough tokens
+  if self.sync || self.tokens.length() >= MaxFlateBlockTokens {
+    // Add EOF marker
+    self.tokens.push(literal_token(256))
+
+    // Write tokens using fixed Huffman encoding (fast)
+    self.w.write_fixed_header(self.sync)
+    self.w.write_tokens(
+      self.tokens,
+      fixed_literal_encoding.codes,
+      fixed_offset_encoding.codes,
+    )
+    self.err = self.w.err
+    self.tokens.clear()
+  }
+  self.window_end = 0
 }
 
 ///|
