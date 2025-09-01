@@ -17,7 +17,7 @@ fn[R : Reader] read_at_least(R, @bytes.View, Int) -> Int raise
 fn[R : Reader] read_full(R, @bytes.View) -> Int raise
 
 // Errors
-pub suberror Eof
+pub(all) suberror Eof
 
 pub suberror InvalidWrite
 
@@ -29,7 +29,7 @@ pub suberror ShortBuffer
 
 pub suberror ShortWrite
 
-pub suberror UnexpectedEof
+pub(all) suberror UnexpectedEof
 
 // Types and methods
 type LimitedReader
@@ -58,7 +58,7 @@ pub(open) trait ByteWriter {
   write_byte(Self, Byte) -> Unit raise
 }
 
-pub(open) trait Closer : Show {
+pub(open) trait Closer {
   close(Self) -> Unit raise
 }
 

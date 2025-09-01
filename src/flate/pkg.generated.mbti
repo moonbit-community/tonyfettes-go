@@ -17,6 +17,10 @@ const HuffmanOnly : Int = -2
 
 const NoCompression : Int = 0
 
+fn[R : @io.Reader + @io.ByteReader] new_reader(R) -> &@io.ReadCloser
+
+fn[R : @io.Reader + @io.ByteReader] new_reader_dict(R, @bytes.View) -> &@io.ReadCloser
+
 fn new_writer(&@io.Writer, Int) -> Writer raise
 
 // Errors
@@ -25,6 +29,14 @@ pub suberror CorruptInputError Int64
 pub suberror InternalError String
 
 type InvalidCompressionLevel
+
+pub suberror ReadError {
+  ReadError(offset~ : Int64, Error)
+}
+
+pub suberror WriteError {
+  WriteError(offset~ : Int64, Error)
+}
 
 pub suberror WriterClosed
 
@@ -38,4 +50,10 @@ impl @io.Writer for Writer
 // Type aliases
 
 // Traits
+pub(open) trait Reader : @io.Reader + @io.ByteReader {
+}
+
+pub(open) trait Resetter {
+  reset(Self, &Reader, @bytes.View) -> Unit raise
+}
 

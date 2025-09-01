@@ -292,7 +292,7 @@ fn[Reader : @io.Reader + @io.ByteReader] Decompressor::new(
 }
 
 ///|
-enum StepState {
+priv enum StepState {
   StateInit
   StateDict
 }
