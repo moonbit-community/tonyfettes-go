@@ -16,7 +16,7 @@
 ///   perform a form of run-length encoding on repeated runs of symbols.
 ///   The write_copy and try_write_copy are used to implement this command.
 priv struct DictDecoder {
-  mut hist : Array[Byte] // Sliding window history
+  mut hist : @bytes.View // Sliding window history
   // Invariant: 0 <= rd_pos <= wr_pos <= hist.length()
   mut wr_pos : Int // Current output position in buffer
   mut rd_pos : Int // Have emitted hist[:rd_pos] already
@@ -26,7 +26,7 @@ priv struct DictDecoder {
 ///|
 /// Create a new DictDecoder
 fn DictDecoder::new() -> DictDecoder {
-  DictDecoder::{ hist: Array::new(), wr_pos: 0, rd_pos: 0, full: false }
+  DictDecoder::{ hist: "", wr_pos: 0, rd_pos: 0, full: false }
 }
 
 ///|
@@ -36,11 +36,11 @@ fn DictDecoder::new() -> DictDecoder {
 fn DictDecoder::init(
   self : DictDecoder,
   size : Int,
-  dict : Array[Byte],
+  dict : @bytes.View,
 ) -> Unit {
   // Resize history if needed
   if self.hist.length() < size {
-    self.hist = Array::make(size, 0)
+    self.hist = Bytes::make(size, 0)
   } else {
     // Clear existing data
     for i = 0; i < size; i = i + 1 {
@@ -87,7 +87,7 @@ fn DictDecoder::avail_write(self : DictDecoder) -> Int {
 ///|
 /// Returns a mutable reference to the historical buffer for writing
 /// The caller should write only up to avail_write() bytes
-fn DictDecoder::write_slice(self : DictDecoder) -> Array[Byte] {
+fn DictDecoder::write_slice(self : DictDecoder) -> @bytes.View {
   self.hist
 }
 

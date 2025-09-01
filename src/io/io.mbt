@@ -99,10 +99,10 @@ pub fn SectionReader::seek(
 
 ///|
 /// Standard io errors
-pub suberror Eof
+pub(all) suberror Eof
 
 ///|
-pub suberror UnexpectedEof
+pub(all) suberror UnexpectedEof
 
 ///|
 pub suberror ShortWrite
@@ -158,7 +158,7 @@ pub fn SectionReader::size(s : SectionReader) -> Int64 {
 }
 
 ///|
-pub(open) trait Closer: Show {
+pub(open) trait Closer {
   close(self : Self) -> Unit raise
 }
 
