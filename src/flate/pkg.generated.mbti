@@ -1,0 +1,96 @@
+// Generated using `moon info`, DON'T EDIT IT
+package "tonyfettes/debugo/flate"
+
+import(
+  "tonyfettes/debugo/io"
+)
+
+// Values
+let best_compression : Int
+
+let best_speed : Int
+
+let default_compression : Int
+
+fn generate_fixed_literal_encoding() -> HuffmanEncoder
+
+fn generate_fixed_offset_encoding() -> HuffmanEncoder
+
+let huffman_only : Int
+
+fn length_code(UInt) -> UInt
+
+fn literal_token(UInt) -> Token
+
+fn match_token(UInt, UInt) -> Token
+
+fn new_reader(&@io.Reader) -> Reader
+
+fn new_reader_dict(&@io.Reader, Array[Byte]) -> Reader
+
+fn new_writer(&@io.Writer, Int) -> Writer
+
+fn new_writer_dict(&@io.Writer, Int, Array[Byte]) -> Writer
+
+let no_compression : Int
+
+fn offset_code(UInt) -> UInt
+
+// Errors
+pub suberror CorruptInputError Int64
+
+pub suberror InternalError String
+
+// Types and methods
+type DictDecoder
+fn DictDecoder::avail_read(Self) -> Int
+fn DictDecoder::avail_write(Self) -> Int
+fn DictDecoder::hist_size(Self) -> Int
+fn DictDecoder::init(Self, Int, Array[Byte]) -> Unit
+fn DictDecoder::new() -> Self
+fn DictDecoder::read_flush(Self) -> Array[Byte]
+fn DictDecoder::try_write_copy(Self, Int, Int) -> Int
+fn DictDecoder::write_byte(Self, Byte) -> Unit
+fn DictDecoder::write_copy(Self, Int, Int) -> Int
+fn DictDecoder::write_mark(Self, Int) -> Unit
+fn DictDecoder::write_slice(Self) -> Array[Byte]
+impl Show for DictDecoder
+
+type HCode
+fn HCode::set(Self, UInt, UInt) -> Unit
+impl Eq for HCode
+impl Show for HCode
+
+type HuffmanDecoder
+fn HuffmanDecoder::init(Self, Array[Int]) -> Bool
+fn HuffmanDecoder::new() -> Self
+impl Show for HuffmanDecoder
+
+type HuffmanEncoder
+fn HuffmanEncoder::bit_length(Self, Array[Int]) -> Int
+fn HuffmanEncoder::new(Int) -> Self
+impl Show for HuffmanEncoder
+
+type LevelInfo
+impl Show for LevelInfo
+
+type LiteralNode
+impl Eq for LiteralNode
+impl Show for LiteralNode
+
+type Reader
+
+type Token
+fn Token::length(Self) -> UInt
+fn Token::literal(Self) -> UInt
+fn Token::offset(Self) -> UInt
+impl Eq for Token
+impl Show for Token
+
+type Writer
+fn Writer::flush(Self) -> Unit
+
+// Type aliases
+
+// Traits
+

@@ -6,11 +6,18 @@ import(
 )
 
 // Values
+fn[R : Reader] read_full(R, @bytes.View) -> Int raise
 
 // Errors
 pub suberror Eof
 
 type SeekError
+
+pub suberror ShortBuffer
+
+pub suberror ShortWrite
+
+pub suberror UnexpectedEof
 
 // Types and methods
 type SectionReader
@@ -29,11 +36,33 @@ pub(all) enum SeekWhence {
 // Type aliases
 
 // Traits
+pub(open) trait ByteReader {
+  read_byte(Self) -> Byte raise
+}
+
+pub(open) trait ByteWriter {
+  write_byte(Self, Byte) -> Unit raise
+}
+
 pub(open) trait Closer {
   close() -> Unit raise
 }
 
+pub(open) trait ReadCloser : Reader + Closer {
+}
+
+pub(open) trait Reader {
+  read(Self, @bytes.View) -> Int raise
+}
+
 pub(open) trait ReaderAt {
   read_at(Self, @bytes.View, Int64) -> Int raise
+}
+
+pub(open) trait WriteCloser : Writer + Closer {
+}
+
+pub(open) trait Writer : Show {
+  write(Self, @bytes.View) -> Int raise
 }
 

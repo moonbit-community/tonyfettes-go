@@ -1,0 +1,81 @@
+// Generated using `moon info`, DON'T EDIT IT
+package "tonyfettes/debugo/zlib"
+
+import(
+  "moonbitlang/core/bytes"
+  "tonyfettes/debugo/io"
+)
+
+// Values
+fn checksum(@bytes.View) -> UInt
+
+fn checksum_array(FixedArray[Byte]) -> UInt
+
+fn get_uint16_be(@bytes.View, Int) -> UInt
+
+fn get_uint16_be_array(FixedArray[Byte], Int) -> UInt
+
+fn get_uint32_be(@bytes.View, Int) -> UInt
+
+fn get_uint32_be_array(FixedArray[Byte], Int) -> UInt
+
+fn put_uint16_be(FixedArray[Byte], Int, UInt) -> Unit
+
+fn put_uint32_be(FixedArray[Byte], Int, UInt) -> Unit
+
+// Errors
+pub suberror ChecksumError String
+
+pub suberror DictionaryError String
+
+pub suberror HeaderError String
+
+// Types and methods
+pub struct Adler32 {
+  mut a : UInt
+  mut b : UInt
+}
+fn Adler32::new() -> Self
+fn Adler32::reset(Self) -> Unit
+fn Adler32::sum32(Self) -> UInt
+fn Adler32::write(Self, @bytes.View) -> Unit
+fn Adler32::write_array(Self, Array[Byte]) -> Unit
+fn Adler32::write_arrayview(Self, ArrayView[Byte]) -> Unit
+fn Adler32::write_bytes(Self, Bytes) -> Unit
+fn Adler32::write_fixedarray(Self, FixedArray[Byte]) -> Unit
+impl Show for Adler32
+
+pub struct Reader {
+  mut reader : Bytes
+  mut offset : Int
+  digest : Adler32
+  scratch : FixedArray[Byte]
+  mut header_read : Bool
+}
+fn Reader::new(Bytes) -> Self
+fn Reader::new_dict(Bytes, Bytes) -> Self
+fn Reader::read(Self, FixedArray[Byte]) -> Int raise
+fn Reader::reset(Self, Bytes, Bytes) -> Unit
+impl Show for Reader
+
+pub struct Writer {
+  mut w : &@io.Writer
+  digest : Adler32
+  mut dict : Bytes
+  scratch : FixedArray[Byte]
+  mut header_written : Bool
+  mut err : Error?
+}
+fn Writer::close(Self) -> Unit raise
+fn Writer::flush(Self) -> Unit raise
+fn Writer::new(&@io.Writer) -> Self
+fn Writer::new_dict(&@io.Writer, Bytes) -> Self
+fn Writer::reset(Self, &@io.Writer) -> Unit
+fn Writer::reset_dict(Self, &@io.Writer, Bytes) -> Unit
+fn Writer::write(Self, Bytes) -> Int raise
+impl Show for Writer
+
+// Type aliases
+
+// Traits
+

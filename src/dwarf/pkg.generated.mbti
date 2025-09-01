@@ -50,6 +50,8 @@ let enc_unsigned_fixed : UInt
 
 let enc_utf : UInt
 
+fn find_unit_by_offset(Array[DwarfUnit], Int64) -> Int
+
 let lle_base_address : UInt
 
 let lle_base_addressx : UInt
@@ -254,6 +256,12 @@ let op_xderef_type : UInt
 
 let op_xor : UInt
 
+fn parse_abbrev(Data, UInt64, Int) -> Result[Map[UInt, Abbrev], String]
+
+fn parse_entry(Buffer, Entry?, SimpleUnit, Map[UInt, Abbrev]) -> Entry?
+
+fn parse_units(Data) -> Result[Array[DwarfUnit], String]
+
 let rle_base_address : UInt
 
 let rle_base_addressx : UInt
@@ -285,6 +293,31 @@ let ut_type : UInt
 // Errors
 
 // Types and methods
+pub struct AField {
+  attr : Attr
+  format : Format
+  class : Class
+  val : Int64
+}
+fn AField::attr(Self) -> Attr
+fn AField::class(Self) -> Class
+fn AField::format(Self) -> Format
+fn AField::new(Attr, Format, Class, Int64) -> Self
+fn AField::val(Self) -> Int64
+impl Show for AField
+
+pub struct Abbrev {
+  tag : Tag
+  children : Bool
+  fields : Array[AField]
+}
+fn Abbrev::add_field(Self, AField) -> Unit
+fn Abbrev::children(Self) -> Bool
+fn Abbrev::fields(Self) -> Array[AField]
+fn Abbrev::new(Tag, Bool) -> Self
+fn Abbrev::tag(Self) -> Tag
+impl Show for Abbrev
+
 pub struct ArrayType {
   common : CommonType
   array_type : DwarfTypeRef?
@@ -450,10 +483,12 @@ fn Buffer::addr(Self) -> UInt64
 fn Buffer::bytes(Self, Int) -> Bytes
 fn Buffer::error(Self, String) -> Unit
 fn Buffer::get_error(Self) -> DecodeError?
+fn Buffer::has_data(Self) -> Bool
 fn Buffer::has_error(Self) -> Bool
 fn Buffer::int(Self) -> Int64
 fn Buffer::length(Self) -> Int
 fn Buffer::offset(Self) -> Int64
+fn Buffer::peek_entry_id(Self) -> UInt?
 fn Buffer::skip(Self, Int) -> Unit
 fn Buffer::string(Self) -> String
 fn Buffer::uint(Self) -> UInt64
@@ -514,20 +549,33 @@ pub struct Data {
   mut line_str : Bytes
   mut str_offsets : Bytes
   mut rng_lists : Bytes
+  abbrev_cache : Map[UInt64, Map[UInt, Abbrev]]
   big_endian : Bool
   order : ByteOrder
 }
 fn Data::add_section_simple(Self, Bytes, Bytes) -> Bool
+fn Data::get_abbrev_cache(Self, UInt64) -> Map[UInt, Abbrev]?
 fn Data::get_byte_order(Self) -> ByteOrder
 fn Data::get_section(Self, Bytes) -> Bytes
 fn Data::is_big_endian(Self) -> Bool
 fn Data::new_minimal(Bytes, Bytes, Bytes) -> Self?
+fn Data::reader(Self) -> Reader
+fn Data::reader_with_parsed_units(Self) -> Result[Reader, String]
+fn Data::reader_with_units(Self) -> Result[Reader, String]
+fn Data::set_abbrev_cache(Self, UInt64, Map[UInt, Abbrev]) -> Unit
+fn Data::set_units(Self, Array[DwarfUnit]) -> Unit
 impl Show for Data
 
 pub enum DataFormatRef {
   UnknownFormatRef(UnknownFormat)
+  DataFormatRefFromUnit(DataFormatRefFromUnit)
 }
 impl Show for DataFormatRef
+
+pub enum DataFormatRefFromUnit {
+  UnitFormat(DwarfUnit)
+}
+impl Show for DataFormatRefFromUnit
 
 pub struct DecodeError {
   name : String
@@ -552,6 +600,33 @@ pub enum DwarfTypeRef {
   UnsupportedTypeRef(UnsupportedType)
 }
 impl Show for DwarfTypeRef
+
+pub struct DwarfUnit {
+  base : Int64
+  off : Int64
+  data : Bytes
+  atable : Map[UInt, Abbrev]
+  mut unit5 : Unit5?
+  asize : Int
+  vers : Int
+  is64 : Bool
+  utype : UInt
+}
+fn DwarfUnit::addr_base(Self) -> UInt64
+fn DwarfUnit::addrsize(Self) -> Int
+fn DwarfUnit::atable(Self) -> Map[UInt, Abbrev]
+fn DwarfUnit::base(Self) -> Int64
+fn DwarfUnit::data(Self) -> Bytes
+fn DwarfUnit::dwarf64(Self) -> (Bool, Bool)
+fn DwarfUnit::is_dwarf64(Self) -> Bool
+fn DwarfUnit::loc_lists_base(Self) -> UInt64
+fn DwarfUnit::new(Int64, Int64, Bytes, Map[UInt, Abbrev], Int, Int, Bool, UInt) -> Self
+fn DwarfUnit::off(Self) -> Int64
+fn DwarfUnit::rng_lists_base(Self) -> UInt64
+fn DwarfUnit::str_offsets_base(Self) -> UInt64
+fn DwarfUnit::utype(Self) -> UInt
+fn DwarfUnit::version(Self) -> Int
+impl Show for DwarfUnit
 
 pub struct Entry {
   offset : Int64
@@ -657,6 +732,7 @@ pub enum Format {
   FormGnuRefAlt
   FormGnuStrpAlt
 }
+fn Format::from_uint(UInt) -> Self?
 impl Eq for Format
 impl Show for Format
 
@@ -689,6 +765,31 @@ fn QualType::qual(Self) -> String
 fn QualType::qual_type(Self) -> DwarfTypeRef?
 impl Show for QualType
 
+pub struct Reader {
+  mut buf : Buffer
+  data : Data
+  mut err : String?
+  mut unit : Int
+  mut last_unit : Bool
+  mut last_children : Bool
+  mut last_sibling : Int64
+  mut cu : Entry?
+  units : Array[SimpleUnit]
+}
+fn Reader::address_size(Self) -> Int
+fn Reader::at_end(Self) -> Bool
+fn Reader::byte_order(Self) -> ByteOrder
+fn Reader::clone(Self) -> Self
+fn Reader::get_error(Self) -> String?
+fn Reader::has_error(Self) -> Bool
+fn Reader::new(Data, Array[SimpleUnit]) -> Self
+fn Reader::next(Self) -> Entry?
+fn Reader::offset(Self) -> Int64
+fn Reader::reset(Self) -> Unit
+fn Reader::seek(Self, Int64) -> Unit
+fn Reader::skip_children(Self) -> Unit
+impl Show for Reader
+
 pub struct SimpleUnit {
   base : Int64
   off : Int64
@@ -698,6 +799,7 @@ pub struct SimpleUnit {
   is64 : Bool
 }
 fn SimpleUnit::addrsize(Self) -> Int
+fn SimpleUnit::from_unit(DwarfUnit) -> Self
 fn SimpleUnit::is_dwarf64(Self) -> Bool
 fn SimpleUnit::new(Int64, Int64, Bytes, Int, Int, Bool) -> Self
 fn SimpleUnit::version(Self) -> Int
@@ -804,6 +906,7 @@ pub enum Tag {
   TagSkeletonUnit
   TagImmutableType
 }
+fn Tag::from_uint(UInt) -> Self?
 fn Tag::to_uint(Self) -> UInt
 impl Eq for Tag
 impl Show for Tag
@@ -827,6 +930,15 @@ fn UnionType::new(CommonType, String) -> Self
 fn UnionType::union_name(Self) -> String
 impl Show for UnionType
 
+pub struct Unit5 {
+  mut addr_base : UInt64
+  mut str_offsets_base : UInt64
+  mut rng_lists_base : UInt64
+  mut loc_lists_base : UInt64
+}
+fn Unit5::new() -> Self
+impl Show for Unit5
+
 pub struct UnknownFormat {
 }
 fn UnknownFormat::new() -> Self
@@ -847,6 +959,8 @@ fn VoidType::new(CommonType) -> Self
 impl Show for VoidType
 
 // Type aliases
+pub typealias Map[UInt, Abbrev] as AbbrevTable
+
 pub typealias Int64 as Offset
 
 // Traits

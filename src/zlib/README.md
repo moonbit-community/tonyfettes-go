@@ -20,7 +20,7 @@ This package implements RFC 1950 (ZLIB compression format) for MoonBit, providin
 // ZLIB Reader for decompressing data
 pub struct Reader
 
-// ZLIB Writer for compressing data  
+// ZLIB Writer for compressing data
 pub struct Writer
 
 // Adler32 checksum calculator
@@ -31,7 +31,7 @@ pub struct Adler32
 
 ```moonbit
 pub suberror ChecksumError String
-pub suberror DictionaryError String  
+pub suberror DictionaryError String
 pub suberror HeaderError String
 ```
 
@@ -66,10 +66,10 @@ try {
 
 ```moonbit
 // Writer with dictionary
-let dict = [b'd', b'i', b'c', b't']
+let dict : Bytes = "dict"
 let writer = @zlib.Writer::new_dict(dict)
 
-// Reader with dictionary  
+// Reader with dictionary
 let reader = @zlib.Reader::new_dict(data, dict)
 ```
 

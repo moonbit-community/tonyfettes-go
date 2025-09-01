@@ -158,6 +158,21 @@ pub fn SectionReader::size(s : SectionReader) -> Int64 {
 }
 
 ///|
-pub(open) trait Closer {
-  close() -> Unit raise
+pub(open) trait Closer: Show {
+  close(self : Self) -> Unit raise
+}
+
+///|
+/// ReadCloser is the interface that groups the basic Read and Close methods.
+pub(open) trait ReadCloser: Reader + Closer {}
+
+///|
+/// WriteCloser is the interface that groups the basic Write and Close methods.
+pub(open) trait WriteCloser: Writer + Closer {}
+
+///|
+/// ByteWriter is the trait that wraps the write_byte method.
+/// write_byte writes a single byte.
+pub(open) trait ByteWriter {
+  write_byte(self : Self, b : Byte) -> Unit raise
 }
