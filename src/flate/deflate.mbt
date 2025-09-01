@@ -140,17 +140,15 @@ let levels : Array[CompressionLevel] = [
 
 ///|
 /// Hash multiplier for hash function
-let hashmul : UInt = 0x1e35a7bd
+const Hashmul : UInt = 0x1e35a7bd
 
 ///|
 /// Error for writer closed
-pub suberror WriterClosed String
+pub suberror WriterClosed
 
 ///|
 impl Show for WriterClosed with output(self, logger) {
-  match self {
-    WriterClosed(msg) => logger.write_string("flate: \{msg}")
-  }
+  logger.write_string("flate: WriterClosed")
 }
 
 ///|
@@ -177,7 +175,7 @@ priv struct Compressor {
 
   // input window: unprocessed data is window[index:window_end]
   mut index : Int
-  mut window : Array[Byte]
+  mut window : @bytes.View
   mut window_end : Int
   mut block_start : Int // window index where current tokens start
   mut byte_available : Bool // if true, still need to process window[index-1].
@@ -190,7 +188,7 @@ priv struct Compressor {
   mut length : Int
   mut offset : Int
   max_insert_index : Int // TODO: make mutable when implementing full algorithm
-  mut err : Bool
+  mut err : Error?
 
   // hash_match must be able to contain hashes for the maximum match length.
   hash_match : Array[UInt] // TODO: make mutable when implementing full algorithm
@@ -208,7 +206,7 @@ fn hash4(b : Array[Byte]) -> UInt {
       (b[1].to_uint() << 16) |
       (b[0].to_uint() << 24)
     ) *
-    hashmul
+    Hashmul
   ) >>
   (32 - hashBits)
 }
@@ -223,11 +221,11 @@ fn bulk_hash4(b : Array[Byte], dst : Array[UInt]) -> Unit {
     (b[2].to_uint() << 8) |
     (b[1].to_uint() << 16) |
     (b[0].to_uint() << 24)
-  dst[0] = (hb * hashmul) >> (32 - hashBits)
+  dst[0] = (hb * Hashmul) >> (32 - hashBits)
   let end = b.length() - MinMatchLength + 1
   for i = 1; i < end; i = i + 1 {
     hb = (hb << 8) | b[i + 3].to_uint()
-    dst[i] = (hb * hashmul) >> (32 - hashBits)
+    dst[i] = (hb * Hashmul) >> (32 - hashBits)
   }
 }
 
@@ -287,7 +285,7 @@ fn Compressor::new(w : &@io.Writer) -> Compressor {
     hash_prev: Array::make(WindowSize, 0),
     hash_offset: 1,
     index: 0,
-    window: Array::new(),
+    window: "",
     window_end: 0,
     block_start: 0,
     byte_available: false,
@@ -296,7 +294,7 @@ fn Compressor::new(w : &@io.Writer) -> Compressor {
     length: MinMatchLength - 1,
     offset: 0,
     max_insert_index: 0,
-    err: false,
+    err: None,
     hash_match: Array::make(MaxMatchLength - 1, 0),
   }
 }
@@ -314,18 +312,18 @@ fn Compressor::init(
   d.w = HuffmanBitWriter::new(w)
   match level {
     NoCompression => {
-      d.window = Array::make(MaxStoreBlockSize, 0)
+      d.window = Bytes::make(MaxStoreBlockSize, 0)
       d.fill = Compressor::fill_store
       d.step = Compressor::store
     }
     HuffmanOnly => {
-      d.window = Array::make(MaxStoreBlockSize, 0)
+      d.window = Bytes::make(MaxStoreBlockSize, 0)
       d.fill = Compressor::fill_store
       d.step = Compressor::store_huff
     }
     BestSpeed => {
       d.compression_level = levels[level]
-      d.window = Array::make(MaxStoreBlockSize, 0)
+      d.window = Bytes::make(MaxStoreBlockSize, 0)
       d.fill = Compressor::fill_store
       d.step = Compressor::enc_speed
       // self.best_speed = DeflateFast::new() // TODO: implement
@@ -348,7 +346,7 @@ fn Compressor::init(
 ///|
 /// Initialize deflate state
 fn Compressor::init_deflate(self : Compressor) -> Unit {
-  self.window = Array::make(2 * WindowSize, 0)
+  self.window = Bytes::make(2 * WindowSize, 0)
   self.hash_offset = 1
   self.tokens = Array::make(MaxFlateBlockTokens + 1, literal_token(0))
   self.length = MinMatchLength - 1
@@ -422,67 +420,64 @@ fn Compressor::fill_deflate(self : Compressor, b : Array[Byte]) -> Int {
 
 ///|
 /// Store step function
-fn Compressor::store(self : Compressor) -> Unit {
-  if self.window_end > 0 && (self.window_end == MaxStoreBlockSize || self.sync) {
-    let window_slice = Array::new()
-    for i = 0; i < self.window_end; i = i + 1 {
-      window_slice.push(self.window[i])
+fn Compressor::store(d : Compressor) -> Unit {
+  if d.window_end > 0 && (d.window_end == MaxStoreBlockSize || d.sync) {
+    d.write_stored_block(d.window[:d.window_end]) catch {
+      err => d.err = Some(err)
     }
-    self.err = self.write_stored_block(window_slice)
-    self.window_end = 0
+    d.window_end = 0
   }
 }
 
 ///|
-/// Store huffman step function  
-fn Compressor::store_huff(self : Compressor) -> Unit {
-  if (self.window_end < self.window.length() && !self.sync) ||
-    self.window_end == 0 {
+/// Store huffman step function
+fn Compressor::store_huff(d : Compressor) -> Unit {
+  if (d.window_end < d.window.length() && !d.sync) || d.window_end == 0 {
     return
   }
-  let window_slice = Array::new()
-  for i = 0; i < self.window_end; i = i + 1 {
-    window_slice.push(self.window[i])
+  d.w.write_block_huff(false, d.window[:d.window_end]) catch {
+    err => d.err = Some(err)
   }
-  self.w.write_block_huff(false, window_slice)
-  self.err = self.w.err
-  self.window_end = 0
+  d.window_end = 0
 }
 
 ///|
 /// Encode speed step function
-fn Compressor::enc_speed(self : Compressor) -> Unit {
+fn Compressor::enc_speed(d : Compressor) -> Unit {
   // Fast encoding using DeflateFast encoder
-  if self.window_end == 0 && !self.sync {
+  if d.window_end == 0 && !d.sync {
     return
   }
 
   // Get the input window data
   let input = Array::new()
-  for i = 0; i < self.window_end; i = i + 1 {
-    input.push(self.window[i])
+  for i = 0; i < d.window_end; i = i + 1 {
+    input.push(d.window[i])
   }
   if input.length() > 0 {
     // Use DeflateFast to encode the input
-    self.tokens = self.best_speed.encode(self.tokens, input)
+    d.tokens = d.best_speed.encode(d.tokens, input)
   }
 
   // Add EOF token if we're syncing or have enough tokens
-  if self.sync || self.tokens.length() >= MaxFlateBlockTokens {
+  if d.sync || d.tokens.length() >= MaxFlateBlockTokens {
     // Add EOF marker
-    self.tokens.push(literal_token(256))
+    d.tokens.push(literal_token(256))
 
     // Write tokens using fixed Huffman encoding (fast)
-    self.w.write_fixed_header(self.sync)
-    self.w.write_tokens(
-      self.tokens,
-      fixed_literal_encoding.codes,
-      fixed_offset_encoding.codes,
-    )
-    self.err = self.w.err
-    self.tokens.clear()
+    try {
+      d.w.write_fixed_header(d.sync)
+      d.w.write_tokens(
+        d.tokens,
+        fixed_literal_encoding.codes,
+        fixed_offset_encoding.codes,
+      )
+    } catch {
+      err => d.err = Some(err)
+    }
+    d.tokens.clear()
   }
-  self.window_end = 0
+  d.window_end = 0
 }
 
 ///|
@@ -494,13 +489,18 @@ fn Compressor::deflate_step(self : Compressor) -> Unit {
 
 ///|
 /// Write stored block
-fn Compressor::write_stored_block(self : Compressor, buf : Array[Byte]) -> Bool {
+fn Compressor::write_stored_block(
+  self : Compressor,
+  buf : @bytes.View,
+) -> Unit raise {
   self.w.write_stored_header(buf.length(), false)
-  if self.w.err {
-    return true
+  if self.w.err is Some(err) {
+    raise err
   }
   self.w.write_bytes(buf)
-  self.w.err
+  if self.w.err is Some(err) {
+    raise err
+  }
 }
 
 ///|
@@ -524,8 +524,8 @@ pub impl @io.Writer for Writer with write(self, bytes) {
 ///|
 /// Write method for Compressor
 fn Compressor::write(self : Compressor, b : Array[Byte]) -> Int raise {
-  if self.err {
-    raise WriterClosed("writer closed")
+  if self.err is Some(err) {
+    raise err
   }
   let n = b.length()
   let mut remaining = b
@@ -537,8 +537,8 @@ fn Compressor::write(self : Compressor, b : Array[Byte]) -> Int raise {
       new_remaining.push(remaining[i])
     }
     remaining = new_remaining
-    if self.err {
-      raise WriterClosed("write error")
+    if self.err is Some(err) {
+      raise err
     }
   }
   n
@@ -553,23 +553,23 @@ impl @io.Closer for Writer with close(self) {
 ///|
 /// Close method for Compressor
 fn Compressor::close(self : Compressor) -> Unit raise {
-  if self.err {
-    return
+  if self.err is Some(err) {
+    raise err
   }
   self.sync = true
   (self.step)(self)
-  if self.err {
-    raise WriterClosed("error during close")
+  if self.err is Some(err) {
+    raise err
   }
   self.w.write_stored_header(0, true)
-  if self.w.err {
-    raise WriterClosed("error writing final header")
+  if self.w.err is Some(err) {
+    raise err
   }
   self.w.flush()
-  if self.w.err {
-    raise WriterClosed("error flushing")
+  if self.w.err is Some(err) {
+    raise err
   }
-  self.err = true
+  self.err = Some(WriterClosed)
 }
 
 ///|
@@ -581,23 +581,23 @@ pub fn Writer::flush(self : Writer) -> Unit raise {
 ///|
 /// Sync flush for Compressor
 fn Compressor::sync_flush(self : Compressor) -> Unit raise {
-  if self.err {
-    raise WriterClosed("writer closed")
+  if self.err is Some(err) {
+    raise err
   }
   self.sync = true
   (self.step)(self)
-  if !self.err {
+  if self.err is None {
     self.w.write_stored_header(0, false)
-    if self.w.err {
-      raise WriterClosed("error writing sync header")
+    if self.w.err is Some(err) {
+      raise err
     }
     self.w.flush()
-    if self.w.err {
-      raise WriterClosed("error flushing")
+    if self.w.err is Some(err) {
+      raise err
     }
   }
   self.sync = false
-  if self.err {
-    raise WriterClosed("sync flush error")
+  if self.err is Some(err) {
+    raise err
   }
 }

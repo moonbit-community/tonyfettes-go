@@ -1,26 +1,26 @@
 ///|
 /// Constants for Huffman bit writing
-let offset_code_count = 30
+const OffsetCodeCount = 30
 
 ///|
-let length_codes_start = 257
+const LengthCodesStart = 257
 
 ///|
-let codegen_code_count = 19
+const CodegenCodeCount = 19
 
 ///|
-let bad_code = 255
+const BadCode = 255
 
 ///|
 /// Buffer sizes for efficient writing
-let buffer_flush_size = 240
+const BufferFlushSize = 240
 
 ///|
-let buffer_size : Int = buffer_flush_size + 8
+const BufferSize : Int = BufferFlushSize + 8
 
 ///|
 /// The number of extra bits needed by length code X - LENGTH_CODES_START
-let length_extra_bits : Array[Int] = [
+let length_extra_bits : FixedArray[Int] = [
   0, 0, 0, // 257-259
    0, 0, 0, 0, 0, 1, 1, 1, 1, 2, // 260-272
    2, 2, 2, 3, 3, 3, 3, 4, 4, 4, // 273-282
@@ -29,20 +29,20 @@ let length_extra_bits : Array[Int] = [
 
 ///|
 /// The length indicated by length code X - LENGTH_CODES_START
-let length_base : Array[UInt] = [
+let length_base : FixedArray[UInt] = [
   0, 1, 2, 3, 4, 5, 6, 7, 8, 10, 12, 14, 16, 20, 24, 28, 32, 40, 48, 56, 64, 80,
   96, 112, 128, 160, 192, 224, 255,
 ]
 
 ///|
 /// Offset code word extra bits
-let offset_extra_bits : Array[Int] = [
+let offset_extra_bits : FixedArray[Int] = [
   0, 0, 0, 0, 1, 1, 2, 2, 3, 3, 4, 4, 5, 5, 6, 6, 7, 7, 8, 8, 9, 9, 10, 10, 11, 11,
   12, 12, 13, 13,
 ]
 
 ///|
-let offset_base : Array[UInt] = [
+let offset_base : FixedArray[UInt] = [
   0x000000, 0x000001, 0x000002, 0x000003, 0x000004, 0x000006, 0x000008, 0x00000c,
   0x000010, 0x000018, 0x000020, 0x000030, 0x000040, 0x000060, 0x000080, 0x0000c0,
   0x000100, 0x000180, 0x000200, 0x000300, 0x000400, 0x000600, 0x000800, 0x000c00,
@@ -51,7 +51,7 @@ let offset_base : Array[UInt] = [
 
 ///|
 /// The odd order in which the codegen code sizes are written
-let codegen_order : Array[UInt] = [
+let codegen_order : FixedArray[UInt] = [
   16, 17, 18, 0, 8, 7, 9, 6, 10, 5, 11, 4, 12, 3, 13, 2, 14, 1, 15,
 ]
 
@@ -61,7 +61,7 @@ priv struct HuffmanBitWriter {
   mut writer : &@io.Writer
   mut bits : UInt64 // Data waiting to be written
   mut nbits : UInt // Number of bits in bits field
-  bytes : Array[Byte] // Output buffer
+  bytes : @bytes.View
   codegen_freq : Array[Int]
   mut nbytes : Int // Number of bytes in buffer
   literal_freq : Array[Int]
@@ -70,7 +70,7 @@ priv struct HuffmanBitWriter {
   literal_encoding : HuffmanEncoder
   offset_encoding : HuffmanEncoder
   codegen_encoding : HuffmanEncoder
-  mut err : Bool // Error state
+  mut err : Error?
 } derive(Show)
 
 ///|
@@ -80,16 +80,16 @@ fn HuffmanBitWriter::new(w : &@io.Writer) -> HuffmanBitWriter {
     writer: w,
     bits: 0,
     nbits: 0,
-    bytes: Array::make(buffer_size, 0),
-    codegen_freq: Array::make(codegen_code_count, 0),
+    bytes: Bytes::make(BufferSize, 0),
+    codegen_freq: Array::make(CodegenCodeCount, 0),
     nbytes: 0,
     literal_freq: Array::make(286, 0),
-    offset_freq: Array::make(offset_code_count, 0),
-    codegen: Array::make(286 + offset_code_count + 1, 0),
+    offset_freq: Array::make(OffsetCodeCount, 0),
+    codegen: Array::make(286 + OffsetCodeCount + 1, 0),
     literal_encoding: HuffmanEncoder::new(286),
-    offset_encoding: HuffmanEncoder::new(offset_code_count),
-    codegen_encoding: HuffmanEncoder::new(codegen_code_count),
-    err: false,
+    offset_encoding: HuffmanEncoder::new(OffsetCodeCount),
+    codegen_encoding: HuffmanEncoder::new(CodegenCodeCount),
+    err: None,
   }
 }
 
@@ -103,137 +103,134 @@ fn HuffmanBitWriter::reset(
   self.bits = 0
   self.nbits = 0
   self.nbytes = 0
-  self.err = false
+  self.err = None
 }
 
 ///|
 /// Flush any pending bits and bytes to the output
-fn HuffmanBitWriter::flush(self : HuffmanBitWriter) -> Unit {
-  if self.err {
-    self.nbits = 0
-    return
+fn HuffmanBitWriter::flush(w : HuffmanBitWriter) -> Unit raise {
+  if w.err is Some(err) {
+    w.nbits = 0
+    raise err
   }
-  let mut n = self.nbytes
-  while self.nbits != 0 {
-    self.bytes[n] = (self.bits & 0xFF).to_int().to_byte()
-    self.bits = self.bits >> 8
-    if self.nbits > 8 {
-      self.nbits = self.nbits - 8
+  let mut n = w.nbytes
+  while w.nbits != 0 {
+    w.bytes[n] = (w.bits & 0xFF).to_int().to_byte()
+    w.bits = w.bits >> 8
+    if w.nbits > 8 {
+      w.nbits = w.nbits - 8
     } else {
-      self.nbits = 0
+      w.nbits = 0
     }
     n = n + 1
   }
-  self.bits = 0
-  self.write_bytes_internal(n)
-  self.nbytes = 0
+  w.bits = 0
+  w.write(w.bytes[:n])
+  w.nbytes = 0
 }
 
 ///|
-/// Write bytes to the underlying writer
-fn HuffmanBitWriter::write_bytes_internal(
-  self : HuffmanBitWriter,
-  count : Int,
-) -> Unit {
-  if self.err {
-    return
+fn Bytes::op_set(self : Bytes, index : Int, value : Byte) -> Unit = "%fixedarray.set"
+
+///|
+fn @bytes.View::op_set(self : @bytes.View, index : Int, value : Byte) -> Unit {
+  self.data()[self.start_offset() + index] = value
+}
+
+///|
+fn HuffmanBitWriter::write(w : HuffmanBitWriter, b : @bytes.View) -> Unit raise {
+  if w.err is Some(err) {
+    raise err
   }
-  // For now, we'll need to implement this once we have proper bytes.View support
-  // This is a placeholder that sets error state if called
-  self.err = true
+  ignore(w.writer.write(b))
 }
 
 ///|
 /// Write raw bytes to output
 fn HuffmanBitWriter::write_bytes(
-  self : HuffmanBitWriter,
-  bytes : Array[Byte],
-) -> Unit {
-  if self.err {
+  w : HuffmanBitWriter,
+  bytes : @bytes.View,
+) -> Unit raise {
+  if w.err is Some(err) {
+    raise err
+  }
+  let mut n = w.nbytes
+  if (w.nbits & 7) != 0 {
+    w.err = Some(InternalError("writeBytes with unfinished bits"))
     return
   }
-  let mut n = self.nbytes
-  if (self.nbits & 7) != 0 {
-    self.err = true // writeBytes with unfinished bits
-    return
-  }
-  while self.nbits != 0 {
-    self.bytes[n] = (self.bits & 0xFF).to_int().to_byte()
-    self.bits = self.bits >> 8
-    self.nbits = self.nbits - 8
+  while w.nbits != 0 {
+    w.bytes[n] = (w.bits & 0xFF).to_int().to_byte()
+    w.bits = w.bits >> 8
+    w.nbits = w.nbits - 8
     n = n + 1
   }
   if n != 0 {
-    self.write_bytes_internal(n)
+    w.write(w.bytes[:n])
   }
-  self.nbytes = 0
-  // Write the input bytes directly - placeholder for now
-  // TODO: Implement proper byte array writing
-  self.err = true
+  w.nbytes = 0
+  w.write(bytes)
 }
 
 ///|
 /// Write bits to the output stream
 fn HuffmanBitWriter::write_bits(
-  self : HuffmanBitWriter,
+  w : HuffmanBitWriter,
   b : Int,
   nb : UInt,
-) -> Unit {
-  if self.err {
-    return
+) -> Unit raise {
+  if w.err is Some(err) {
+    raise err
   }
-  self.bits = self.bits | (b.to_uint64() << self.nbits.reinterpret_as_int())
-  self.nbits = self.nbits + nb
-  if self.nbits >= 48 {
-    let bits = self.bits
-    self.bits = self.bits >> 48
-    self.nbits = self.nbits - 48
-    let mut n = self.nbytes
+  w.bits = w.bits | (b.to_uint64() << w.nbits.reinterpret_as_int())
+  w.nbits = w.nbits + nb
+  if w.nbits >= 48 {
+    let bits = w.bits
+    w.bits = w.bits >> 48
+    w.nbits = w.nbits - 48
+    let mut n = w.nbytes
 
     // Write 6 bytes
-    self.bytes[n] = (bits & 0xFF).to_int().to_byte()
-    self.bytes[n + 1] = ((bits >> 8) & 0xFF).to_int().to_byte()
-    self.bytes[n + 2] = ((bits >> 16) & 0xFF).to_int().to_byte()
-    self.bytes[n + 3] = ((bits >> 24) & 0xFF).to_int().to_byte()
-    self.bytes[n + 4] = ((bits >> 32) & 0xFF).to_int().to_byte()
-    self.bytes[n + 5] = ((bits >> 40) & 0xFF).to_int().to_byte()
+    w.bytes[n] = (bits & 0xFF).to_int().to_byte()
+    w.bytes[n + 1] = ((bits >> 8) & 0xFF).to_int().to_byte()
+    w.bytes[n + 2] = ((bits >> 16) & 0xFF).to_int().to_byte()
+    w.bytes[n + 3] = ((bits >> 24) & 0xFF).to_int().to_byte()
+    w.bytes[n + 4] = ((bits >> 32) & 0xFF).to_int().to_byte()
+    w.bytes[n + 5] = ((bits >> 40) & 0xFF).to_int().to_byte()
     n = n + 6
-    if n >= buffer_flush_size {
-      self.write_bytes_internal(n)
+    if n >= BufferFlushSize {
+      w.write(w.bytes[:n])
       n = 0
     }
-    self.nbytes = n
+    w.nbytes = n
   }
 }
 
 ///|
 /// Write a Huffman code to the output
-fn HuffmanBitWriter::write_code(self : HuffmanBitWriter, c : HCode) -> Unit {
-  if self.err {
-    return
+fn HuffmanBitWriter::write_code(w : HuffmanBitWriter, c : HCode) -> Unit raise {
+  if w.err is Some(err) {
+    raise err
   }
-  self.bits = self.bits |
-    (c.code.to_uint64() << self.nbits.reinterpret_as_int())
-  self.nbits = self.nbits + c.len
-  if self.nbits >= 48 {
-    let bits = self.bits
-    self.bits = self.bits >> 48
-    self.nbits = self.nbits - 48
-    let mut n = self.nbytes
-
-    // Write 6 bytes
-    self.bytes[n] = (bits & 0xFF).to_int().to_byte()
-    self.bytes[n + 1] = ((bits >> 8) & 0xFF).to_int().to_byte()
-    self.bytes[n + 2] = ((bits >> 16) & 0xFF).to_int().to_byte()
-    self.bytes[n + 3] = ((bits >> 24) & 0xFF).to_int().to_byte()
-    self.bytes[n + 4] = ((bits >> 32) & 0xFF).to_int().to_byte()
-    self.bytes[n + 5] = ((bits >> 40) & 0xFF).to_int().to_byte()
-    n = n + 6
-    if n >= buffer_flush_size {
-      self.write_bytes_internal(n)
+  w.bits = w.bits | (c.code.to_uint64() << w.nbits.reinterpret_as_int())
+  w.nbits = w.nbits + c.len
+  if w.nbits >= 48 {
+    let bits = w.bits
+    w.bits = w.bits >> 48
+    w.nbits = w.nbits - 48
+    let mut n = w.nbytes
+    w.bytes[n] = bits.to_byte()
+    w.bytes[n + 1] = (bits >> 8).to_byte()
+    w.bytes[n + 2] = (bits >> 16).to_byte()
+    w.bytes[n + 3] = (bits >> 24).to_byte()
+    w.bytes[n + 4] = (bits >> 32).to_byte()
+    w.bytes[n + 5] = (bits >> 40).to_byte()
+    n += 6
+    if n >= BufferFlushSize {
+      w.write(w.bytes[:n])
       n = 0
     }
-    self.nbytes = n
+    w.nbytes = n
   }
 }
 
@@ -262,12 +259,12 @@ fn HuffmanBitWriter::generate_codegen(
       .reinterpret_as_int()
       .to_byte()
   }
-  self.codegen[num_literals + num_offsets] = bad_code.to_byte()
+  self.codegen[num_literals + num_offsets] = BadCode.to_byte()
   let mut size = self.codegen[0].to_int()
   let mut count = 1
   let mut out_index = 0
   let mut in_index = 1
-  while size != bad_code {
+  while size != BadCode {
     let next_size = self.codegen[in_index].to_int()
     if next_size == size {
       count = count + 1
@@ -318,7 +315,7 @@ fn HuffmanBitWriter::generate_codegen(
     count = 1
     in_index = in_index + 1
   }
-  self.codegen[out_index] = bad_code.to_byte()
+  self.codegen[out_index] = BadCode.to_byte()
 }
 
 ///|
@@ -382,9 +379,9 @@ fn HuffmanBitWriter::write_stored_header(
   self : HuffmanBitWriter,
   length : Int,
   is_eof : Bool,
-) -> Unit {
-  if self.err {
-    return
+) -> Unit raise {
+  if self.err is Some(err) {
+    raise err
   }
   let flag = if is_eof { 1 } else { 0 }
   self.write_bits(flag, 3)
@@ -398,9 +395,9 @@ fn HuffmanBitWriter::write_stored_header(
 fn HuffmanBitWriter::write_fixed_header(
   self : HuffmanBitWriter,
   is_eof : Bool,
-) -> Unit {
-  if self.err {
-    return
+) -> Unit raise {
+  if self.err is Some(err) {
+    raise err
   }
   let value = if is_eof { 3 } else { 2 }
   self.write_bits(value, 3)
@@ -414,9 +411,9 @@ fn HuffmanBitWriter::write_dynamic_header(
   num_offsets : Int,
   num_codegens : Int,
   is_eof : Bool,
-) -> Unit {
-  if self.err {
-    return
+) -> Unit raise {
+  if self.err is Some(err) {
+    raise err
   }
   let first_bits = if is_eof { 5 } else { 4 }
   self.write_bits(first_bits, 3)
@@ -431,7 +428,7 @@ fn HuffmanBitWriter::write_dynamic_header(
   while true {
     let code_word = self.codegen[i].to_int()
     i = i + 1
-    if code_word == bad_code {
+    if code_word == BadCode {
       break
     }
     self.write_code(self.codegen_encoding.codes[code_word])
@@ -476,8 +473,8 @@ fn HuffmanBitWriter::index_tokens(
     } else {
       let length = t.length()
       let offset = t.offset()
-      self.literal_freq[length_codes_start +
-      length_code(length).reinterpret_as_int()] = self.literal_freq[length_codes_start +
+      self.literal_freq[LengthCodesStart +
+      length_code(length).reinterpret_as_int()] = self.literal_freq[LengthCodesStart +
         length_code(length).reinterpret_as_int()] +
         1
       self.offset_freq[offset_code(offset).reinterpret_as_int()] = self.offset_freq[offset_code(
@@ -519,9 +516,9 @@ fn HuffmanBitWriter::write_tokens(
   tokens : Array[Token],
   le_codes : Array[HCode],
   oe_codes : Array[HCode],
-) -> Unit {
-  if self.err {
-    return
+) -> Unit raise {
+  if self.err is Some(err) {
+    raise err
   }
   for i = 0; i < tokens.length(); i = i + 1 {
     let t = tokens[i]
@@ -532,7 +529,7 @@ fn HuffmanBitWriter::write_tokens(
       let length = t.length()
       let length_code_val = length_code(length)
       self.write_code(
-        le_codes[length_code_val.reinterpret_as_int() + length_codes_start],
+        le_codes[length_code_val.reinterpret_as_int() + LengthCodesStart],
       )
       let extra_length_bits = length_extra_bits[length_code_val.reinterpret_as_int()].reinterpret_as_uint()
       if extra_length_bits > 0 {
@@ -563,10 +560,10 @@ fn HuffmanBitWriter::write_tokens(
 fn HuffmanBitWriter::write_block_huff(
   self : HuffmanBitWriter,
   eof : Bool,
-  input : Array[Byte],
-) -> Unit {
-  if self.err {
-    return
+  input : @bytes.View,
+) -> Unit raise {
+  if self.err is Some(err) {
+    raise err
   }
 
   // Clear the literal frequency

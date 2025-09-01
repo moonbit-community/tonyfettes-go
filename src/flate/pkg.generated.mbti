@@ -26,7 +26,7 @@ pub suberror InternalError String
 
 type InvalidCompressionLevel
 
-pub suberror WriterClosed String
+pub suberror WriterClosed
 
 // Types and methods
 type CompressionLevel
