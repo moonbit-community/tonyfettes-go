@@ -21,6 +21,9 @@ pub struct Data {
   mut str_offsets : Bytes
   mut rng_lists : Bytes
 
+  // Caches
+  abbrev_cache : Map[UInt64, AbbrevTable]
+
   // Metadata
   big_endian : Bool
   order : ByteOrder
@@ -63,6 +66,7 @@ pub fn Data::new_minimal(abbrev : Bytes, info : Bytes, str : Bytes) -> Data? {
     line_str: b"",
     str_offsets: b"",
     rng_lists: b"",
+    abbrev_cache: {},
     big_endian,
     order,
   })
@@ -168,4 +172,39 @@ pub fn SimpleUnit::addrsize(self : SimpleUnit) -> Int {
 /// Check if 64-bit DWARF
 pub fn SimpleUnit::is_dwarf64(self : SimpleUnit) -> Bool {
   self.is64
+}
+
+// Abbrev types are defined in abbrev.mbt
+
+///|
+/// Get from abbreviation cache
+pub fn Data::get_abbrev_cache(self : Data, off : UInt64) -> AbbrevTable? {
+  self.abbrev_cache.get(off)
+}
+
+///|
+/// Set in abbreviation cache
+pub fn Data::set_abbrev_cache(
+  self : Data,
+  off : UInt64,
+  table : AbbrevTable,
+) -> Unit {
+  self.abbrev_cache.set(off, table)
+}
+
+///|
+/// Create a new Reader for this Data.
+/// The reader is positioned at byte offset 0 in the DWARF "info" section.
+pub fn Data::reader(self : Data) -> Reader {
+  // For now, create empty units array - this would be populated from parse_units
+  let units : Array[SimpleUnit] = []
+  Reader::new(self, units)
+}
+
+///|
+/// Parse compilation units and return a reader
+pub fn Data::reader_with_units(self : Data) -> Result[Reader, String] {
+  // This is a placeholder - would need full unit parsing implementation
+  let units : Array[SimpleUnit] = []
+  Ok(Reader::new(self, units))
 }

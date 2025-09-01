@@ -58,6 +58,7 @@ pub struct Buffer {
 /// Reference to a data format implementation
 pub enum DataFormatRef {
   UnknownFormatRef(UnknownFormat)
+  DataFormatRefFromUnit(DataFormatRefFromUnit)
   // Add more format types as needed
 } derive(Show)
 
@@ -66,6 +67,7 @@ pub enum DataFormatRef {
 pub fn data_format_ref_version(format_ref : DataFormatRef) -> Int {
   match format_ref {
     UnknownFormatRef(f) => DataFormat::version(f)
+    DataFormatRefFromUnit(f) => DataFormat::version(f)
   }
 }
 
@@ -73,6 +75,7 @@ pub fn data_format_ref_version(format_ref : DataFormatRef) -> Int {
 pub fn data_format_ref_dwarf64(format_ref : DataFormatRef) -> (Bool, Bool) {
   match format_ref {
     UnknownFormatRef(f) => DataFormat::dwarf64(f)
+    DataFormatRefFromUnit(f) => DataFormat::dwarf64(f)
   }
 }
 
@@ -80,6 +83,7 @@ pub fn data_format_ref_dwarf64(format_ref : DataFormatRef) -> (Bool, Bool) {
 pub fn data_format_ref_addrsize(format_ref : DataFormatRef) -> Int {
   match format_ref {
     UnknownFormatRef(f) => DataFormat::addrsize(f)
+    DataFormatRefFromUnit(f) => DataFormat::addrsize(f)
   }
 }
 
@@ -176,7 +180,7 @@ pub fn Buffer::bytes(self : Buffer, n : Int) -> Bytes {
 /// Skip n bytes  
 pub fn Buffer::skip(self : Buffer, n : Int) -> Unit {
   let _discarded = self.bytes(n)
-
+  ()
 }
 
 ///|
@@ -361,6 +365,9 @@ pub fn Buffer::error(self : Buffer, s : String) -> Unit {
   if self.err is None {
     self.data = b""
     self.err = Some(DecodeError::new(self.name, self.off, s))
+    ()
+  } else {
+    ()
   }
 }
 
