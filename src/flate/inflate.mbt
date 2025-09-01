@@ -189,31 +189,9 @@ let code_order = [
 ]
 
 ///|
-impl Show for ReadError with output(self, logger) {
-  match self {
-    ReadError(offset~, error) =>
-      logger.write_string("flate: read error at offset \{offset}: \{error}")
-  }
-}
-
-///|
-pub suberror WriteError {
-  WriteError(offset~ : Int64, Error)
-}
-
-///|
 pub suberror InternalError String
 
 ///|
-impl Show for WriteError with output(self, logger) {
-  match self {
-    WriteError(offset~, error) =>
-      logger.write_string("flate: write error at offset \{offset}: \{error}")
-  }
-}
-
-///|
-/// FlateReader trait that combines io.Reader and io.ByteReader
 pub(open) trait Reader: @io.Reader + @io.ByteReader {}
 
 ///|
@@ -332,11 +310,6 @@ fn get_fixed_huffman_decoder() -> HuffmanDecoder {
     Some(decoder) => decoder
     None => abort("Fixed Huffman decoder not initialized")
   }
-}
-
-///|
-pub suberror ReadError {
-  ReadError(offset~ : Int64, Error)
 }
 
 ///|
@@ -815,14 +788,6 @@ impl Resetter for Decompressor with reset(
   self.copy_dist = 0
   self.r = r
   self.dict.init(MaxMatchOffset, dict)
-}
-
-///|
-fn[Reader : @io.Reader + @io.ByteReader] Decompressor::make_reader(
-  f : Decompressor,
-  r : Reader,
-) -> Unit {
-  f.r = r
 }
 
 ///|

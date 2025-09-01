@@ -30,16 +30,6 @@ pub suberror InternalError String
 
 type InvalidCompressionLevel
 
-pub suberror ReadError {
-  ReadError(offset~ : Int64, Error)
-}
-
-pub suberror WriteError {
-  WriteError(offset~ : Int64, Error)
-}
-
-pub suberror WriterClosed
-
 // Types and methods
 type Writer
 fn Writer::flush(Self) -> Unit raise

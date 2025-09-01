@@ -144,7 +144,7 @@ const Hashmul : UInt = 0x1e35a7bd
 
 ///|
 /// Error for writer closed
-pub suberror WriterClosed
+priv suberror WriterClosed
 
 ///|
 impl Show for WriterClosed with output(self, logger) {
