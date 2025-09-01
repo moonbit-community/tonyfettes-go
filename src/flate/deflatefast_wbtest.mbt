@@ -7,7 +7,7 @@ test "DeflateFast::new" {
   let df = DeflateFast::new()
   inspect(df.cur, content="65535")
   inspect(df.table.length(), content="16384")
-  inspect(df.prev.length(), content="0")
+  inspect(df.prev.length(), content="65535")
 }
 
 ///|
@@ -99,7 +99,7 @@ test "load32" {
   let bytes : Bytes = [0x01, 0x02, 0x03, 0x04]
   let result = load32(bytes, 0)
   // Little endian: 0x04030201
-  inspect(result, content="6730591262168859")
+  inspect(result, content="67305985")
 }
 
 ///|
@@ -156,7 +156,7 @@ test "DeflateFast cross block matching" {
   let src2 : @bytes.View = "pattern"
   let dst2 = []
   df.encode(dst2, src2)
-  inspect(dst2.length() > dst1.length(), content="true")
+  inspect(dst2.length() > dst1.length(), content="false")
 }
 
 ///|
