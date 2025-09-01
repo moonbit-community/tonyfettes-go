@@ -94,6 +94,84 @@ fn HuffmanBitWriter::new(w : &@io.Writer) -> HuffmanBitWriter {
 }
 
 ///|
+/// Write block using dynamic Huffman encoding
+/// writeBlockDynamic encodes and writes the given tokens as dynamic
+/// Huffman encoded data. If input is supplied and the compression savings
+/// are below 1/16th of the input size the block is stored.
+fn HuffmanBitWriter::write_block_dynamic(
+  self : HuffmanBitWriter,
+  tokens : Array[Token],
+  eof : Bool,
+  input : @bytes.View,
+) -> Unit raise {
+  if self.err is Some(_) {
+    return
+  }
+
+  // Add end-of-block marker token (literal 256)
+  let tokens_with_eof = Array::new()
+  for i = 0; i < tokens.length(); i = i + 1 {
+    tokens_with_eof.push(tokens[i])
+  }
+  tokens_with_eof.push(literal_token(256))
+
+  // Index tokens to get frequency counts
+  let (num_literals, num_offsets) = self.index_tokens(tokens_with_eof)
+
+  // Generate codegen and frequency tables for dynamic encoding
+  self.generate_codegen(
+    num_literals,
+    num_offsets,
+    self.literal_encoding,
+    self.offset_encoding,
+  )
+
+  // For now, we use simplified size estimation
+  // TODO: Implement proper dynamic size calculation
+  let dynamic_size = self.estimate_dynamic_size(tokens_with_eof)
+
+  // Check if stored encoding would be better
+  let (stored_size, storable) = self.stored_size(input)
+  if storable && stored_size < dynamic_size + (dynamic_size >> 4) {
+    self.write_stored_header(input.length(), eof)
+    self.write_bytes(input)
+    return
+  }
+
+  // For now, fall back to fixed Huffman encoding since we don't have
+  // full dynamic Huffman generation implemented yet
+  // TODO: Implement full dynamic Huffman tree generation and encoding
+  self.write_fixed_header(eof)
+  self.write_tokens(
+    tokens_with_eof,
+    fixed_literal_encoding.codes,
+    fixed_offset_encoding.codes,
+  )
+}
+
+///|
+/// Estimate dynamic encoding size (simplified version)
+fn HuffmanBitWriter::estimate_dynamic_size(
+  self : HuffmanBitWriter,
+  tokens : Array[Token],
+) -> Int {
+  // Simplified estimation - in practice this would use proper Huffman tree generation
+  // For now, assume it's roughly equivalent to fixed encoding
+  let mut size = 0
+  for i = 0; i < tokens.length(); i = i + 1 {
+    let token = tokens[i]
+    if (token.value & TypeMask) < MatchType {
+      // Literal token - assume 8 bits on average
+      size += 8
+    } else {
+      // Match token - assume 12 bits for length + 12 bits for offset on average
+      size += 24
+    }
+  }
+  size
+}
+
+///|
 /// Reset the writer with a new output writer
 fn HuffmanBitWriter::reset(
   self : HuffmanBitWriter,
@@ -364,7 +442,7 @@ fn HuffmanBitWriter::fixed_size(
 /// Calculate stored size including header
 fn HuffmanBitWriter::stored_size(
   self : HuffmanBitWriter,
-  input : Array[Byte],
+  input : @bytes.View,
 ) -> (Int, Bool) {
   if input.length() <= 65535 { // maxStoreBlockSize
     ((input.length() + 5) * 8, true)
@@ -598,24 +676,4 @@ fn HuffmanBitWriter::write_block_huff(
 
   // Write the EOF marker
   self.write_code(fixed_literal_encoding.codes[256])
-}
-
-///|
-/// Write block using dynamic Huffman encoding
-/// writeBlockDynamic encodes and writes the given tokens as dynamic
-/// Huffman encoded data. If input is supplied and the compression savings
-/// are below 1/16th of the input size the block is stored.
-fn HuffmanBitWriter::write_block_dynamic(
-  self : HuffmanBitWriter,
-  tokens : Array[Token],
-  eof : Bool,
-  input : @bytes.View,
-) -> Unit raise {
-  if self.err is Some(_) {
-    return
-  }
-
-  // For now, we'll fall back to Huffman-only encoding
-  // TODO: Implement proper dynamic Huffman encoding
-  self.write_block_huff(eof, input)
 }
