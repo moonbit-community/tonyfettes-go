@@ -28,6 +28,14 @@ pub fn Adler32::write(self : Adler32, data : @bytes.View) -> Unit {
 }
 
 ///|
+pub fn Adler32::write_bytes(self : Adler32, data : Bytes) -> Unit {
+  for i = 0; i < data.length(); i = i + 1 {
+    self.a = (self.a + data[i].to_uint()) % mod_adler
+    self.b = (self.b + self.a) % mod_adler
+  }
+}
+
+///|
 /// Update the checksum with new data from an Array
 pub fn Adler32::write_array(self : Adler32, data : Array[Byte]) -> Unit {
   for i = 0; i < data.length(); i = i + 1 {

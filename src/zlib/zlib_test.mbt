@@ -28,20 +28,20 @@ test "adler32 incremental vs one-shot" {
 
 ///|
 test "binary encoding big endian" {
-  let buf = Array::make(4, b'\x00')
+  let buf : FixedArray[Byte] = FixedArray::make(4, 0)
 
   // Test UInt16
   @zlib.put_uint16_be(buf, 0, 0x1234)
-  assert_eq(buf[0], b'\x12')
-  assert_eq(buf[1], b'\x34')
+  assert_eq(buf[0], 0x12)
+  assert_eq(buf[1], 0x34)
   assert_eq(@zlib.get_uint16_be_array(buf, 0), 0x1234)
 
   // Test UInt32
   @zlib.put_uint32_be(buf, 0, 0x12345678)
-  assert_eq(buf[0], b'\x12')
-  assert_eq(buf[1], b'\x34')
-  assert_eq(buf[2], b'\x56')
-  assert_eq(buf[3], b'\x78')
+  assert_eq(buf[0], 0x12)
+  assert_eq(buf[1], 0x34)
+  assert_eq(buf[2], 0x56)
+  assert_eq(buf[3], 0x78)
   assert_eq(@zlib.get_uint32_be_array(buf, 0), 0x12345678)
 }
 
@@ -50,7 +50,7 @@ test "writer basic functionality" {
   let writer = @zlib.Writer::new()
 
   // Write some test data
-  let test_data = [b'h', b'e', b'l', b'l', b'o']
+  let test_data : Bytes = "hello"
   writer.write(test_data)
   writer.close()
   let output = writer.to_bytes()
@@ -69,14 +69,14 @@ test "writer basic functionality" {
 test "reader basic functionality" {
   // Create a minimal valid ZLIB stream
   let writer = @zlib.Writer::new()
-  let test_data = [b'h', b'e', b'l', b'l', b'o']
+  let test_data : Bytes = "hello"
   writer.write(test_data)
   writer.close()
   let zlib_data = writer.to_bytes()
 
   // Now try to read it back
   let reader = @zlib.Reader::new(zlib_data)
-  let buf = Array::make(10, b'\x00')
+  let buf : FixedArray[Byte] = FixedArray::make(10, 0)
   try {
     let n = reader.read(buf)
     assert_eq(n, 5) // Should read the 5 bytes we wrote
@@ -92,10 +92,7 @@ test "reader basic functionality" {
 
 ///|
 test "round trip compress decompress" {
-  let original_data = [
-    b'T', b'h', b'i', b's', b' ', b'i', b's', b' ', b'a', b' ', b't', b'e', b's',
-    b't',
-  ]
+  let original_data : Bytes = "This is a test"
 
   // Compress
   let writer = @zlib.Writer::new()
@@ -105,7 +102,7 @@ test "round trip compress decompress" {
 
   // Decompress
   let reader = @zlib.Reader::new(compressed)
-  let buf = Array::make(20, b'\x00')
+  let buf : FixedArray[Byte] = FixedArray::make(20, 0)
   try {
     let n = reader.read(buf)
     assert_eq(n, original_data.length())
@@ -121,9 +118,9 @@ test "round trip compress decompress" {
 
 ///|
 test "writer with dictionary" {
-  let dict = [b'd', b'i', b'c', b't']
+  let dict : Bytes = "dict"
   let writer = @zlib.Writer::new_dict(dict)
-  let test_data = [b'h', b'e', b'l', b'l', b'o']
+  let test_data : Bytes = "hello"
   writer.write(test_data)
   writer.close()
   let output = writer.to_bytes()
@@ -138,9 +135,9 @@ test "writer with dictionary" {
 ///|
 test "header validation" {
   // Test invalid compression method
-  let bad_data1 = [b'\x77', b'\x01'] // CM = 7 instead of 8
+  let bad_data1 : Bytes = "\x77\x01" // CM = 7 instead of 8
   let reader1 = @zlib.Reader::new(bad_data1)
-  let buf = Array::make(1, b'\x00')
+  let buf : FixedArray[Byte] = FixedArray::make(1, 0)
   try {
     let _ = reader1.read(buf)
     fail("should reject invalid compression method")
@@ -150,7 +147,7 @@ test "header validation" {
   }
 
   // Test invalid checksum
-  let bad_data2 = [b'\x78', b'\x00'] // Header checksum not divisible by 31
+  let bad_data2 : Bytes = b"\x78\x00" // Header checksum not divisible by 31
   let reader2 = @zlib.Reader::new(bad_data2)
   try {
     let _ = reader2.read(buf)

@@ -55,7 +55,7 @@ pub fn Writer::write(self : Writer, data : Bytes) -> Unit {
   }
 
   // Update digest with original data
-  self.digest.write_array(data)
+  self.digest.write_bytes(data)
 
   // For this simplified implementation, we're not including actual deflate compression
   // In a complete implementation, this would use a flate compressor to compress the data

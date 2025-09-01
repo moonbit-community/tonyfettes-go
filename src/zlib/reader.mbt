@@ -57,7 +57,7 @@ fn Reader::read_header(self : Reader) -> Unit raise {
 
 ///|
 /// Read some bytes from the stream
-pub fn Reader::read(self : Reader, buf : Bytes) -> Int raise {
+pub fn Reader::read(self : Reader, buf : FixedArray[Byte]) -> Int raise {
   // Read header if not already read
   if not(self.header_read) {
     self.read_header()
