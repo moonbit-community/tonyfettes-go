@@ -255,7 +255,7 @@ pub fn limit_reader(r : &Reader, n : Int64) -> LimitedReader {
 }
 
 ///|
-impl Reader for LimitedReader with read(self, p) {
+pub impl Reader for LimitedReader with read(self, p) {
   if self.n <= 0 {
     raise Eof
   }

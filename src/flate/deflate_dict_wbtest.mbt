@@ -21,11 +21,6 @@ fn TestWriter::new() -> TestWriter {
 }
 
 ///|
-fn TestWriter::to_bytes(self : TestWriter) -> Array[Byte] {
-  self.buffer.val
-}
-
-///|
 test "new_writer_dict basic functionality" {
   let w = TestWriter::new()
   let dict : Array[Byte] = Array::new()
