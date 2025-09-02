@@ -619,7 +619,7 @@ fn HuffmanBitWriter::index_tokens(
   }
   for i = 0; i < tokens.length(); i = i + 1 {
     let t = tokens[i]
-    if (t.value & TypeMask) < MatchType {
+    if (t.0 & TypeMask) < MatchType {
       self.literal_freq[t.literal().reinterpret_as_int()] = self.literal_freq[t
         .literal()
         .reinterpret_as_int()] +
@@ -674,7 +674,7 @@ fn HuffmanBitWriter::write_tokens(
   }
   for i = 0; i < tokens.length(); i = i + 1 {
     let t = tokens[i]
-    if (t.value & TypeMask) < MatchType {
+    if (t.0 & TypeMask) < MatchType {
       self.write_code(le_codes[t.literal().reinterpret_as_int()])
     } else {
       // Write the length

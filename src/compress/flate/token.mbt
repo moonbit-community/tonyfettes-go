@@ -55,38 +55,36 @@ let offset_codes : FixedArray[UInt] = [
 
 ///|
 /// Token represents a literal or match token
-priv struct Token {
-  value : UInt
-} derive(Show)
+priv struct Token(UInt)
 
 ///|
 /// Convert a literal into a literal token
 fn literal_token(literal : UInt) -> Token {
-  Token::{ value: LiteralType + literal }
+  Token(LiteralType + literal)
 }
 
 ///|
 /// Convert a <xlength, xoffset> pair into a match token
 fn match_token(xlength : UInt, xoffset : UInt) -> Token {
-  Token::{ value: MatchType + (xlength << LengthShift) + xoffset }
+  Token(MatchType + (xlength << LengthShift) + xoffset)
 }
 
 ///|
 /// Returns the literal of a literal token
 fn Token::literal(self : Token) -> UInt {
-  self.value - LiteralType
+  self.0 - LiteralType
 }
 
 ///|
 /// Returns the extra offset of a match token
 fn Token::offset(self : Token) -> UInt {
-  self.value & OffsetMask
+  self.0 & OffsetMask
 }
 
 ///|
 /// Returns the length of a match token
 fn Token::length(self : Token) -> UInt {
-  (self.value - MatchType) >> LengthShift
+  (self.0 - MatchType) >> LengthShift
 }
 
 ///|
