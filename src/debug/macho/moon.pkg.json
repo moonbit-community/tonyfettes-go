@@ -1,9 +1,8 @@
 {
   "import": [
     "moonbitlang/x/fs",
-    "gmlewis/zlib",
-    "gmlewis/io",
-    "gmlewis/flate"
+    "tonyfettes/go/io",
+    "tonyfettes/go/compress/zlib"
   ],
   "test-import": [
     "moonbitlang/x/encoding"

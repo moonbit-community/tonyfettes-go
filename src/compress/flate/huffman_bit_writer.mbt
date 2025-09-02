@@ -71,7 +71,7 @@ priv struct HuffmanBitWriter {
   offset_encoding : HuffmanEncoder
   codegen_encoding : HuffmanEncoder
   mut err : Error?
-} derive(Show)
+}
 
 ///|
 /// Create a new HuffmanBitWriter

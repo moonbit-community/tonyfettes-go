@@ -194,7 +194,7 @@ priv struct Compressor {
 
   // hash_match must be able to contain hashes for the maximum match length.
   hash_match : Array[UInt] // TODO: make mutable when implementing full algorithm
-} derive(Show)
+}
 
 ///|
 /// hash4 returns a hash representation of the first 4 bytes
@@ -251,7 +251,7 @@ fn match_len(a : Array[Byte], b : Array[Byte], max : Int) -> Int {
 struct Writer {
   d : Compressor
   dict : Array[Byte]
-} derive(Show)
+}
 
 ///|
 /// NewWriter returns a new Writer compressing data at the given level.
@@ -843,7 +843,7 @@ pub fn new_writer_dict(
 /// DictWriter is a helper that wraps an io.Writer for dictionary support
 priv struct DictWriter {
   w : &@io.Writer
-} derive(Show)
+}
 
 ///|
 /// Create a new DictWriter

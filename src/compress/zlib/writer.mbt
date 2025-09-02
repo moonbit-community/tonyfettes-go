@@ -1,64 +1,164 @@
-///|
-/// ZLIB writer implementation with proper error handling
+// Copyright 2009 The Go Authors. All rights reserved.
+// Use of this source code is governed by a BSD-style
+// license that can be found in the LICENSE file.
 
 ///|
-/// Write the ZLIB header (RFC 1950 section 2.2)
-fn Writer::write_header(self : Writer) -> Unit raise {
-  if self.header_written {
-    return
+/// A Writer takes data written to it and writes the compressed
+/// form of that data to an underlying writer (see NewWriter).
+pub struct Writer {
+  mut w : &@io.Writer
+  level : Int
+  dict : Bytes
+  mut compressor : @flate.Writer?
+  mut digest : Adler32
+  mut err : Error?
+  scratch : FixedArray[Byte]
+  mut wrote_header : Bool
+}
+
+///|
+/// NewWriter creates a new Writer.
+/// Writes to the returned Writer are compressed and written to w.
+///
+/// It is the caller's responsibility to call Close on the Writer when done.
+/// Writes may be buffered and not flushed until Close.
+pub fn new_writer(w : &@io.Writer) -> Writer {
+  let (z, _) = new_writer_level_dict(w, DefaultCompression, b"")
+  z
+}
+
+///|
+/// NewWriterLevel is like NewWriter but specifies the compression level instead
+/// of assuming DefaultCompression.
+///
+/// The compression level can be DefaultCompression, NoCompression, HuffmanOnly
+/// or any integer value between BestSpeed and BestCompression inclusive.
+/// The error returned will be nil if the level is valid.
+pub fn new_writer_level(w : &@io.Writer, level : Int) -> (Writer, Error?) {
+  new_writer_level_dict(w, level, b"")
+}
+
+///|
+/// NewWriterLevelDict is like NewWriterLevel but specifies a dictionary to
+/// compress with.
+///
+/// The dictionary may be empty. If not, its contents should not be modified until
+/// the Writer is closed.
+pub fn new_writer_level_dict(
+  w : &@io.Writer,
+  level : Int,
+  dict : Bytes,
+) -> (Writer, Error?) {
+  if level < HuffmanOnly || level > BestCompression {
+    return (
+      Writer::{
+        w,
+        level: DefaultCompression,
+        dict: b"",
+        compressor: None,
+        digest: Adler32::new(),
+        err: None,
+        scratch: FixedArray::make(4, 0),
+        wrote_header: false,
+      },
+      Some(InvalidCompressionLevel(level)),
+    )
   }
+  (
+    Writer::{
+      w,
+      level,
+      dict,
+      compressor: None,
+      digest: Adler32::new(),
+      err: None,
+      scratch: FixedArray::make(4, 0),
+      wrote_header: false,
+    },
+    None,
+  )
+}
 
+///|
+/// Reset clears the state of the Writer z such that it is equivalent to its
+/// initial state from NewWriterLevel or NewWriterLevelDict, but instead writing
+/// to w.
+pub fn Writer::reset(self : Writer, w : &@io.Writer) -> Unit {
+  self.w = w
+  // z.level and z.dict left unchanged.
+  match self.compressor {
+    Some(compressor) => compressor.reset(w)
+    None => ()
+  }
+  self.digest.reset()
+  self.err = None
+  for i = 0; i < 4; i = i + 1 {
+    self.scratch[i] = 0
+  }
+  self.wrote_header = false
+}
+
+///|
+/// writeHeader writes the ZLIB header.
+fn Writer::write_header(self : Writer) -> Unit raise {
+  self.wrote_header = true
   // ZLIB has a two-byte header (as documented in RFC 1950).
   // The first four bits is the CINFO (compression info), which is 7 for the default deflate window size.
   // The next four bits is the CM (compression method), which is 8 for deflate.
   self.scratch[0] = 0x78
-
   // The next two bits is the FLEVEL (compression level). The four values are:
   // 0=fastest, 1=fast, 2=default, 3=best.
   // The next bit, FDICT, is set if a dictionary is given.
   // The final five FCHECK bits form a mod-31 checksum.
-  self.scratch[1] = 0x80 // Default compression level (2 << 6)
-  if self.dict.length() > 0 {
+  match self.level {
+    -2 | 0 | 1 => self.scratch[1] = 0 << 6
+    2 | 3 | 4 | 5 => self.scratch[1] = 1 << 6
+    6 | -1 => self.scratch[1] = 2 << 6
+    7 | 8 | 9 => self.scratch[1] = 3 << 6
+    _ => abort("unreachable")
+  }
+  if self.dict.length() != 0 {
     self.scratch[1] = self.scratch[1] | (1 << 5)
   }
-
-  // Calculate checksum to make header divisible by 31
-  // Create a temporary header with current values to calculate check bits
-  let temp_header = (self.scratch[0].to_uint() << 8) | self.scratch[1].to_uint()
-  let remainder = temp_header % 31
-  let check_bits : UInt = if remainder == 0 { 0 } else { 31 - remainder }
-  self.scratch[1] = (self.scratch[1].to_uint() + check_bits).to_byte()
-
-  // Write the 2-byte header to underlying writer
-  ignore(self.w.write([self.scratch[0], self.scratch[1]]))
-
-  // If using a dictionary, write its Adler-32 checksum
-  if self.dict.length() > 0 {
-    let dict_checksum = checksum(self.dict)
-    put_uint32_be(self.scratch, 0, dict_checksum)
-    let checksum_bytes : Bytes = [
-      self.scratch[0],
-      self.scratch[1],
-      self.scratch[2],
-      self.scratch[3],
-    ]
-    ignore(self.w.write(checksum_bytes))
+  self.scratch[1] = self.scratch[1] +
+    (31 - get_uint16_be_array(self.scratch, 0) % 31).to_byte()
+  let header_bytes = Bytes::make(2, 0)
+  header_bytes[0] = self.scratch[0]
+  header_bytes[1] = self.scratch[1]
+  ignore(self.w.write(header_bytes)) catch {
+    e => raise e
   }
-  self.header_written = true
+  if self.dict.length() != 0 {
+    // The next four bytes are the Adler-32 checksum of the dictionary.
+    put_uint32_be(self.scratch, 0, checksum_bytes(self.dict))
+    let checksum_bytes = Bytes::make(4, 0)
+    for i = 0; i < 4; i = i + 1 {
+      checksum_bytes[i] = self.scratch[i]
+    }
+    ignore(self.w.write(checksum_bytes)) catch {
+      e => raise e
+    }
+  }
+  if self.compressor.is_empty() {
+    // Initialize deflater unless the Writer is being reused
+    // after a Reset call.
+    self.compressor = Some(
+      @flate.new_writer_dict(
+        self.w,
+        self.level,
+        Array::from_iter(self.dict.iter()),
+      ),
+    )
+    self.digest = Adler32::new()
+  }
 }
 
 ///|
-/// Write data to the ZLIB stream
-/// Returns the number of bytes written from data and any error encountered
-pub fn Writer::write(self : Writer, data : Bytes) -> Int raise {
-  // Check for previous errors
-  match self.err {
-    Some(err) => raise err
-    None => ()
-  }
-
-  // Write header if not already written
-  if not(self.header_written) {
+/// Write writes a compressed form of p to the underlying io.Writer. The
+/// compressed bytes are not necessarily flushed until the Writer is closed or
+/// explicitly flushed.
+pub impl @io.Writer for Writer with write(self, p) {
+  if not(self.wrote_header) {
     self.write_header() catch {
       e => {
         self.err = Some(e)
@@ -66,74 +166,64 @@ pub fn Writer::write(self : Writer, data : Bytes) -> Int raise {
       }
     }
   }
-  if data.length() == 0 {
+  match self.err {
+    Some(err) => raise err
+    None => ()
+  }
+  if p.length() == 0 {
     return 0
   }
-
-  // Update digest with original data
-  self.digest.write_bytes(data)
-
-  // For this simplified implementation, we're not including actual deflate compression
-  // In a complete implementation, this would use a flate compressor to compress the data
-  // For now, we'll just write the data directly (this would be replaced with compression)
-  try {
-    let n = self.w.write(data)
-    return n
-  } catch {
-    e => {
-      self.err = Some(e)
-      raise e
+  let n = match self.compressor {
+    Some(compressor) =>
+      compressor.write(p) catch {
+        e => {
+          self.err = Some(e)
+          raise e
+        }
+      }
+    None => {
+      self.err = Some(InternalError("compressor not initialized"))
+      raise InternalError("compressor not initialized")
     }
   }
+  self.digest.write(p)
+  n
 }
 
 ///|
-/// Flush any pending data to the underlying writer
+/// Flush flushes the Writer to its underlying io.Writer.
 pub fn Writer::flush(self : Writer) -> Unit raise {
-  // Check for previous errors
-  match self.err {
-    Some(err) => raise err
-    None => ()
+  if !self.wrote_header {
+    self.write_header()
   }
-  if not(self.header_written) {
-    self.write_header() catch {
-      e => {
-        self.err = Some(e)
-        raise e
-      }
-    }
+  if self.err is Some(err) {
+    raise err
   }
-
-  // In a complete implementation, this would flush the underlying compressor
-  // For now, no additional flushing is needed since we write directly
+  if self.compressor is Some(compressor) {
+    compressor.flush()
+  }
 }
 
 ///|
-/// Close the writer and write the final checksum
-pub fn Writer::close(self : Writer) -> Unit raise {
-  // Check for previous errors
-  match self.err {
-    Some(err) => raise err
-    None => ()
+/// Close closes the Writer, flushing any unwritten data to the underlying
+/// io.Writer, but does not close the underlying io.Writer.
+impl @io.Closer for Writer with close(self) {
+  if !self.wrote_header {
+    self.write_header()
   }
-  if not(self.header_written) {
-    self.write_header() catch {
-      e => {
-        self.err = Some(e)
-        raise e
-      }
-    }
+  if self.err is Some(err) {
+    raise err
   }
-
-  // Write the Adler-32 checksum (4 bytes, big-endian)
-  let checksum_val = self.digest.sum32()
-  put_uint32_be(self.scratch, 0, checksum_val)
-  let checksum_bytes : Bytes = [
-    self.scratch[0],
-    self.scratch[1],
-    self.scratch[2],
-    self.scratch[3],
-  ]
+  if self.compressor is Some(compressor) {
+    compressor.close()
+  }
+  let checksum = self.digest.sum32()
+  // ZLIB (RFC 1950) is big-endian, unlike GZIP (RFC 1952).
+  put_uint32_be(self.scratch, 0, checksum)
+  let checksum_bytes = Bytes::make(4, 0)
+  for i = 0; i < 4; i = i + 1 {
+    checksum_bytes[i] = self.scratch[i]
+  }
   ignore(self.w.write(checksum_bytes)) catch {
     e => {
       self.err = Some(e)
@@ -143,23 +233,4 @@ pub fn Writer::close(self : Writer) -> Unit raise {
 }
 
 ///|
-/// Reset clears the state of the Writer such that it is equivalent to its
-/// initial state from new, but instead writing to w.
-/// This permits reusing a Writer rather than allocating a new one.
-pub fn Writer::reset(self : Writer, w : &@io.Writer) -> Unit {
-  self.w = w
-  self.digest.reset()
-  self.header_written = false
-  self.err = None
-  // Reset scratch buffer
-  for i = 0; i < 4; i = i + 1 {
-    self.scratch[i] = 0
-  }
-}
-
-///|
-/// Reset the writer with a new underlying writer and dictionary
-pub fn Writer::reset_dict(self : Writer, w : &@io.Writer, dict : Bytes) -> Unit {
-  self.reset(w)
-  self.dict = dict
-}
+suberror InvalidCompressionLevel Int

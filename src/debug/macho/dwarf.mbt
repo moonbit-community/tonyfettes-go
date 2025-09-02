@@ -19,22 +19,9 @@ pub fn File::dwarf(self : File, file_data : Bytes) -> DwarfData? raise {
     let b = s.data(file_data)
     if b.length() >= 12 && b is [.. "ZLIB", ..] {
       let dlen = read_uint64_be(b, 4)
-      let input_buffer = @io.Buffer::from_bytes([..b[12:]])
-      let (r, err) = @zlib.Reader::new(input_buffer)
-      if err is Some(err) {
-        raise err
-      }
-      let output_buffer = @io.Buffer::new(size_hint=dlen.to_int())
-      let (_, copy_err) = @io.copy(output_buffer, r)
-      match copy_err {
-        Some(_) =>
-          raise ParseError::MissingData(
-            offset=0L,
-            expected="Complete ZLIB decompressed data",
-          )
-        None => ()
-      }
-      let _ = r.close()
+      let r = @zlib.Reader::new([..b[12:]])
+      let output_buffer = @buffer.new(size_hint=dlen.to_int())
+      let _ = @io.copy_n(output_buffer, r, dlen.to_int())
       output_buffer.to_bytes()
     } else {
       b

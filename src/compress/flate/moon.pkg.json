@@ -1,5 +1,5 @@
 {
   "import": [
-    "tonyfettes/debugo/io"
+    "tonyfettes/go/io"
   ]
 }
