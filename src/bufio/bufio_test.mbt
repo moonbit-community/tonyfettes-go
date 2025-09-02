@@ -1,0 +1,350 @@
+// Tests for bufio package
+
+///|
+fn Bytes::op_set(self : Bytes, index : Int, value : Byte) -> Unit = "%fixedarray.set"
+
+///|
+fn @bytes.View::op_set(self : @bytes.View, index : Int, value : Byte) -> Unit {
+  self.data()[self.start_offset() + index] = value
+}
+
+///|
+// Simple test reader that provides a fixed byte sequence
+struct TestReader {
+  data : Bytes
+  mut pos : Int
+}
+
+///|
+fn TestReader::new(data : Bytes) -> TestReader {
+  TestReader::{ data, pos: 0 }
+}
+
+///|
+impl @io.Reader for TestReader with read(self, p) {
+  if self.pos >= self.data.length() {
+    raise @io.Eof
+  }
+  let n = if p.length() > self.data.length() - self.pos {
+    self.data.length() - self.pos
+  } else {
+    p.length()
+  }
+  for i = 0; i < n; i = i + 1 {
+    p[i] = self.data[self.pos + i]
+  }
+  self.pos += n
+  n
+}
+
+///|
+// Simple test writer that accumulates written bytes
+struct TestWriter {
+  mut data : Bytes
+}
+
+///|
+fn TestWriter::new() -> TestWriter {
+  TestWriter::{ data: Bytes::make(0, 0) }
+}
+
+///|
+impl @io.Writer for TestWriter with write(self, p) {
+  let old_len = self.data.length()
+  let new_data = Bytes::make(old_len + p.length(), 0)
+  for i = 0; i < old_len; i = i + 1 {
+    new_data[i] = self.data[i]
+  }
+  for i = 0; i < p.length(); i = i + 1 {
+    new_data[old_len + i] = p[i]
+  }
+  self.data = new_data
+  p.length()
+}
+
+///|
+fn TestWriter::bytes(self : TestWriter) -> Bytes {
+  self.data
+}
+
+///|
+test "reader basic functionality" {
+  let test_data : Bytes = "Hello, World!"
+  let tr = TestReader::new(test_data)
+  let reader = new_reader(tr)
+  let buf = Bytes::make(5, 0)
+  let n = reader.read(buf[:]) catch { _ => 0 }
+  inspect(n, content="5")
+  inspect(
+    buf,
+    content=(
+      #|b"\x48\x65\x6c\x6c\x6f"
+
+    ),
+  )
+}
+
+///|
+test "reader peek functionality" {
+  let test_data : Bytes = "Hello, World!"
+  let tr = TestReader::new(test_data)
+  let reader = new_reader(tr)
+  let peeked = reader.peek(5) catch { _ => Bytes::make(0, 0) }
+  inspect(
+    peeked,
+    content=(
+      #|b"\x48\x65\x6c\x6c\x6f"
+
+    ),
+  )
+
+  // Data should still be available for reading
+  let buf = Bytes::make(5, 0)
+  let n = reader.read(buf[:]) catch { _ => 0 }
+  inspect(n, content="5")
+  inspect(
+    buf,
+    content=(
+      #|b"\x48\x65\x6c\x6c\x6f"
+
+    ),
+  )
+}
+
+///|
+test "reader read_slice functionality" {
+  let test_data : Bytes = "line1\nline2\r\nline3"
+  let tr = TestReader::new(test_data)
+  let reader = new_reader(tr)
+  let line1 = reader.read_slice(b'\n') catch { _ => Bytes::make(0, 0) }
+  inspect(
+    line1,
+    content=(
+      #|b"\x6c\x69\x6e\x65\x31\x0a"
+
+    ),
+  )
+  let line2 = reader.read_slice(b'\n') catch { _ => Bytes::make(0, 0) }
+  inspect(
+    line2,
+    content=(
+      #|b"\x6c\x69\x6e\x65\x32\x0d\x0a"
+
+    ),
+  )
+}
+
+///|
+test "reader read_bytes functionality" {
+  let test_data : Bytes = "Hello|World|Test"
+  let tr = TestReader::new(test_data)
+  let reader = new_reader(tr)
+  let bytes1 = reader.read_bytes(b'|') catch { _ => Bytes::make(0, 0) }
+  inspect(
+    bytes1,
+    content=(
+      #|b"\x48\x65\x6c\x6c\x6f\x7c"
+
+    ),
+  )
+  let bytes2 = reader.read_bytes(b'|') catch { _ => Bytes::make(0, 0) }
+  inspect(
+    bytes2,
+    content=(
+      #|b"\x57\x6f\x72\x6c\x64\x7c"
+
+    ),
+  )
+  let bytes3 = reader.read_bytes(b'|') catch { _ => Bytes::make(0, 0) }
+  inspect(
+    bytes3,
+    content=(
+      #|b""
+    ),
+  )
+}
+
+///|
+test "reader buffered functionality" {
+  let test_data : Bytes = "Hello"
+  let tr = TestReader::new(test_data)
+  let reader = new_reader(tr)
+
+  // Initially no data is buffered
+  inspect(reader.buffered(), content="0")
+
+  // Peek some data to fill buffer
+  let _ = reader.peek(3) catch { _ => Bytes::make(0, 0) }
+  inspect(reader.buffered() >= 3, content="true")
+}
+
+///|
+test "writer basic functionality" {
+  let tw = TestWriter::new()
+  let writer = new_writer(tw)
+  let test_data : Bytes = "Hello, World!"
+  let n = writer.write(test_data[:]) catch { _ => 0 }
+  inspect(n, content="13")
+
+  // Flush to make sure data is written
+  writer.flush() catch {
+    _ => ()
+  }
+  inspect(
+    tw.bytes(),
+    content=(
+      #|b"\x48\x65\x6c\x6c\x6f\x2c\x20\x57\x6f\x72\x6c\x64\x21"
+
+    ),
+  )
+}
+
+///|
+test "writer buffered functionality" {
+  let tw = TestWriter::new()
+  let writer = new_writer(tw)
+
+  // Initially no data is buffered
+  inspect(writer.buffered(), content="0")
+  let test_data : Bytes = "Hello"
+  let _ = writer.write(test_data[:]) catch { _ => 0 }
+
+  // Data should be buffered
+  inspect(writer.buffered(), content="5")
+
+  // After flush, buffer should be empty
+  writer.flush() catch {
+    _ => ()
+  }
+  inspect(writer.buffered(), content="0")
+}
+
+///|
+test "writer write_byte functionality" {
+  let tw = TestWriter::new()
+  let writer = new_writer(tw)
+  writer.write_byte(b'H') catch {
+    _ => ()
+  }
+  writer.write_byte(b'i') catch {
+    _ => ()
+  }
+  writer.flush() catch {
+    _ => ()
+  }
+  inspect(
+    tw.bytes(),
+    content=(
+      #|b"\x48\x69"
+    ),
+  )
+}
+
+///|
+test "writer write_string functionality" {
+  let tw = TestWriter::new()
+  let writer = new_writer(tw)
+  let n = writer.write_string("Hello, World!") catch { _ => 0 }
+  inspect(n, content="26")
+  writer.flush() catch {
+    _ => ()
+  }
+  inspect(
+    tw.bytes(),
+    content=(
+      #|b"\x48\x00\x65\x00\x6c\x00\x6c\x00\x6f\x00\x2c\x00\x20\x00\x57\x00\x6f\x00\x72\x00\x6c\x00\x64\x00\x21\x00"
+    ),
+  )
+}
+
+///|
+test "scanner basic functionality" {
+  let test_data : Bytes = "line1\nline2\nline3\n"
+  let tr = TestReader::new(test_data)
+  let scanner = new_scanner(tr)
+  let lines : Array[String] = []
+  while scanner.scan() {
+    lines.push(scanner.text())
+  }
+  inspect(lines.length(), content="3")
+  inspect(
+    lines[0],
+    content=(
+      #|b"\x6c\x69\x6e\x65\x31"
+
+    ),
+  )
+  inspect(
+    lines[1],
+    content=(
+      #|b"\x6c\x69\x6e\x65\x32"
+
+    ),
+  )
+  inspect(
+    lines[2],
+    content=(
+      #|b"\x6c\x69\x6e\x65\x33"
+
+    ),
+  )
+}
+
+///|
+test "scanner with custom split function" {
+  let test_data : Bytes = "word1 word2 word3"
+  let tr = TestReader::new(test_data)
+  let scanner = new_scanner(tr)
+  scanner.split(scan_words)
+  let words : Array[String] = []
+  while scanner.scan() {
+    words.push(scanner.text())
+  }
+  inspect(words.length(), content="3")
+  inspect(
+    words[0],
+    content=(
+      #|b"\x77\x6f\x72\x64\x31"
+
+    ),
+  )
+  inspect(
+    words[1],
+    content=(
+      #|b"\x77\x6f\x72\x64\x32"
+
+    ),
+  )
+  inspect(
+    words[2],
+    content=(
+      #|b"\x77\x6f\x72\x64\x33"
+
+    ),
+  )
+}
+
+///|
+test "read_writer functionality" {
+  let test_data : Bytes = "Hello"
+  let tr = TestReader::new(test_data)
+  let tw = TestWriter::new()
+  let reader = new_reader(tr)
+  let writer = new_writer(tw)
+  let rw = new_read_writer(reader, writer)
+  let buf = Bytes::make(5, 0)
+  let n = rw.read(buf[:]) catch { _ => 0 }
+  inspect(n, content="5")
+  let n2 = rw.write(buf[:]) catch { _ => 0 }
+  inspect(n2, content="5")
+  rw.writer.flush() catch {
+    _ => ()
+  }
+  inspect(
+    tw.bytes(),
+    content=(
+      #|b"\x48\x65\x6c\x6c\x6f"
+
+    ),
+  )
+}

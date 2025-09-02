@@ -95,7 +95,7 @@ pub fn checksum_array(data : FixedArray[Byte]) -> UInt {
 
 ///|
 /// Compute Adler32 checksum of data in one go (bytes.View)
-pub fn checksum_array_view(data : @bytes.View) -> UInt {
+pub fn checksum_bytesview(data : @bytes.View) -> UInt {
   let adler = Adler32::new()
   adler.write(data)
   adler.sum32()

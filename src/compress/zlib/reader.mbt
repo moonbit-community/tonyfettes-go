@@ -89,7 +89,7 @@ pub fn[R : @flate.Reader] new_reader_dict(
     err: None,
     scratch: FixedArray::make(4, 0),
   }
-  z.reset_impl(r, dict)
+  z.reset(r, dict)
   z
 }
 
@@ -215,7 +215,7 @@ impl Resetter for Reader with reset(
       self.scratch[i] = dict_bytes[i]
     }
     let checksum = get_uint32_be_array(self.scratch, 0)
-    if checksum != checksum_bytes(dict) {
+    if checksum != checksum_bytesview(dict) {
       self.err = Some(DictionaryError)
       raise DictionaryError
     }
@@ -226,9 +226,4 @@ impl Resetter for Reader with reset(
     self.decompressor = @flate.new_reader(self.r)
   }
   self.digest = Adler32::new()
-}
-
-///|
-impl Resetter for Reader with reset(self, r, dict) {
-  self.reset_impl(r, dict)
 }
