@@ -43,7 +43,7 @@ impl DataFormat for UnknownFormat with addrsize(_) {
 ///|
 /// Data buffer being decoded.
 priv struct Buf {
-  dwarf : Data?
+  dwarf : @slice.Slice[Byte]?
   order : ByteOrder
   format : &DataFormat
   name : String
@@ -66,7 +66,7 @@ fn[DataFormat : DataFormat] make_buf(
   format : DataFormat,
   name : String,
   off : Offset,
-  data : Bytes,
+  data : @slice.Slice[Byte],
 ) -> Buf {
   let order = match d {
     Some(data) => if data.big_endian { BigEndian } else { LittleEndian }
@@ -77,26 +77,27 @@ fn[DataFormat : DataFormat] make_buf(
 
 ///|
 /// Decode error
-pub struct DecodeError {
-  name : String
-  offset : Offset
-  err : String
-} derive(Show)
+pub suberror DecodeError {
+  DecodeError(name~ : String, offset~ : Offset, String)
+}
 
 ///|
 /// Create a new DecodeError
 pub fn DecodeError::new(
-  name : String,
-  offset : Offset,
+  name~ : String,
+  offset~ : Offset,
   err : String,
 ) -> DecodeError {
-  { name, offset, err }
+  DecodeError(name~, offset~, err)
 }
 
 ///|
 /// Convert to string
-pub fn DecodeError::to_string(self : DecodeError) -> String {
-  "decoding dwarf section \{self.name} at offset 0x\{self.offset}: \{self.err}"
+pub impl Show for DecodeError with output(self : DecodeError, logger : &Logger) -> Unit {
+  let DecodeError(name~, offset~, err) = self
+  logger.write_string(
+    "decoding dwarf section \{name} at offset 0x\{offset}: \{err}",
+  )
 }
 
 ///|
@@ -326,29 +327,15 @@ fn Buf::unit_length(self : Buf) -> (Offset, Bool) {
 
 ///|
 /// Set error
-fn Buf::error(self : Buf, s : String) -> Unit {
-  if self.err is None {
-    self.data = b""
-    self.err = Some(DecodeError::new(self.name, self.off, s))
-    ()
+fn Buf::error(self : Buf, s : String) -> DecodeError {
+  if self.err is Some(err) {
+    return err
   } else {
-    ()
+    self.data = ""
+    let err = DecodeError::new(name=self.name, offset=self.off, s)
+    self.err = Some(err)
+    return err
   }
-}
-
-///|
-/// Check if there's an error
-fn Buf::has_error(self : Buf) -> Bool {
-  match self.err {
-    Some(_) => true
-    None => false
-  }
-}
-
-///|
-/// Get the error
-fn Buf::get_error(self : Buf) -> DecodeError? {
-  self.err
 }
 
 ///|

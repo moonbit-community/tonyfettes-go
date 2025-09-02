@@ -3,48 +3,37 @@
 
 ///|
 /// Parse a single DWARF entry from a buffer
-fn parse_entry(
-  buf : Buf,
-  cu : Entry?,
-  unit : SimpleUnit,
-  atable : AbbrevTable,
-) -> Entry? {
-  let off = buf.offset()
-  let id = buf.uint().to_uint()
+fn Buf::entry(b : Buf, cu : Entry?, u : Unit_) -> Entry raise {
+  let atab = u.atable
+  let ubase = u.base
+  let vers = u.vers
+  let off = b.off
+  let id = b.uint().to_uint()
   if id == 0U {
     // Null entry (end of children)
-    return Some(Entry::new(off, TagVariable, false)) // Use a dummy tag
+    return Entry::new(off, TagVariable, false)
+  } // Use a dummy tag
+  guard atab.get(id) is Some(a) else {
+    raise b.error("unknown abbreviation code \{id}")
   }
-  match atable.get(id) {
-    None =>
-      // Unknown abbreviation - this is an error but we'll return None
-      return None
-    Some(abbrev) => {
-      let entry = Entry::new(off, abbrev.tag(), abbrev.children())
+  let e = Entry::new(off, a.tag(), a.children())
 
-      // Parse all fields according to the abbreviation
-      for field_def in abbrev.fields() {
-        match parse_field(buf, field_def, cu, unit) {
-          Some(field) => {
-            entry.add_field(field)
-            ()
-          }
-          None => return None // Error parsing field
-        }
-      }
-      Some(entry)
+  // Parse all fields according to the abbreviation
+  for field_def in a.fields() {
+    match parse_field(b, field_def, cu, u) {
+      Some(field) => e.add_field(field)
+      None =>
+        raise b.error(
+          "failed to parse field for attribute \{field_def.attr()} with format \{field_def.format()}",
+        )
     }
   }
+  e
 }
 
 ///|
 /// Parse a single field from a buffer according to its definition
-fn parse_field(
-  buf : Buf,
-  field_def : AField,
-  cu : Entry?,
-  unit : SimpleUnit,
-) -> Field? {
+fn parse_field(buf : Buf, field_def : AField, cu : Entry?, u : Unit_) -> Field? {
   let attr = field_def.attr()
   let format = field_def.format()
   let class = field_def.class()
@@ -60,7 +49,7 @@ fn parse_field(
   }
 
   // Parse the value based on the format
-  match parse_field_value(buf, actual_format, attr, unit) {
+  match parse_field_value(buf, actual_format, attr, u) {
     Some(value) => Some(Field::new(attr, value, class))
     None => None
   }
@@ -69,105 +58,102 @@ fn parse_field(
 ///|
 /// Parse a field value based on its format
 fn parse_field_value(
-  buf : Buf,
+  b : Buf,
   format : Format,
   attr : Attr,
-  unit : SimpleUnit,
+  u : Unit_,
 ) -> FieldValue? {
   match format {
     // Address formats
-    FormAddr => Some(VUInt64(buf.addr()))
-    FormAddrx => Some(VUInt64(parse_addrx(buf, buf.uint(), unit)))
-    FormAddrx1 => Some(VUInt64(parse_addrx(buf, buf.uint8().to_uint64(), unit)))
-    FormAddrx2 =>
-      Some(VUInt64(parse_addrx(buf, buf.uint16().to_uint64(), unit)))
-    FormAddrx3 =>
-      Some(VUInt64(parse_addrx(buf, buf.uint24().to_uint64(), unit)))
-    FormAddrx4 =>
-      Some(VUInt64(parse_addrx(buf, buf.uint32().to_uint64(), unit)))
+    FormAddr => Some(VUInt64(b.addr()))
+    FormAddrx => Some(VUInt64(parse_addrx(b, b.uint())))
+    FormAddrx1 => Some(VUInt64(parse_addrx(b, b.uint8().to_uint64())))
+    FormAddrx2 => Some(VUInt64(parse_addrx(b, b.uint16().to_uint64())))
+    FormAddrx3 => Some(VUInt64(parse_addrx(b, b.uint24().to_uint64())))
+    FormAddrx4 => Some(VUInt64(parse_addrx(b, b.uint32().to_uint64())))
 
     // Block formats
-    FormDwarfBlock1 => Some(VBytes(buf.bytes(buf.uint8().to_int())))
-    FormDwarfBlock2 => Some(VBytes(buf.bytes(buf.uint16().to_int())))
-    FormDwarfBlock4 => Some(VBytes(buf.bytes(buf.uint32().to_int())))
-    FormDwarfBlock => Some(VBytes(buf.bytes(buf.uint().to_int())))
+    FormDwarfBlock1 => Some(VBytes(b.bytes(b.uint8().to_int())))
+    FormDwarfBlock2 => Some(VBytes(b.bytes(b.uint16().to_int())))
+    FormDwarfBlock4 => Some(VBytes(b.bytes(b.uint32().to_int())))
+    FormDwarfBlock => Some(VBytes(b.bytes(b.uint().to_int())))
 
     // Data formats
-    FormData1 => Some(VInt64(buf.uint8().to_int64()))
-    FormData2 => Some(VInt64(buf.uint16().to_int64()))
-    FormData4 => Some(VInt64(buf.uint32().to_int64()))
-    FormData8 => Some(VInt64(buf.uint64().reinterpret_as_int64()))
-    FormData16 => Some(VBytes(buf.bytes(16)))
-    FormSdata => Some(VInt64(buf.int()))
-    FormUdata => Some(VInt64(buf.uint().reinterpret_as_int64()))
+    FormData1 => Some(VInt64(b.uint8().to_int64()))
+    FormData2 => Some(VInt64(b.uint16().to_int64()))
+    FormData4 => Some(VInt64(b.uint32().to_int64()))
+    FormData8 => Some(VInt64(b.uint64().reinterpret_as_int64()))
+    FormData16 => Some(VBytes(b.bytes(16)))
+    FormSdata => Some(VInt64(b.int()))
+    FormUdata => Some(VInt64(b.uint().reinterpret_as_int64()))
     FormImplicitConst =>
       // Value was stored in abbreviation table, need to get it from field_def
       // For now, return 0 - this would need the field_def passed through
       Some(VInt64(0L))
 
     // Flag formats
-    FormFlag => Some(VBool(buf.uint8() == 1U))
+    FormFlag => Some(VBool(b.uint8() == 1U))
     FormFlagPresent => Some(VBool(true)) // Presence implies true
 
     // Reference formats
     FormRefAddr => {
-      let vers = unit.version()
+      let vers = u.version()
       if vers == 2 {
-        Some(VOffset(buf.addr().reinterpret_as_int64()))
+        Some(VOffset(b.addr().reinterpret_as_int64()))
         // DWARF 3+
-      } else if unit.is_dwarf64() {
-        Some(VOffset(buf.uint64().reinterpret_as_int64()))
+      } else if u.is_dwarf64() {
+        Some(VOffset(b.uint64().reinterpret_as_int64()))
       } else {
-        Some(VOffset(buf.uint32().to_int64()))
+        Some(VOffset(b.uint32().to_int64()))
       }
     }
-    FormRef1 => Some(VOffset(buf.uint8().to_int64()))
-    FormRef2 => Some(VOffset(buf.uint16().to_int64()))
-    FormRef4 => Some(VOffset(buf.uint32().to_int64()))
-    FormRef8 => Some(VOffset(buf.uint64().reinterpret_as_int64()))
-    FormRefUdata => Some(VOffset(buf.uint().reinterpret_as_int64()))
-    FormRefSig8 => Some(VUInt64(buf.uint64()))
-    FormRefSup4 => Some(VUInt64(buf.uint32().to_uint64()))
-    FormRefSup8 => Some(VUInt64(buf.uint64()))
+    FormRef1 => Some(VOffset(b.uint8().to_int64()))
+    FormRef2 => Some(VOffset(b.uint16().to_int64()))
+    FormRef4 => Some(VOffset(b.uint32().to_int64()))
+    FormRef8 => Some(VOffset(b.uint64().reinterpret_as_int64()))
+    FormRefUdata => Some(VOffset(b.uint().reinterpret_as_int64()))
+    FormRefSig8 => Some(VUInt64(b.uint64()))
+    FormRefSup4 => Some(VUInt64(b.uint32().to_uint64()))
+    FormRefSup8 => Some(VUInt64(b.uint64()))
 
     // String formats
-    FormString => Some(VString(buf.string()))
-    FormStrp => Some(VString(parse_strp(buf, unit)))
-    FormLineStrp => Some(VString(parse_line_strp(buf, unit)))
-    FormStrx => Some(VString(parse_strx(buf, buf.uint(), unit)))
-    FormStrx1 => Some(VString(parse_strx(buf, buf.uint8().to_uint64(), unit)))
-    FormStrx2 => Some(VString(parse_strx(buf, buf.uint16().to_uint64(), unit)))
-    FormStrx3 => Some(VString(parse_strx(buf, buf.uint24().to_uint64(), unit)))
-    FormStrx4 => Some(VString(parse_strx(buf, buf.uint32().to_uint64(), unit)))
-    FormStrpSup => Some(VUInt64(buf.uint64())) // Offset into alternate string section
+    FormString => Some(VString(b.string()))
+    FormStrp => Some(VString(parse_strp(b)))
+    FormLineStrp => Some(VString(parse_line_strp(b)))
+    FormStrx => Some(VString(parse_strx(b, b.uint())))
+    FormStrx1 => Some(VString(parse_strx(b, b.uint8().to_uint64())))
+    FormStrx2 => Some(VString(parse_strx(b, b.uint16().to_uint64())))
+    FormStrx3 => Some(VString(parse_strx(b, b.uint24().to_uint64())))
+    FormStrx4 => Some(VString(parse_strx(b, b.uint32().to_uint64())))
+    FormStrpSup => Some(VUInt64(b.uint64())) // Offset into alternate string section
 
     // Section offset formats
     FormSecOffset =>
-      if unit.is_dwarf64() {
-        Some(VInt64(buf.uint64().reinterpret_as_int64()))
+      if u.is_dwarf64() {
+        Some(VInt64(b.uint64().reinterpret_as_int64()))
       } else {
-        Some(VInt64(buf.uint32().to_int64()))
+        Some(VInt64(b.uint32().to_int64()))
       }
 
     // Expression location
-    FormExprloc => Some(VBytes(buf.bytes(buf.uint().to_int())))
+    FormExprloc => Some(VBytes(b.bytes(b.uint().to_int())))
 
     // List references
-    FormLoclistx => Some(VUInt64(buf.uint()))
-    FormRnglistx => Some(VUInt64(buf.uint()))
+    FormLoclistx => Some(VUInt64(b.uint()))
+    FormRnglistx => Some(VUInt64(b.uint()))
 
     // GNU extensions
     FormGnuRefAlt =>
-      if unit.is_dwarf64() {
-        Some(VInt64(buf.uint64().reinterpret_as_int64()))
+      if u.is_dwarf64() {
+        Some(VInt64(b.uint64().reinterpret_as_int64()))
       } else {
-        Some(VInt64(buf.uint32().to_int64()))
+        Some(VInt64(b.uint32().to_int64()))
       }
     FormGnuStrpAlt =>
-      if unit.is_dwarf64() {
-        Some(VUInt64(buf.uint64()))
+      if u.is_dwarf64() {
+        Some(VUInt64(b.uint64()))
       } else {
-        Some(VUInt64(buf.uint32().to_uint64()))
+        Some(VUInt64(b.uint32().to_uint64()))
       }
 
     // Unsupported or unknown formats
@@ -177,7 +163,7 @@ fn parse_field_value(
 
 ///|
 /// Parse address index (DWARF 5)
-fn parse_addrx(buf : Buf, index : UInt64, unit : SimpleUnit) -> UInt64 {
+fn parse_addrx(buf : Buf, index : UInt64) -> UInt64 {
   // For now, just return the index as an address
   // Full implementation would look up in .debug_addr section
   index
@@ -185,38 +171,20 @@ fn parse_addrx(buf : Buf, index : UInt64, unit : SimpleUnit) -> UInt64 {
 
 ///|
 /// Parse string pointer from .debug_str section
-fn parse_strp(buf : Buf, unit : SimpleUnit) -> String {
-  let offset = if unit.is_dwarf64() {
-    buf.uint64()
-  } else {
-    buf.uint32().to_uint64()
-  }
-
-  // For now, return a placeholder
-  // Full implementation would read from .debug_str at offset
-  "strp_offset_\{offset}"
+fn parse_strp(buf : Buf) -> String {
+  ...
 }
 
 ///|
 /// Parse string pointer from .debug_line_str section
-fn parse_line_strp(buf : Buf, unit : SimpleUnit) -> String {
-  let offset = if unit.is_dwarf64() {
-    buf.uint64()
-  } else {
-    buf.uint32().to_uint64()
-  }
-
-  // For now, return a placeholder
-  // Full implementation would read from .debug_line_str at offset
-  "line_strp_offset_\{offset}"
+fn parse_line_strp(buf : Buf) -> String {
+  ...
 }
 
 ///|
 /// Parse string index (DWARF 5)
-fn parse_strx(buf : Buf, index : UInt64, unit : SimpleUnit) -> String {
-  // For now, return a placeholder
-  // Full implementation would resolve through .debug_str_offsets
-  "strx_index_\{index}"
+fn parse_strx(buf : Buf, index : UInt64) -> String {
+  ...
 }
 
 /// uint_to_format is defined in abbrev.mbt
@@ -329,27 +297,18 @@ pub typealias Map[UInt, Abbrev] as AbbrevTable
 
 ///|
 /// Parse abbreviation table from the .debug_abbrev section
-fn parse_abbrev(
-  data : Data,
-  off : UInt64,
-  vers : Int,
-) -> Result[AbbrevTable, String] {
+fn parse_abbrev(d : Data, off : UInt64, vers : Int) -> AbbrevTable raise {
   // Check cache first
-  match data.get_abbrev_cache(off) {
-    Some(table) => return Ok(table)
-    None => () // continue
+  if d.abbrev_cache.get(off) is Some(m) {
+    return m
   }
-  let abbrev_data = data.get_section(".debug_abbrev")
-  let data_slice = if off > abbrev_data.length().to_uint64() {
-    b""
+  let data = d.abbrev
+  let data = if off > data.length().to_uint64() {
+    @slice.new()
   } else {
-    let bytes_array : Array[Byte] = []
-    for i = off.to_int(); i < abbrev_data.length(); i = i + 1 {
-      bytes_array.push(abbrev_data[i])
-    }
-    Bytes::from_array(bytes_array)
+    data[off.to_int():]
   }
-  let b = make_buf(Some(data), UnknownFormat::new(), "abbrev", 0L, data_slice)
+  let b = make_buf(Some(d), UnknownFormat::new(), "abbrev", 0, data)
   let table : AbbrevTable = {}
   while true {
     // Table ends with id == 0
@@ -420,7 +379,7 @@ fn parse_abbrev(
   }
 
   // Cache the result
-  let _ = data.set_abbrev_cache(off, table)
+  let _ = d.set_abbrev_cache(off, table)
   Ok(table)
 }
 
@@ -608,4 +567,238 @@ fn format_to_uint(format : Format) -> UInt64 {
     FormGnuRefAlt => 0x1F20UL
     FormGnuStrpAlt => 0x1F21UL
   }
+}
+
+///|
+/// A Reader allows reading Entry structures from a DWARF "info" section.
+/// The Entry structures are arranged in a tree. The Reader.next function
+/// returns successive entries from a pre-order traversal of the tree.
+/// If an entry has children, its children field will be true, and the children
+/// follow, terminated by an Entry with tag 0.
+struct Reader {
+  mut b : Buf
+  d : Data
+  mut err : String?
+  mut unit : Int
+  mut last_unit : Bool // set if last entry returned by next is TagCompileUnit/TagPartialUnit
+  mut last_children : Bool // .children of last entry returned by next
+  mut last_sibling : Offset // .val(AttrSibling) of last entry returned by next
+  mut cu : Entry? // current compilation unit
+}
+
+///|
+/// Create a new Reader for this Data.
+/// The reader is positioned at byte offset 0 in the DWARF "info" section.
+pub fn Data::reader(self : Data) -> Reader {
+  ...
+}
+
+///|
+/// Get address size of current compilation unit
+pub fn Reader::address_size(self : Reader) -> Int {
+  self.d.unit[self.unit].asize
+}
+
+///|
+/// Get byte order of current compilation unit
+pub fn Reader::byte_order(self : Reader) -> ByteOrder {
+  self.d.order
+}
+
+///|
+/// Seek positions the Reader at offset off in the encoded entry stream.
+/// Offset 0 can be used to denote the first entry.
+pub fn Reader::seek(self : Reader, off : Offset) -> Unit {
+  let d = self.d
+  self.err = None
+  self.last_children = false
+  if off == 0L {
+    if self.d.unit.length() == 0 {
+      return
+    }
+    let u = self.d.unit[0]
+    self.unit = 0
+    self.b = make_buf(Some(self.d), u, "info", off, u.data)
+    self.cu = None
+    return
+  }
+  let i = self.offset_to_unit(off)
+  if i == -1 {
+    self.err = Some("offset out of range")
+    return
+  }
+  if i != self.unit {
+    self.cu = None
+  }
+  let u = d.unit[i]
+  self.unit = i
+  self.b = make_buf(Some(self.d), u, "info", off, u.data[off - u.off:])
+}
+
+///|
+/// Move to next unit if current one is finished
+fn Reader::maybe_next_unit(self : Reader) -> Unit {
+  while self.b.length() == 0 && self.unit + 1 < self.units.length() {
+    self.next_unit()
+  }
+}
+
+///|
+/// Advance to the next unit
+fn Reader::next_unit(self : Reader) -> Unit {
+  self.unit = self.unit + 1
+  if self.unit >= self.units.length() {
+    return
+  }
+  let u = self.units[self.unit]
+  self.b = make_buf(
+    Some(self.d),
+    UnknownFormat::new(),
+    "info",
+    0L, // Unit's data starts at its offset
+    u.data,
+  )
+  self.cu = None
+}
+
+///|
+/// Read the next entry from the encoded entry stream.
+/// It returns None when it reaches the end of the section.
+/// It returns an error via the Reader's error field if the current offset 
+/// is invalid or the data cannot be decoded as a valid Entry.
+pub fn Reader::next(self : Reader) -> Entry? {
+  match self.err {
+    Some(_) => return None
+    None => () // continue
+  }
+  self.maybe_next_unit()
+  if self.b.length() == 0 {
+    return None
+  }
+  if self.unit >= self.units.length() {
+    self.err = Some("unit index out of range")
+    return None
+  }
+  let u = self.units[self.unit]
+
+  // Get abbreviation table for this unit
+  let atable = match parse_abbrev(self.d, 0UL, u.version()) {
+    Ok(table) => table
+    Err(error) => {
+      self.err = Some(error)
+      return None
+    }
+  }
+  let entry = parse_entry(self.b, self.cu, u, atable)
+  if self.b.has_error() {
+    match self.b.get_error() {
+      Some(err) => self.err = Some(err.to_string())
+      None => self.err = Some("unknown buffer error")
+    }
+    return None
+  }
+  self.last_unit = false
+  match entry {
+    Some(e) => {
+      self.last_children = e.children()
+      if self.last_children {
+        self.last_sibling = match e.val(AttrSibling) {
+          Some(VOffset(off)) => off
+          _ => 0L
+        }
+      }
+      if e.tag() == TagCompileUnit || e.tag() == TagPartialUnit {
+        self.last_unit = true
+        self.cu = Some(e)
+      }
+      Some(e)
+    }
+    None => {
+      self.last_children = false
+      None
+    }
+  }
+}
+
+///|
+/// Skip over the child entries associated with the last Entry returned by next.
+/// If that Entry did not have children or next has not been called, skip_children is a no-op.
+pub fn Reader::skip_children(self : Reader) -> Unit {
+  match self.err {
+    Some(_) => return
+    None => () // continue
+  }
+  if not(self.last_children) {
+    return
+  }
+
+  // If the last entry had a sibling attribute,
+  // that attribute gives the offset of the next
+  // sibling, so we can avoid decoding the
+  // child subtrees.
+  if self.last_sibling >= self.b.offset() {
+    self.seek(self.last_sibling)
+    return
+  }
+  if self.last_unit && self.unit + 1 < self.d.unit.length() {
+    self.next_unit()
+    return
+  }
+
+  // Traverse children manually
+  while true {
+    match self.next() {
+      None => break
+      Some(e) => {
+        if e.tag() == TagVariable && e.offset() == 0L {
+          // This is our null entry marker
+          break
+        }
+        if e.children() {
+          self.skip_children()
+        }
+      }
+    }
+  }
+}
+
+///|
+/// Get current error state
+pub fn Reader::get_error(self : Reader) -> String? {
+  self.err
+}
+
+///|
+/// Check if reader has error
+pub fn Reader::has_error(self : Reader) -> Bool {
+  match self.err {
+    Some(_) => true
+    None => false
+  }
+}
+
+///|
+/// Find unit index containing the given offset
+fn Reader::offset_to_unit(self : Reader, off : Offset) -> Int {
+  // This is a simplified implementation
+  // Real implementation would need proper unit offset tracking
+  for i = 0; i < self.units.length(); i = i + 1 {
+    let u = self.units[i]
+    if u.base <= off && off < u.base + u.data.length().to_int64() {
+      return i
+    }
+  }
+  -1
+}
+
+///|
+/// Create a clone of this reader
+fn Reader::clone(r : Reader) -> Reader {
+  r.d.reader()
+}
+
+///|
+/// Get current buffer offset
+pub fn Reader::offset(r : Reader) -> Offset {
+  r.b.offset()
 }

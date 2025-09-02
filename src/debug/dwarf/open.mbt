@@ -3,10 +3,10 @@
 
 ///|
 /// Data represents the DWARF debugging information
-/// loaded from an executable file
-pub struct Data {
-  // Raw data sections
-  abbrev : Bytes
+/// loaded from an executable file (for example, an ELF or Mach-O executable).
+struct Data {
+  // raw data
+  abbrev : @slice.Slice[Byte]
   aranges : Bytes
   frame : Bytes
   info : Bytes
@@ -21,61 +21,13 @@ pub struct Data {
   mut str_offsets : Bytes
   mut rng_lists : Bytes
 
-  // Caches
+  // parsed data
   abbrev_cache : Map[UInt64, AbbrevTable]
-
-  // Metadata
   big_endian : Bool
   order : ByteOrder
-} derive(Show)
-
-///|
-/// Create a new minimal Data object
-pub fn Data::new_minimal(abbrev : Bytes, info : Bytes, str : Bytes) -> Data? {
-  // Sniff .debug_info to figure out byte order
-  if info.length() < 6 {
-    return None
-  }
-  let mut offset = 4
-  if info[0] == 0xff && info[1] == 0xff && info[2] == 0xff && info[3] == 0xff {
-    if info.length() < 14 {
-      return None
-    }
-    offset = 12
-  }
-
-  // Fetch the version bytes
-  let x = info[offset]
-  let y = info[offset + 1]
-  let (big_endian, order) = match (x, y) {
-    (0, 0) => return None // unsupported version 0
-    (0, _) => (true, BigEndian)
-    (_, 0) => (false, LittleEndian)
-    _ => return None // cannot determine byte order
-  }
-  Some({
-    abbrev,
-    aranges: b"",
-    frame: b"",
-    info,
-    line: b"",
-    pubnames: b"",
-    ranges: b"",
-    str,
-    addr: b"",
-    line_str: b"",
-    str_offsets: b"",
-    rng_lists: b"",
-    abbrev_cache: {},
-    big_endian,
-    order,
-  })
-}
-
-///|
-/// Get the byte order
-pub fn Data::get_byte_order(self : Data) -> ByteOrder {
-  self.order
+  type_cache : Map[Offset, &Type]
+  // type_sigs : Map[UInt64, &Type]
+  unit : Array[Unit_]
 }
 
 ///|
@@ -190,21 +142,4 @@ pub fn Data::set_abbrev_cache(
   table : AbbrevTable,
 ) -> Unit {
   self.abbrev_cache.set(off, table)
-}
-
-///|
-/// Create a new Reader for this Data.
-/// The reader is positioned at byte offset 0 in the DWARF "info" section.
-pub fn Data::reader(self : Data) -> Reader {
-  // For now, create empty units array - this would be populated from parse_units
-  let units : Array[SimpleUnit] = []
-  Reader::new(self, units)
-}
-
-///|
-/// Parse compilation units and return a reader
-pub fn Data::reader_with_units(self : Data) -> Result[Reader, String] {
-  // This is a placeholder - would need full unit parsing implementation
-  let units : Array[SimpleUnit] = []
-  Ok(Reader::new(self, units))
 }
