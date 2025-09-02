@@ -818,6 +818,101 @@ fn Compressor::write(self : Compressor, b : Array[Byte]) -> Int raise {
 }
 
 ///|
+/// NewWriterDict is like NewWriter but initializes the new
+/// Writer with a preset dictionary. The returned Writer behaves
+/// as if the dictionary had been written to it without producing
+/// any compressed output. The compressed data written to w
+/// can only be decompressed by a reader initialized with the
+/// same dictionary (see NewReaderDict).
+pub fn new_writer_dict(
+  w : &@io.Writer,
+  level : Int,
+  dict : Array[Byte],
+) -> Writer raise {
+  let dw = DictWriter::new(w)
+  let zw = new_writer(dw, level)
+  zw.d.fill_window(dict)
+  // Duplicate dictionary for Reset method
+  for byte in dict {
+    zw.dict.push(byte)
+  }
+  zw
+}
+
+///|
+/// DictWriter is a helper that wraps an io.Writer for dictionary support
+priv struct DictWriter {
+  w : &@io.Writer
+} derive(Show)
+
+///|
+/// Create a new DictWriter
+fn DictWriter::new(w : &@io.Writer) -> DictWriter {
+  DictWriter::{ w, }
+}
+
+///|
+/// Implement Writer trait for DictWriter
+impl @io.Writer for DictWriter with write(
+  self : DictWriter,
+  bytes : @bytes.View,
+) -> Int raise {
+  self.w.write(bytes)
+}
+
+///|
+/// Reset discards the writer's state and makes it equivalent to
+/// the result of NewWriter or NewWriterDict called with dst
+/// and w's level and dictionary.
+pub fn Writer::reset(self : Writer, dst : &@io.Writer) -> Unit {
+  // Check if this writer was created with a dictionary
+  if self.dict.length() > 0 {
+    // w was created with NewWriterDict
+    let dw = DictWriter::new(dst)
+    self.d.reset(dw)
+    self.d.fill_window(self.dict)
+  } else {
+    // w was created with NewWriter
+    self.d.reset(dst)
+  }
+}
+
+///|
+/// Reset the compressor state for a new writer
+fn Compressor::reset(self : Compressor, w : &@io.Writer) -> Unit {
+  self.w.reset(w)
+  self.sync = false
+  self.err = None
+  match self.compression_level.level {
+    NoCompression => self.window_end = 0
+    BestSpeed => {
+      self.window_end = 0
+      self.tokens.clear()
+      self.best_speed.reset()
+    }
+    _ => {
+      self.chain_head = -1
+      // Clear hash tables
+      for i = 0; i < self.hash_head.length(); i = i + 1 {
+        self.hash_head[i] = 0
+      }
+      for i = 0; i < self.hash_prev.length(); i = i + 1 {
+        self.hash_prev[i] = 0
+      }
+      self.hash_offset = 1
+      self.index = 0
+      self.window_end = 0
+      self.block_start = 0
+      self.byte_available = false
+      self.tokens.clear()
+      self.length = MinMatchLength - 1
+      self.offset = 0
+      self.max_insert_index = 0
+    }
+  }
+}
+
+///|
 /// Close method for Writer
 pub impl @io.Closer for Writer with close(self) {
   self.d.close()
