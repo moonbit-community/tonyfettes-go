@@ -149,8 +149,8 @@ const Hashmul : UInt = 0x1e35a7bd
 priv suberror WriterClosed
 
 ///|
-impl Show for WriterClosed with output(self, logger) {
-  logger.write_string("flate: WriterClosed")
+impl Show for WriterClosed with output(_ : WriterClosed, logger : &Logger) {
+  logger.write_string("flate: closed writer")
 }
 
 ///|
@@ -163,7 +163,7 @@ priv struct Compressor {
   // compression algorithm
   mut fill : (Compressor, Array[Byte]) -> Int // copy data to window
   mut step : (Compressor) -> Unit // process window
-  best_speed : DeflateFast // Encoder for BestSpeed
+  mut best_speed : DeflateFast // Encoder for BestSpeed
 
   // Input hash chains
   // hash_head[hashValue] contains the largest inputIndex with the specified hash value
@@ -328,7 +328,7 @@ fn Compressor::init(
       d.window = Bytes::make(MaxStoreBlockSize, 0)
       d.fill = Compressor::fill_store
       d.step = Compressor::enc_speed
-      // self.best_speed = DeflateFast::new() // TODO: implement
+      d.best_speed = DeflateFast::new()
       d.tokens = Array::make(MaxStoreBlockSize, literal_token(0))
     }
     DefaultCompression => { // DefaultCompression
@@ -339,7 +339,7 @@ fn Compressor::init(
       d.compression_level = levels[level]
       d.init_deflate()
       d.fill = Compressor::fill_deflate
-      d.step = Compressor::deflate_step
+      d.step = Compressor::deflate
     }
     level => raise InvalidCompressionLevel(level)
   }
@@ -489,113 +489,106 @@ fn Compressor::enc_speed(d : Compressor) -> Unit {
 }
 
 ///|
-/// Deflate step function - implements the main DEFLATE compression algorithm
-fn Compressor::deflate_step(self : Compressor) -> Unit {
-  self.deflate() catch {
-    err => self.err = Some(err)
-  }
-}
-
-///|
 /// Main deflate algorithm implementation
 /// This is a direct translation of Go's compress/flate/deflate.go deflate method
-fn Compressor::deflate(self : Compressor) -> Unit raise {
-  if self.window_end - self.index < MinMatchLength + MaxMatchLength &&
-    not(self.sync) {
+fn Compressor::deflate(d : Compressor) -> Unit {
+  if d.window_end - d.index < MinMatchLength + MaxMatchLength && not(d.sync) {
     return
   }
-  self.max_insert_index = self.window_end - (MinMatchLength - 1)
+  d.max_insert_index = d.window_end - (MinMatchLength - 1)
 
   // Main compression loop
   while true {
-    if self.index > self.window_end {
+    if d.index > d.window_end {
       abort("index > windowEnd")
     }
-    let lookahead = self.window_end - self.index
+    let lookahead = d.window_end - d.index
     if lookahead < MinMatchLength + MaxMatchLength {
-      if not(self.sync) {
+      if not(d.sync) {
         break // Exit main loop
       }
-      if self.index > self.window_end {
+      if d.index > d.window_end {
         abort("index > windowEnd")
       }
       if lookahead == 0 {
         // Flush current output block if any.
-        if self.byte_available {
+        if d.byte_available {
           // There is still one pending token that needs to be flushed
-          self.tokens.push(literal_token(self.window[self.index - 1].to_uint()))
-          self.byte_available = false
+          d.tokens.push(literal_token(d.window[d.index - 1].to_uint()))
+          d.byte_available = false
         }
-        if self.tokens.length() > 0 {
-          self.write_block(self.tokens, self.index)
-          self.tokens.clear()
+        if d.tokens.length() > 0 {
+          d.write_block(d.tokens, d.index) catch {
+            err => d.err = Some(err)
+          }
+          d.tokens.clear()
         }
         break // Exit main loop
       }
     }
-    if self.index < self.max_insert_index {
+    if d.index < d.max_insert_index {
       // Update the hash
       let hash_bytes = Array::new()
       for i = 0; i < MinMatchLength; i = i + 1 {
-        hash_bytes.push(self.window[self.index + i])
+        hash_bytes.push(d.window[d.index + i])
       }
       let hash = hash4(hash_bytes)
       let hash_index = (hash & HashMask.reinterpret_as_uint()).reinterpret_as_int()
-      self.chain_head = self.hash_head[hash_index].reinterpret_as_int()
-      self.hash_prev[self.index & WindowMask] = self.hash_head[hash_index]
-      self.hash_head[hash_index] = (self.index + self.hash_offset).reinterpret_as_uint()
+      d.chain_head = d.hash_head[hash_index].reinterpret_as_int()
+      d.hash_prev[d.index & WindowMask] = d.hash_head[hash_index]
+      d.hash_head[hash_index] = (d.index + d.hash_offset).reinterpret_as_uint()
     }
-    let prev_length = self.length
-    let prev_offset = self.offset
-    self.length = MinMatchLength - 1
-    self.offset = 0
-    let mut min_index = self.index - WindowSize
+    let prev_length = d.length
+    let prev_offset = d.offset
+    d.length = MinMatchLength - 1
+    d.offset = 0
+    let mut min_index = d.index - WindowSize
     if min_index < 0 {
       min_index = 0
     }
-    if self.chain_head - self.hash_offset >= min_index &&
+    if d.chain_head - d.hash_offset >= min_index &&
       (
         (
-          self.compression_level.fast_skip_hashing != SkipNever &&
+          d.compression_level.fast_skip_hashing != SkipNever &&
           lookahead > MinMatchLength - 1
         ) ||
         (
-          self.compression_level.fast_skip_hashing == SkipNever &&
+          d.compression_level.fast_skip_hashing == SkipNever &&
           lookahead > prev_length &&
-          prev_length < self.compression_level.lazy_
+          prev_length < d.compression_level.lazy_
         )
       ) {
-      let (new_length, new_offset, ok) = self.find_match(
-        self.index,
-        self.chain_head - self.hash_offset,
+      let (new_length, new_offset, ok) = d.find_match(
+        d.index,
+        d.chain_head - d.hash_offset,
         MinMatchLength - 1,
         lookahead,
       )
       if ok {
-        self.length = new_length
-        self.offset = new_offset
+        d.length = new_length
+        d.offset = new_offset
       }
     }
     if (
-        self.compression_level.fast_skip_hashing != SkipNever &&
-        self.length >= MinMatchLength
+        d.compression_level.fast_skip_hashing != SkipNever &&
+        d.length >= MinMatchLength
       ) ||
       (
-        self.compression_level.fast_skip_hashing == SkipNever &&
+        d.compression_level.fast_skip_hashing == SkipNever &&
         prev_length >= MinMatchLength &&
-        self.length <= prev_length
+        d.length <= prev_length
       ) {
       // There was a match at the previous step, and the current match is
       // not better. Output the previous match.
-      if self.compression_level.fast_skip_hashing != SkipNever {
-        self.tokens.push(
+      if d.compression_level.fast_skip_hashing != SkipNever {
+        d.tokens.push(
           match_token(
-            (self.length - BaseMatchLength).reinterpret_as_uint(),
-            (self.offset - BaseMatchOffset).reinterpret_as_uint(),
+            (d.length - BaseMatchLength).reinterpret_as_uint(),
+            (d.offset - BaseMatchOffset).reinterpret_as_uint(),
           ),
         )
       } else {
-        self.tokens.push(
+        d.tokens.push(
           match_token(
             (prev_length - BaseMatchLength).reinterpret_as_uint(),
             (prev_offset - BaseMatchOffset).reinterpret_as_uint(),
@@ -607,61 +600,64 @@ fn Compressor::deflate(self : Compressor) -> Unit raise {
       // index and index-1 are already inserted. If there is not enough
       // lookahead, the last two strings are not inserted into the hash
       // table.
-      if self.length <= self.compression_level.fast_skip_hashing {
-        let new_index = if self.compression_level.fast_skip_hashing != SkipNever {
-          self.index + self.length
+      if d.length <= d.compression_level.fast_skip_hashing {
+        let new_index = if d.compression_level.fast_skip_hashing != SkipNever {
+          d.index + d.length
         } else {
-          self.index + prev_length - 1
+          d.index + prev_length - 1
         }
-        let mut index = self.index + 1
+        let mut index = d.index + 1
         while index < new_index {
-          if index < self.max_insert_index {
+          if index < d.max_insert_index {
             let hash_bytes = Array::new()
             for i = 0; i < MinMatchLength; i = i + 1 {
-              hash_bytes.push(self.window[index + i])
+              hash_bytes.push(d.window[index + i])
             }
             let hash = hash4(hash_bytes)
             let hash_index = (hash & HashMask.reinterpret_as_uint()).reinterpret_as_int()
             // Get previous value with the same hash.
             // Our chain should point to the previous value.
-            self.hash_prev[index & WindowMask] = self.hash_head[hash_index]
+            d.hash_prev[index & WindowMask] = d.hash_head[hash_index]
             // Set the head of the hash chain to us.
-            self.hash_head[hash_index] = (index + self.hash_offset).reinterpret_as_uint()
+            d.hash_head[hash_index] = (index + d.hash_offset).reinterpret_as_uint()
           }
           index = index + 1
         }
-        self.index = index
-        if self.compression_level.fast_skip_hashing == SkipNever {
-          self.byte_available = false
-          self.length = MinMatchLength - 1
+        d.index = index
+        if d.compression_level.fast_skip_hashing == SkipNever {
+          d.byte_available = false
+          d.length = MinMatchLength - 1
         }
       } else {
         // For matches this long, we don't bother inserting each individual
         // item into the table.
-        self.index = self.index + self.length
+        d.index = d.index + d.length
       }
-      if self.tokens.length() == MaxFlateBlockTokens {
+      if d.tokens.length() == MaxFlateBlockTokens {
         // The block includes the current character
-        self.write_block(self.tokens, self.index)
-        self.tokens.clear()
+        d.write_block(d.tokens, d.index) catch {
+          err => d.err = Some(err)
+        }
+        d.tokens.clear()
       }
     } else {
-      if self.compression_level.fast_skip_hashing != SkipNever ||
-        self.byte_available {
-        let i = if self.compression_level.fast_skip_hashing != SkipNever {
-          self.index
+      if d.compression_level.fast_skip_hashing != SkipNever || d.byte_available {
+        let i = if d.compression_level.fast_skip_hashing != SkipNever {
+          d.index
         } else {
-          self.index - 1
+          d.index - 1
         }
-        self.tokens.push(literal_token(self.window[i].to_uint()))
-        if self.tokens.length() == MaxFlateBlockTokens {
-          self.write_block(self.tokens, i + 1)
-          self.tokens.clear()
+        d.tokens.push(literal_token(d.window[i].to_uint()))
+        if d.tokens.length() == MaxFlateBlockTokens {
+          d.write_block(d.tokens, i + 1) catch {
+            err => d.err = Some(err)
+          }
+          d.tokens.clear()
         }
       }
-      self.index = self.index + 1
-      if self.compression_level.fast_skip_hashing == SkipNever {
-        self.byte_available = true
+      d.index = d.index + 1
+      if d.compression_level.fast_skip_hashing == SkipNever {
+        d.byte_available = true
       }
     }
   }
