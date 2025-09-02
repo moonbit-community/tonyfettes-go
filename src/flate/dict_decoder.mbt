@@ -21,7 +21,7 @@ priv struct DictDecoder {
   mut wr_pos : Int // Current output position in buffer
   mut rd_pos : Int // Have emitted hist[:rd_pos] already
   mut full : Bool // Has a full window length been written yet?
-} derive(Show)
+}
 
 ///|
 /// Create a new DictDecoder

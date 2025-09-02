@@ -517,7 +517,7 @@ fn HuffmanBitWriter::fixed_size(
 ///|
 /// Calculate stored size including header
 fn HuffmanBitWriter::stored_size(
-  self : HuffmanBitWriter,
+  _ : HuffmanBitWriter,
   input : @bytes.View,
 ) -> (Int, Bool) {
   if input.length() <= 65535 { // maxStoreBlockSize

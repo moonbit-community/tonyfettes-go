@@ -46,7 +46,7 @@ priv struct HuffmanDecoder {
   chunks : Array[UInt] // chunks as described in algorithm
   mut links : Array[Array[UInt]] // overflow links
   mut link_mask : UInt // mask the width of the link table
-} derive(Show)
+}
 
 ///|
 /// Create a new HuffmanDecoder

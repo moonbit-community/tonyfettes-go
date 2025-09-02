@@ -11,11 +11,10 @@ test "HCode creation" {
 
 ///|
 /// Test HCode set method
-test "HCode set" {
-  let code = HCode::{ code: 0, len: 0 }
-  let new_code = code.set(0b1111, 4)
-  inspect(new_code.code, content="15")
-  inspect(new_code.len, content="4")
+test "HCode::new" {
+  let hcode = HCode::new(0b1111, 4)
+  inspect(hcode.code, content="15")
+  inspect(hcode.len, content="4")
 }
 
 ///|

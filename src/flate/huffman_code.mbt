@@ -7,7 +7,7 @@ priv struct HCode {
 
 ///|
 /// Set the code and length of an HCode (returns new HCode since structs are immutable)
-fn HCode::set(self : HCode, code : UInt, length : UInt) -> HCode {
+fn HCode::new(code : UInt, length : UInt) -> HCode {
   HCode::{ code, len: length }
 }
 
@@ -32,7 +32,7 @@ priv struct LevelInfo {
   next_char_freq : Int // The frequency of the next character to add to this level
   mut next_pair_freq : Int // The frequency of the next pair (from level below) to add to this level
   mut needed : Int // The number of chains remaining to generate for this level
-} derive(Show)
+}
 
 ///|
 let max_bits_limit = 16
@@ -388,7 +388,7 @@ fn HuffmanEncoder::generate(
     for i = 0; i < list.length(); i = i + 1 {
       let node = list[i]
       let key = node.literal.reinterpret_as_int()
-      self.codes[key] = self.codes[key].set(i.reinterpret_as_uint(), 1)
+      self.codes[key] = HCode::new(i.reinterpret_as_uint(), 1)
     }
     return
   }
