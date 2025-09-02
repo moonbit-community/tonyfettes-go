@@ -7,19 +7,19 @@
 struct Data {
   // raw data
   abbrev : @slice.Slice[Byte]
-  aranges : Bytes
-  frame : Bytes
-  info : Bytes
-  line : Bytes
-  pubnames : Bytes
-  ranges : Bytes
-  str : Bytes
+  aranges : @slice.Slice[Byte]
+  frame : @slice.Slice[Byte]
+  info : @slice.Slice[Byte]
+  line : @slice.Slice[Byte]
+  pubnames : @slice.Slice[Byte]
+  ranges : @slice.Slice[Byte]
+  str : @slice.Slice[Byte]
 
   // New sections added in DWARF 5
-  mut addr : Bytes
-  mut line_str : Bytes
-  mut str_offsets : Bytes
-  mut rng_lists : Bytes
+  mut addr : @slice.Slice[Byte]
+  mut line_str : @slice.Slice[Byte]
+  mut str_offsets : @slice.Slice[Byte]
+  mut rng_lists : @slice.Slice[Byte]
 
   // parsed data
   abbrev_cache : Map[UInt64, AbbrevTable]
@@ -41,7 +41,7 @@ pub fn Data::is_big_endian(self : Data) -> Bool {
 pub fn Data::add_section_simple(
   self : Data,
   name : Bytes,
-  contents : Bytes,
+  contents : @slice.Slice[Byte],
 ) -> Bool {
   match name {
     ".debug_addr" => {
@@ -66,7 +66,7 @@ pub fn Data::add_section_simple(
 
 ///|
 /// Get a section by name
-pub fn Data::get_section(self : Data, name : Bytes) -> Bytes {
+pub fn Data::get_section(self : Data, name : Bytes) -> @slice.Slice[Byte] {
   match name {
     ".debug_abbrev" => self.abbrev
     ".debug_aranges" => self.aranges
@@ -80,7 +80,7 @@ pub fn Data::get_section(self : Data, name : Bytes) -> Bytes {
     ".debug_line_str" => self.line_str
     ".debug_str_offsets" => self.str_offsets
     ".debug_rnglists" => self.rng_lists
-    _ => b"" // Unknown section
+    _ => @slice.new() // Unknown section
   }
 }
 
@@ -124,22 +124,4 @@ pub fn SimpleUnit::addrsize(self : SimpleUnit) -> Int {
 /// Check if 64-bit DWARF
 pub fn SimpleUnit::is_dwarf64(self : SimpleUnit) -> Bool {
   self.is64
-}
-
-/// Abbrev types are defined in abbrev.mbt
-
-///|
-/// Get from abbreviation cache
-pub fn Data::get_abbrev_cache(self : Data, off : UInt64) -> AbbrevTable? {
-  self.abbrev_cache.get(off)
-}
-
-///|
-/// Set in abbreviation cache
-pub fn Data::set_abbrev_cache(
-  self : Data,
-  off : UInt64,
-  table : AbbrevTable,
-) -> Unit {
-  self.abbrev_cache.set(off, table)
 }

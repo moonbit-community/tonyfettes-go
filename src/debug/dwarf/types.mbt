@@ -39,10 +39,10 @@ pub struct Field {
 /// FieldValue represents the possible values that can be stored in a DWARF field
 pub enum FieldValue {
   VUInt64(UInt64) // address, constant values
-  VBytes(Bytes) // block data, expression location
+  VBytes(@slice.Slice[Byte]) // block data, expression location
   VBool(Bool) // flag values
   VInt64(Int64) // signed constants, pointers
-  VString(String) // string values
+  VString(@slice.Slice[Byte]) // string values
   VOffset(Offset) // references
 } derive(Show)
 
@@ -89,18 +89,6 @@ pub fn Entry::new(offset : Offset, tag : Tag, children : Bool) -> Entry {
 /// Get the offset
 pub fn Entry::offset(self : Entry) -> Offset {
   self.offset
-}
-
-///|
-/// Get the tag
-pub fn Entry::tag(self : Entry) -> Tag {
-  self.tag
-}
-
-///|
-/// Get whether this entry has children
-pub fn Entry::children(self : Entry) -> Bool {
-  self.children
 }
 
 ///|

@@ -1,13 +1,11 @@
 // Generated using `moon info`, DON'T EDIT IT
 package "tonyfettes/go/debug/dwarf"
 
+import(
+  "tonyfettes/go/slice"
+)
+
 // Values
-fn dwarf_type_ref_common(DwarfTypeRef) -> CommonType
-
-fn dwarf_type_ref_size(DwarfTypeRef) -> Int64
-
-fn dwarf_type_ref_to_string(DwarfTypeRef) -> String
-
 let enc_address : UInt
 
 let enc_ascii : UInt
@@ -43,8 +41,6 @@ let enc_unsigned_char : UInt
 let enc_unsigned_fixed : UInt
 
 let enc_utf : UInt
-
-fn find_unit_by_offset(Array[DwarfUnit], Int64) -> Int
 
 let lle_base_address : UInt
 
@@ -248,8 +244,6 @@ let op_xderef_type : UInt
 
 let op_xor : UInt
 
-fn parse_units(Data) -> Result[Array[DwarfUnit], String]
-
 let rle_base_address : UInt
 
 let rle_base_addressx : UInt
@@ -266,26 +260,19 @@ let rle_startx_endx : UInt
 
 let rle_startx_length : UInt
 
-let ut_compile : UInt
-
-let ut_partial : UInt
-
-let ut_skeleton : UInt
-
-let ut_split_compile : UInt
-
-let ut_split_type : UInt
-
-let ut_type : UInt
-
 // Errors
+pub suberror DecodeError {
+  DecodeError(name~ : String, offset~ : Int64, String)
+}
+fn DecodeError::new(name~ : String, offset~ : Int64, String) -> Self
+impl Show for DecodeError
 
 // Types and methods
 pub struct AField {
-  attr : Attr
-  format : Format
-  class : Class
-  val : Int64
+  mut attr : Attr
+  mut format : Format
+  mut class : Class
+  mut val : Int64
 }
 fn AField::attr(Self) -> Attr
 fn AField::class(Self) -> Class
@@ -294,29 +281,16 @@ fn AField::new(Attr, Format, Class, Int64) -> Self
 fn AField::val(Self) -> Int64
 impl Show for AField
 
-pub struct Abbrev {
-  tag : Tag
-  children : Bool
-  fields : Array[AField]
-}
-fn Abbrev::add_field(Self, AField) -> Unit
-fn Abbrev::children(Self) -> Bool
-fn Abbrev::fields(Self) -> Array[AField]
-fn Abbrev::new(Tag, Bool) -> Self
-fn Abbrev::tag(Self) -> Tag
-impl Show for Abbrev
+pub struct AddrType(BasicType)
+fn AddrType::inner(Self) -> BasicType
 
-pub struct ArrayType {
+pub(all) struct ArrayType {
   common : CommonType
-  array_type : DwarfTypeRef?
+  type_ : &Type
   stride_size : Int64
   count : Int64
 }
-fn ArrayType::array_type(Self) -> DwarfTypeRef?
-fn ArrayType::count(Self) -> Int64
-fn ArrayType::new(CommonType, DwarfTypeRef?, Int64, Int64) -> Self
-fn ArrayType::stride_size(Self) -> Int64
-impl Show for ArrayType
+impl Type for ArrayType
 
 pub enum Attr {
   AttrSibling
@@ -452,11 +426,12 @@ pub struct BasicType {
   bit_offset : Int64
   data_bit_offset : Int64
 }
-fn BasicType::bit_offset(Self) -> Int64
-fn BasicType::bit_size(Self) -> Int64
-fn BasicType::data_bit_offset(Self) -> Int64
 fn BasicType::new(CommonType, Int64, Int64, Int64) -> Self
 impl Show for BasicType
+impl Type for BasicType
+
+pub struct BoolType(BasicType)
+fn BoolType::inner(Self) -> BasicType
 
 pub enum ByteOrder {
   LittleEndian
@@ -464,6 +439,9 @@ pub enum ByteOrder {
 }
 impl Eq for ByteOrder
 impl Show for ByteOrder
+
+pub struct CharType(BasicType)
+fn CharType::inner(Self) -> BasicType
 
 pub enum Class {
   ClassAddress
@@ -483,101 +461,22 @@ pub enum Class {
 impl Eq for Class
 impl Show for Class
 
-pub struct CommonType {
+pub(all) struct CommonType {
   byte_size : Int64
   name : String
 }
-fn CommonType::byte_size(Self) -> Int64
-fn CommonType::name(Self) -> String
-fn CommonType::new(Int64, String) -> Self
-fn CommonType::size(Self) -> Int64
 impl Show for CommonType
+impl Type for CommonType
 
-pub struct Data {
-  abbrev : Bytes
-  aranges : Bytes
-  frame : Bytes
-  info : Bytes
-  line : Bytes
-  pubnames : Bytes
-  ranges : Bytes
-  str : Bytes
-  mut addr : Bytes
-  mut line_str : Bytes
-  mut str_offsets : Bytes
-  mut rng_lists : Bytes
-  abbrev_cache : Map[UInt64, Map[UInt, Abbrev]]
-  big_endian : Bool
-  order : ByteOrder
-}
-fn Data::add_section_simple(Self, Bytes, Bytes) -> Bool
-fn Data::get_abbrev_cache(Self, UInt64) -> Map[UInt, Abbrev]?
-fn Data::get_byte_order(Self) -> ByteOrder
-fn Data::get_section(Self, Bytes) -> Bytes
+pub struct ComplexType(BasicType)
+fn ComplexType::inner(Self) -> BasicType
+
+type Data
+fn Data::add_section_simple(Self, Bytes, @slice.Slice[Byte]) -> Bool
+fn Data::get_section(Self, Bytes) -> @slice.Slice[Byte]
 fn Data::is_big_endian(Self) -> Bool
-fn Data::new_minimal(Bytes, Bytes, Bytes) -> Self?
 fn Data::reader(Self) -> Reader
-fn Data::reader_with_parsed_units(Self) -> Result[Reader, String]
-fn Data::reader_with_units(Self) -> Result[Reader, String]
-fn Data::set_abbrev_cache(Self, UInt64, Map[UInt, Abbrev]) -> Unit
-fn Data::set_units(Self, Array[DwarfUnit]) -> Unit
-impl Show for Data
-
-pub enum DataFormatRefFromUnit {
-  UnitFormat(DwarfUnit)
-}
-impl Show for DataFormatRefFromUnit
-
-pub struct DecodeError {
-  name : String
-  offset : Int64
-  err : String
-}
-fn DecodeError::new(String, Int64, String) -> Self
-fn DecodeError::to_string(Self) -> String
-impl Show for DecodeError
-
-pub enum DwarfTypeRef {
-  BasicTypeRef(BasicType)
-  QualTypeRef(QualType)
-  ArrayTypeRef(ArrayType)
-  VoidTypeRef(VoidType)
-  PtrTypeRef(PtrType)
-  StructTypeRef(StructType)
-  UnionTypeRef(UnionType)
-  EnumTypeRef(EnumType)
-  FuncTypeRef(FuncType)
-  TypedefTypeRef(TypedefType)
-  UnsupportedTypeRef(UnsupportedType)
-}
-impl Show for DwarfTypeRef
-
-pub struct DwarfUnit {
-  base : Int64
-  off : Int64
-  data : Bytes
-  atable : Map[UInt, Abbrev]
-  mut unit5 : Unit5?
-  asize : Int
-  vers : Int
-  is64 : Bool
-  utype : UInt
-}
-fn DwarfUnit::addr_base(Self) -> UInt64
-fn DwarfUnit::addrsize(Self) -> Int
-fn DwarfUnit::atable(Self) -> Map[UInt, Abbrev]
-fn DwarfUnit::base(Self) -> Int64
-fn DwarfUnit::data(Self) -> Bytes
-fn DwarfUnit::dwarf64(Self) -> (Bool, Bool)
-fn DwarfUnit::is_dwarf64(Self) -> Bool
-fn DwarfUnit::loc_lists_base(Self) -> UInt64
-fn DwarfUnit::new(Int64, Int64, Bytes, Map[UInt, Abbrev], Int, Int, Bool, UInt) -> Self
-fn DwarfUnit::off(Self) -> Int64
-fn DwarfUnit::rng_lists_base(Self) -> UInt64
-fn DwarfUnit::str_offsets_base(Self) -> UInt64
-fn DwarfUnit::utype(Self) -> UInt
-fn DwarfUnit::version(Self) -> Int
-impl Show for DwarfUnit
+fn Data::type_(Self, Int64) -> &Type raise
 
 pub struct Entry {
   offset : Int64
@@ -587,32 +486,24 @@ pub struct Entry {
 }
 fn Entry::add_field(Self, Field) -> Unit
 fn Entry::attr_field(Self, Attr) -> Field?
-fn Entry::children(Self) -> Bool
 fn Entry::fields(Self) -> Array[Field]
 fn Entry::new(Int64, Tag, Bool) -> Self
 fn Entry::offset(Self) -> Int64
-fn Entry::tag(Self) -> Tag
 fn Entry::val(Self, Attr) -> FieldValue?
 impl Show for Entry
 
-pub struct EnumType {
+pub(all) struct EnumType {
   common : CommonType
   enum_name : String
-  vals : Array[EnumValue]
+  val : Array[EnumValue]
 }
-fn EnumType::add_val(Self, EnumValue) -> Unit
-fn EnumType::enum_name(Self) -> String
-fn EnumType::new(CommonType, String) -> Self
-fn EnumType::vals(Self) -> Array[EnumValue]
 impl Show for EnumType
+impl Type for EnumType
 
-pub struct EnumValue {
+pub(all) struct EnumValue {
   name : String
   val : Int64
 }
-fn EnumValue::name(Self) -> String
-fn EnumValue::new(String, Int64) -> Self
-fn EnumValue::val(Self) -> Int64
 impl Show for EnumValue
 
 pub struct Field {
@@ -628,13 +519,16 @@ impl Show for Field
 
 pub enum FieldValue {
   VUInt64(UInt64)
-  VBytes(Bytes)
+  VBytes(@slice.Slice[Byte])
   VBool(Bool)
   VInt64(Int64)
-  VString(String)
+  VString(@slice.Slice[Byte])
   VOffset(Int64)
 }
 impl Show for FieldValue
+
+pub struct FloatType(BasicType)
+fn FloatType::inner(Self) -> BasicType
 
 pub enum Format {
   FormAddr
@@ -689,46 +583,34 @@ impl Show for Format
 
 pub struct FuncType {
   common : CommonType
-  return_type : DwarfTypeRef?
-  param_types : Array[DwarfTypeRef]
+  return_type : &Type?
+  param_type : Array[&Type]
 }
-fn FuncType::add_param_type(Self, DwarfTypeRef) -> Unit
-fn FuncType::new(CommonType, DwarfTypeRef?) -> Self
-fn FuncType::param_types(Self) -> Array[DwarfTypeRef]
-fn FuncType::return_type(Self) -> DwarfTypeRef?
-impl Show for FuncType
+impl Type for FuncType
 
-pub struct PtrType {
+pub struct IntType(BasicType)
+fn IntType::inner(Self) -> BasicType
+
+pub(all) struct PtrType {
   common : CommonType
-  ptr_type : DwarfTypeRef?
+  type_ : &Type
 }
-fn PtrType::new(CommonType, DwarfTypeRef?) -> Self
-fn PtrType::ptr_type(Self) -> DwarfTypeRef?
-impl Show for PtrType
+impl Type for PtrType
 
 pub struct QualType {
   common : CommonType
   qual : String
-  qual_type : DwarfTypeRef?
+  type_ : &Type
 }
-fn QualType::new(CommonType, String, DwarfTypeRef?) -> Self
-fn QualType::qual(Self) -> String
-fn QualType::qual_type(Self) -> DwarfTypeRef?
-impl Show for QualType
+impl Type for QualType
 
 type Reader
 fn Reader::address_size(Self) -> Int
-fn Reader::at_end(Self) -> Bool
 fn Reader::byte_order(Self) -> ByteOrder
-fn Reader::clone(Self) -> Self
-fn Reader::get_error(Self) -> String?
-fn Reader::has_error(Self) -> Bool
-fn Reader::new(Data, Array[SimpleUnit]) -> Self
-fn Reader::next(Self) -> Entry?
+fn Reader::next(Self) -> Entry? raise
 fn Reader::offset(Self) -> Int64
-fn Reader::reset(Self) -> Unit
 fn Reader::seek(Self, Int64) -> Unit
-fn Reader::skip_children(Self) -> Unit
+fn Reader::skip_children(Self) -> Unit raise
 
 pub struct SimpleUnit {
   base : Int64
@@ -739,26 +621,20 @@ pub struct SimpleUnit {
   is64 : Bool
 }
 fn SimpleUnit::addrsize(Self) -> Int
-fn SimpleUnit::from_unit(DwarfUnit) -> Self
 fn SimpleUnit::is_dwarf64(Self) -> Bool
 fn SimpleUnit::new(Int64, Int64, Bytes, Int, Int, Bool) -> Self
 fn SimpleUnit::version(Self) -> Int
 impl Show for SimpleUnit
 
-pub struct StructField {
+pub(all) struct StructField {
   name : String
-  struct_type : DwarfTypeRef?
+  type_ : &Type
   byte_offset : Int64
   byte_size : Int64
   bit_offset : Int64
   data_bit_offset : Int64
   bit_size : Int64
 }
-fn StructField::byte_offset(Self) -> Int64
-fn StructField::name(Self) -> String
-fn StructField::new(String, DwarfTypeRef?, Int64) -> Self
-fn StructField::struct_type(Self) -> DwarfTypeRef?
-impl Show for StructField
 
 pub struct StructType {
   common : CommonType
@@ -767,13 +643,8 @@ pub struct StructType {
   fields : Array[StructField]
   incomplete : Bool
 }
-fn StructType::add_field(Self, StructField) -> Unit
-fn StructType::fields(Self) -> Array[StructField]
-fn StructType::incomplete(Self) -> Bool
-fn StructType::kind(Self) -> String
-fn StructType::new(CommonType, String, String, Bool) -> Self
-fn StructType::struct_name(Self) -> String
-impl Show for StructType
+fn StructType::defn(Self) -> String
+impl Type for StructType
 
 pub enum Tag {
   TagArrayType
@@ -851,13 +722,17 @@ fn Tag::to_uint(Self) -> UInt
 impl Eq for Tag
 impl Show for Tag
 
-pub struct TypedefType {
+pub(all) struct TypedefType {
   common : CommonType
-  typedef_type : DwarfTypeRef?
+  type_ : &Type
 }
-fn TypedefType::new(CommonType, DwarfTypeRef?) -> Self
-fn TypedefType::typedef_type(Self) -> DwarfTypeRef?
-impl Show for TypedefType
+impl Type for TypedefType
+
+pub struct UcharType(BasicType)
+fn UcharType::inner(Self) -> BasicType
+
+pub struct UintType(BasicType)
+fn UintType::inner(Self) -> BasicType
 
 pub struct UnionType {
   common : CommonType
@@ -868,7 +743,6 @@ fn UnionType::add_field(Self, StructField) -> Unit
 fn UnionType::fields(Self) -> Array[StructField]
 fn UnionType::new(CommonType, String) -> Self
 fn UnionType::union_name(Self) -> String
-impl Show for UnionType
 
 pub struct Unit5 {
   mut addr_base : UInt64
@@ -879,29 +753,26 @@ pub struct Unit5 {
 fn Unit5::new() -> Self
 impl Show for Unit5
 
-pub struct UnsupportedType {
+pub struct UnspecifiedType(BasicType)
+fn UnspecifiedType::inner(Self) -> BasicType
+
+pub(all) struct UnsupportedType {
   common : CommonType
   tag : Tag
 }
-fn UnsupportedType::new(CommonType, Tag) -> Self
-fn UnsupportedType::tag(Self) -> Tag
-impl Show for UnsupportedType
+impl Type for UnsupportedType
 
-pub struct VoidType {
-  common : CommonType
-}
-fn VoidType::new(CommonType) -> Self
-impl Show for VoidType
+pub(all) struct VoidType(CommonType)
+fn VoidType::inner(Self) -> CommonType
+impl Type for VoidType
 
 // Type aliases
-pub typealias Map[UInt, Abbrev] as AbbrevTable
-
 pub typealias Int64 as Offset
 
 // Traits
-pub trait DwarfType {
+pub(open) trait Type {
   common(Self) -> CommonType
-  size(Self) -> Int64
-  to_string(Self) -> String
+  string(Self) -> String
+  size(Self) -> Int64 = _
 }
 

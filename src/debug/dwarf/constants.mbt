@@ -1102,22 +1102,22 @@ pub let lle_start_length : UInt = 0x08U
 ///|
 /// Unit header unit type encodings.
 /// These are new in DWARF 5.
-pub let ut_compile : UInt = 0x01U
+const Utcompile : UInt = 0x01U
 
 ///|
-pub let ut_type : UInt = 0x02U
+const UtType : UInt = 0x02U
 
 ///|
-pub let ut_partial : UInt = 0x03U
+const UtPartial : UInt = 0x03U
 
 ///|
-pub let ut_skeleton : UInt = 0x04U
+const UtSkeleton : UInt = 0x04U
 
 ///|
-pub let ut_split_compile : UInt = 0x05U
+const UtSplitCompile : UInt = 0x05U
 
 ///|
-pub let ut_split_type : UInt = 0x06U
+const UtSplitType : UInt = 0x06U
 
 ///|
 /// Opcodes for DWARFv5 debug_rnglists section.

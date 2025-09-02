@@ -4,15 +4,20 @@
 ///|
 /// Full compilation unit structure with all DWARF features
 priv struct Unit_ {
-  base : Offset // byte offset of header within the aggregate info
-  off : Offset // byte offset of data within the aggregate info
-  data : @slice.Slice[Byte]
-  atable : AbbrevTable
-  mut unit5 : Unit5? // info specific to DWARF 5 units
-  asize : Int // address size
-  vers : Int // DWARF version
-  is64 : Bool // True for 64-bit DWARF format
-  utype : UInt // DWARF 5 unit type
+  mut base : Offset // byte offset of header within the aggregate info
+  mut off : Offset // byte offset of data within the aggregate info
+  mut data : @slice.Slice[Byte]
+  mut atable : AbbrevTable
+  unit5 : Unit5? // info specific to DWARF 5 units
+  mut asize : Int // address size
+  mut vers : Int // DWARF version
+  mut is64 : Bool // True for 64-bit DWARF format
+  mut utype : UInt // DWARF 5 unit type
+}
+
+///|
+impl Default for Unit_ with default() -> Unit_ {
+  Unit_::new(0L, 0L, @slice.new(), AbbrevTable::new(), 0, 0, false, 0U)
 }
 
 ///|
@@ -140,80 +145,102 @@ impl DataFormat for Unit_ with addrsize(self) {
 
 ///|
 /// Parse compilation units from the .debug_info section
-fn parse_units(data : Data) -> Result[Array[Unit_], String] {
+fn Data::parse_units(d : Data) -> FixedArray[Unit_] raise {
   // Count units first
   let mut nunit = 0
-  let info_data = data.get_section(".debug_info")
-  let mut b = make_buf(Some(data), UnknownFormat::new(), "info", 0L, info_data)
+  let mut b = make_buf(Some(d), UnknownFormat::new(), "info", 0L, d.info)
   while b.length() > 0 {
     let (len, _) = b.unit_length()
     if len < 0L {
-      return Err("unit length overflow")
+      raise b.error("unit length overflow")
     }
     b.skip(len.to_int())
     if len > 0L {
-      nunit = nunit + 1
+      nunit += 1
     }
   }
-  if b.has_error() {
-    match b.get_error() {
-      Some(err) => return Err(err.to_string())
-      None => return Err("unknown error parsing units")
-    }
+  if b.err is Some(err) {
+    raise err
   }
 
-  // Parse the units
-  b = make_buf(Some(data), UnknownFormat::new(), "info", 0L, info_data)
-  let units : Array[Unit_] = []
-  for _i = 0; _i < nunit; _i = _i + 1 {
-    match parse_single_unit(data, b) {
-      Ok(unit) => units.push(unit)
-      Err(err) => return Err(err)
+  // Again, this time writing them down.
+  b = make_buf(Some(d), UnknownFormat::new(), "info", 0L, d.info)
+  let units = FixedArray::makei(nunit, _ => Unit_::default())
+  for i in 0..<nunit {
+    let u = units[i]
+    u.base = b.off
+    if b.err is Some(err) {
+      raise err
     }
+    let mut n : Offset = 0
+    while n == 0 {
+      let (n_n, n_is64) = b.unit_length()
+      n = n_n
+      u.is64 = n_is64
+    }
+    let data_off = b.off
+    let vers = b.uint16()
+    if vers < 2 || vers > 5 {
+      raise b.error("unsupported DWARF version \{vers}")
+    }
+    u.vers = vers.reinterpret_as_int()
+    if vers >= 5 {
+      u.utype = b.uint8()
+      u.asize = b.uint8().reinterpret_as_int()
+    }
+    let mut abbrev_off : UInt64 = 0
+    if u.is64 {
+      abbrev_off = b.uint64()
+    } else {
+      abbrev_off = b.uint32().to_uint64()
+    }
+    u.atable = d.parse_abbrev(abbrev_off, u.vers)
+    if vers < 5 {
+      u.asize = b.uint8().reinterpret_as_int()
+    }
+    match u.utype {
+      UtSkeleton | UtSplitCompile => ignore(b.uint64())
+      UtType | UtSplitType => {
+        ignore(b.uint64())
+        if u.is64 {
+          ignore(b.uint64())
+        } else {
+          ignore(b.uint32())
+        }
+      }
+      _ => ()
+    }
+    u.off = b.off
+    u.data = b.bytes((n - (b.off - data_off)).to_int())
   }
-  Ok(units)
+  units
 }
 
 ///|
 /// Collect DWARF 5 base offsets from compilation unit
 fn collect_dwarf5_base_offsets(d : Data, u : Unit_) -> Unit raise {
-  if u.unit5 is None {
+  guard u.unit5 is Some(u5) else {
     abort("expected unit5 to be set up already")
   }
   let b = make_buf(Some(d), u, "info", u.off, u.data)
   let cu = b.entry(None, u)
-  if cu is None && b.err is Some(err) {
+  guard cu is Some(cu) else {
     // Unknown abbreviation table entry or some other fatal
     // problem; bail early on the assumption that this will be
     // detected at some later point.
-    raise err
+    raise b.error("failed to parse compilation unit entry")
   }
-  match cu {
-    Some(entry) => {
-      match updated_unit.unit5 {
-        Some(u5) => {
-          // Extract base offsets from compilation unit attributes
-          match entry.val(AttrAddrBase) {
-            Some(VInt64(addr_base)) => u5.addr_base = addr_base.to_uint64()
-            _ => ()
-          }
-          match entry.val(AttrStrOffsetsBase) {
-            Some(VInt64(str_base)) => u5.str_offsets_base = str_base.to_uint64()
-            _ => ()
-          }
-          match entry.val(AttrRnglistsBase) {
-            Some(VInt64(rng_base)) => u5.rng_lists_base = rng_base.to_uint64()
-            _ => ()
-          }
-          match entry.val(AttrLoclistsBase) {
-            Some(VInt64(loc_base)) => u5.loc_lists_base = loc_base.to_uint64()
-            _ => ()
-          }
-        }
-        None => () // Should not happen
-      }
-      Ok(updated_unit)
-    }
-    None => Err("failed to parse compilation unit entry")
+  // Extract base offsets from compilation unit attributes
+  if cu.val(AttrAddrBase) is Some(VInt64(addr_base)) {
+    u5.addr_base = addr_base.reinterpret_as_uint64()
+  }
+  if cu.val(AttrStrOffsetsBase) is Some(VInt64(str_base)) {
+    u5.str_offsets_base = str_base.reinterpret_as_uint64()
+  }
+  if cu.val(AttrRnglistsBase) is Some(VInt64(rng_base)) {
+    u5.rng_lists_base = rng_base.reinterpret_as_uint64()
+  }
+  if cu.val(AttrLoclistsBase) is Some(VInt64(loc_base)) {
+    u5.loc_lists_base = loc_base.reinterpret_as_uint64()
   }
 }

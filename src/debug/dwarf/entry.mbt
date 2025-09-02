@@ -3,7 +3,7 @@
 
 ///|
 /// Parse a single DWARF entry from a buffer
-fn Buf::entry(b : Buf, cu : Entry?, u : Unit_) -> Entry raise {
+fn Buf::entry(b : Buf, cu : Entry?, u : Unit_) -> Entry? raise {
   let atab = u.atable
   let ubase = u.base
   let vers = u.vers
@@ -11,7 +11,7 @@ fn Buf::entry(b : Buf, cu : Entry?, u : Unit_) -> Entry raise {
   let id = b.uint().to_uint()
   if id == 0U {
     // Null entry (end of children)
-    return Entry::new(off, TagVariable, false)
+    return Some(Entry::new(off, TagVariable, false))
   } // Use a dummy tag
   guard atab.get(id) is Some(a) else {
     raise b.error("unknown abbreviation code \{id}")
@@ -28,12 +28,12 @@ fn Buf::entry(b : Buf, cu : Entry?, u : Unit_) -> Entry raise {
         )
     }
   }
-  e
+  Some(e)
 }
 
 ///|
 /// Parse a single field from a buffer according to its definition
-fn parse_field(buf : Buf, field_def : AField, cu : Entry?, u : Unit_) -> Field? {
+fn parse_field(buf : Buf, field_def : AField, cu : Entry?, u : Unit_) -> Field? raise {
   let attr = field_def.attr()
   let format = field_def.format()
   let class = field_def.class()
@@ -62,7 +62,7 @@ fn parse_field_value(
   format : Format,
   attr : Attr,
   u : Unit_,
-) -> FieldValue? {
+) -> FieldValue? raise {
   match format {
     // Address formats
     FormAddr => Some(VUInt64(b.addr()))
@@ -73,9 +73,9 @@ fn parse_field_value(
     FormAddrx4 => Some(VUInt64(parse_addrx(b, b.uint32().to_uint64())))
 
     // Block formats
-    FormDwarfBlock1 => Some(VBytes(b.bytes(b.uint8().to_int())))
-    FormDwarfBlock2 => Some(VBytes(b.bytes(b.uint16().to_int())))
-    FormDwarfBlock4 => Some(VBytes(b.bytes(b.uint32().to_int())))
+    FormDwarfBlock1 => Some(VBytes(b.bytes(b.uint8().reinterpret_as_int())))
+    FormDwarfBlock2 => Some(VBytes(b.bytes(b.uint16().reinterpret_as_int())))
+    FormDwarfBlock4 => Some(VBytes(b.bytes(b.uint32().reinterpret_as_int())))
     FormDwarfBlock => Some(VBytes(b.bytes(b.uint().to_int())))
 
     // Data formats
@@ -171,19 +171,19 @@ fn parse_addrx(buf : Buf, index : UInt64) -> UInt64 {
 
 ///|
 /// Parse string pointer from .debug_str section
-fn parse_strp(buf : Buf) -> String {
+fn parse_strp(buf : Buf) -> @slice.Slice[Byte] {
   ...
 }
 
 ///|
 /// Parse string pointer from .debug_line_str section
-fn parse_line_strp(buf : Buf) -> String {
+fn parse_line_strp(buf : Buf) -> @slice.Slice[Byte] {
   ...
 }
 
 ///|
 /// Parse string index (DWARF 5)
-fn parse_strx(buf : Buf, index : UInt64) -> String {
+fn parse_strx(buf : Buf, index : UInt64) -> @slice.Slice[Byte] {
   ...
 }
 
@@ -211,50 +211,48 @@ fn Buf::peek_entry_id(self : Buf) -> UInt? {
 
 ///|
 /// Abbreviation table entry - describes how to parse a DWARF entry
-pub struct Abbrev {
-  tag : Tag
-  children : Bool
-  fields : Array[AField]
-} derive(Show)
-
-///|
-/// Create a new Abbrev
-pub fn Abbrev::new(tag : Tag, children : Bool) -> Abbrev {
-  { tag, children, fields: [] }
+priv struct Abbrev {
+  mut tag : Tag
+  mut children : Bool
+  mut fields : FixedArray[AField]
 }
 
 ///|
-/// Add a field to the abbreviation
-pub fn Abbrev::add_field(self : Abbrev, field : AField) -> Unit {
-  self.fields.push(field)
+impl Default for Abbrev with default() -> Abbrev {
+  Abbrev::{ tag: TagVariable, children: false, fields: [] }
 }
 
 ///|
 /// Get the tag
-pub fn Abbrev::tag(self : Abbrev) -> Tag {
+fn Abbrev::tag(self : Abbrev) -> Tag {
   self.tag
 }
 
 ///|
 /// Check if has children
-pub fn Abbrev::children(self : Abbrev) -> Bool {
+fn Abbrev::children(self : Abbrev) -> Bool {
   self.children
 }
 
 ///|
 /// Get fields
-pub fn Abbrev::fields(self : Abbrev) -> Array[AField] {
+fn Abbrev::fields(self : Abbrev) -> FixedArray[AField] {
   self.fields
 }
 
 ///|
 /// Abbreviation field - describes a single attribute in an entry
 pub struct AField {
-  attr : Attr
-  format : Format
-  class : Class
-  val : Int64 // for FormImplicitConst
+  mut attr : Attr
+  mut format : Format
+  mut class : Class
+  mut val : Int64 // for FormImplicitConst
 } derive(Show)
+
+///|
+impl Default for AField with default() -> AField {
+  AField::{ attr: AttrName, format: FormString, class: ClassUnknown, val: 0L }
+}
 
 ///|
 /// Create a new AField
@@ -293,11 +291,11 @@ pub fn AField::val(self : AField) -> Int64 {
 
 ///|
 /// Abbreviation table - maps abbreviation codes to abbreviation entries
-pub typealias Map[UInt, Abbrev] as AbbrevTable
+typealias Map[UInt, Abbrev] as AbbrevTable
 
 ///|
 /// Parse abbreviation table from the .debug_abbrev section
-fn parse_abbrev(d : Data, off : UInt64, vers : Int) -> AbbrevTable raise {
+fn Data::parse_abbrev(d : Data, off : UInt64, vers : Int) -> AbbrevTable raise {
   // Check cache first
   if d.abbrev_cache.get(off) is Some(m) {
     return m
@@ -309,7 +307,7 @@ fn parse_abbrev(d : Data, off : UInt64, vers : Int) -> AbbrevTable raise {
     data[off.to_int():]
   }
   let b = make_buf(Some(d), UnknownFormat::new(), "abbrev", 0, data)
-  let table : AbbrevTable = {}
+  let m : AbbrevTable = {}
   while true {
     // Table ends with id == 0
     let id = b.uint().to_uint()
@@ -317,11 +315,11 @@ fn parse_abbrev(d : Data, off : UInt64, vers : Int) -> AbbrevTable raise {
       break
     }
 
-    // Count attributes first to pre-allocate
+    // Walk over attributes, counting
     let mut n = 0
-    let b1 = b // Copy for counting
-    let _tag = b1.uint() // skip tag
-    let _children = b1.uint8() // skip children
+    let b1 = b // Read from copy of b
+    let _ = b1.uint()
+    let _ = b1.uint8()
     while true {
       let tag = b1.uint()
       let fmt = b1.uint()
@@ -329,58 +327,46 @@ fn parse_abbrev(d : Data, off : UInt64, vers : Int) -> AbbrevTable raise {
         break
       }
       if fmt == format_to_uint(FormImplicitConst) {
-        let _val = b1.int()
-        // skip implicit const value
+        let _ = b1.int()
+
       }
-      n = n + 1
+      n += 1
     }
-    if b1.has_error() {
-      match b1.get_error() {
-        Some(err) => return Err(err.to_string())
-        None => return Err("error counting abbreviation fields")
-      }
+    if b1.err is Some(err) {
+      raise err
     }
 
-    // Read the abbreviation
-    let tag_val = b.uint()
-    let tag = match uint_to_tag(tag_val.to_uint()) {
+    // Walk over attributes again, this time writing them down.
+    let a = Abbrev::default()
+    a.tag = match uint_to_tag(b.uint().to_uint()) {
       Some(t) => t
       None => TagVariable // default fallback
     }
-    let children = b.uint8() != 0U
-    let abbrev = Abbrev::new(tag, children)
-    for _i = 0; _i < n; _i = _i + 1 {
-      let attr_val = b.uint()
-      let fmt_val = b.uint()
-      let attr = match uint_to_attr(attr_val.to_uint()) {
-        Some(a) => a
-        None => AttrName // default fallback
+    a.children = b.uint8() != 0U
+    a.fields = FixedArray::make(n, AField::default())
+    for i = 0; i < n; i = i + 1 {
+      a.fields[i].attr = uint_to_attr(b.uint().to_uint()).unwrap_or(AttrName)
+      a.fields[i].format = uint_to_format(b.uint().to_uint()).unwrap_or(
+        FormString,
+      )
+      a.fields[i].class = format_to_class(
+        a.fields[i].format,
+        a.fields[i].attr,
+        vers,
+      )
+      if a.fields[i].format == FormImplicitConst {
+        a.fields[i].val = b.int()
       }
-      let format = match uint_to_format(fmt_val.to_uint()) {
-        Some(f) => f
-        None => FormString // default fallback
-      }
-      let class = format_to_class(format, attr, vers)
-      let val = if format == FormImplicitConst { b.int() } else { 0L }
-      let _ = abbrev.add_field(AField::new(attr, format, class, val))
-
     }
-
-    // Skip terminating zeros
-    let _end1 = b.uint()
-    let _end2 = b.uint()
-    table.set(id, abbrev)
+    ignore(b.uint())
+    ignore(b.uint())
+    m[id] = a
   }
-  if b.has_error() {
-    match b.get_error() {
-      Some(err) => return Err(err.to_string())
-      None => return Err("error parsing abbreviation table")
-    }
+  if b.err is Some(err) {
+    raise err
   }
-
-  // Cache the result
-  let _ = d.set_abbrev_cache(off, table)
-  Ok(table)
+  d.abbrev_cache[off] = m
+  m
 }
 
 ///|
@@ -578,7 +564,7 @@ fn format_to_uint(format : Format) -> UInt64 {
 struct Reader {
   mut b : Buf
   d : Data
-  mut err : String?
+  mut err : Error?
   mut unit : Int
   mut last_unit : Bool // set if last entry returned by next is TagCompileUnit/TagPartialUnit
   mut last_children : Bool // .children of last entry returned by next
@@ -606,6 +592,9 @@ pub fn Reader::byte_order(self : Reader) -> ByteOrder {
 }
 
 ///|
+priv suberror OffsetOutOfRange
+
+///|
 /// Seek positions the Reader at offset off in the encoded entry stream.
 /// Offset 0 can be used to denote the first entry.
 pub fn Reader::seek(self : Reader, off : Offset) -> Unit {
@@ -624,7 +613,7 @@ pub fn Reader::seek(self : Reader, off : Offset) -> Unit {
   }
   let i = self.offset_to_unit(off)
   if i == -1 {
-    self.err = Some("offset out of range")
+    self.err = Some(OffsetOutOfRange)
     return
   }
   if i != self.unit {
@@ -632,13 +621,19 @@ pub fn Reader::seek(self : Reader, off : Offset) -> Unit {
   }
   let u = d.unit[i]
   self.unit = i
-  self.b = make_buf(Some(self.d), u, "info", off, u.data[off - u.off:])
+  self.b = make_buf(
+    Some(self.d),
+    u,
+    "info",
+    off,
+    u.data[off.to_int() - u.off.to_int():],
+  )
 }
 
 ///|
 /// Move to next unit if current one is finished
 fn Reader::maybe_next_unit(self : Reader) -> Unit {
-  while self.b.length() == 0 && self.unit + 1 < self.units.length() {
+  while self.b.length() == 0 && self.unit + 1 < self.d.unit.length() {
     self.next_unit()
   }
 }
@@ -647,10 +642,10 @@ fn Reader::maybe_next_unit(self : Reader) -> Unit {
 /// Advance to the next unit
 fn Reader::next_unit(self : Reader) -> Unit {
   self.unit = self.unit + 1
-  if self.unit >= self.units.length() {
+  if self.unit >= self.d.unit.length() {
     return
   }
-  let u = self.units[self.unit]
+  let u = self.d.unit[self.unit]
   self.b = make_buf(
     Some(self.d),
     UnknownFormat::new(),
@@ -666,64 +661,39 @@ fn Reader::next_unit(self : Reader) -> Unit {
 /// It returns None when it reaches the end of the section.
 /// It returns an error via the Reader's error field if the current offset 
 /// is invalid or the data cannot be decoded as a valid Entry.
-pub fn Reader::next(self : Reader) -> Entry? {
-  match self.err {
-    Some(_) => return None
-    None => () // continue
+pub fn Reader::next(r : Reader) -> Entry? raise {
+  if r.err is Some(err) {
+    raise err
   }
-  self.maybe_next_unit()
-  if self.b.length() == 0 {
+  r.maybe_next_unit()
+  if r.b.length() == 0 {
     return None
   }
-  if self.unit >= self.units.length() {
-    self.err = Some("unit index out of range")
-    return None
-  }
-  let u = self.units[self.unit]
-
-  // Get abbreviation table for this unit
-  let atable = match parse_abbrev(self.d, 0UL, u.version()) {
-    Ok(table) => table
-    Err(error) => {
-      self.err = Some(error)
-      return None
-    }
-  }
-  let entry = parse_entry(self.b, self.cu, u, atable)
-  if self.b.has_error() {
-    match self.b.get_error() {
-      Some(err) => self.err = Some(err.to_string())
-      None => self.err = Some("unknown buffer error")
-    }
-    return None
-  }
-  self.last_unit = false
-  match entry {
-    Some(e) => {
-      self.last_children = e.children()
-      if self.last_children {
-        self.last_sibling = match e.val(AttrSibling) {
-          Some(VOffset(off)) => off
-          _ => 0L
-        }
+  let u = r.d.unit[r.unit]
+  let e = r.b.entry(r.cu, u)
+  r.last_unit = false
+  if e is Some(e) {
+    r.last_children = e.children
+    if r.last_children {
+      r.last_sibling = match e.val(AttrSibling) {
+        Some(VOffset(off)) => off
+        _ => 0L
       }
-      if e.tag() == TagCompileUnit || e.tag() == TagPartialUnit {
-        self.last_unit = true
-        self.cu = Some(e)
-      }
-      Some(e)
     }
-    None => {
-      self.last_children = false
-      None
+    if e.tag == TagCompileUnit || e.tag == TagPartialUnit {
+      r.last_unit = true
+      r.cu = Some(e)
     }
+  } else {
+    r.last_children = false
   }
+  e
 }
 
 ///|
 /// Skip over the child entries associated with the last Entry returned by next.
 /// If that Entry did not have children or next has not been called, skip_children is a no-op.
-pub fn Reader::skip_children(self : Reader) -> Unit {
+pub fn Reader::skip_children(self : Reader) -> Unit raise {
   match self.err {
     Some(_) => return
     None => () // continue
@@ -750,11 +720,11 @@ pub fn Reader::skip_children(self : Reader) -> Unit {
     match self.next() {
       None => break
       Some(e) => {
-        if e.tag() == TagVariable && e.offset() == 0L {
+        if e.tag == TagVariable && e.offset() == 0L {
           // This is our null entry marker
           break
         }
-        if e.children() {
+        if e.children {
           self.skip_children()
         }
       }
@@ -763,27 +733,12 @@ pub fn Reader::skip_children(self : Reader) -> Unit {
 }
 
 ///|
-/// Get current error state
-pub fn Reader::get_error(self : Reader) -> String? {
-  self.err
-}
-
-///|
-/// Check if reader has error
-pub fn Reader::has_error(self : Reader) -> Bool {
-  match self.err {
-    Some(_) => true
-    None => false
-  }
-}
-
-///|
 /// Find unit index containing the given offset
 fn Reader::offset_to_unit(self : Reader, off : Offset) -> Int {
   // This is a simplified implementation
   // Real implementation would need proper unit offset tracking
-  for i = 0; i < self.units.length(); i = i + 1 {
-    let u = self.units[i]
+  for i = 0; i < self.d.unit.length(); i = i + 1 {
+    let u = self.d.unit[i]
     if u.base <= off && off < u.base + u.data.length().to_int64() {
       return i
     }

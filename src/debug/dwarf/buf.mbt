@@ -43,12 +43,12 @@ impl DataFormat for UnknownFormat with addrsize(_) {
 ///|
 /// Data buffer being decoded.
 priv struct Buf {
-  dwarf : @slice.Slice[Byte]?
+  dwarf : Data?
   order : ByteOrder
   format : &DataFormat
   name : String
   mut off : Offset
-  mut data : Bytes
+  mut data : @slice.Slice[Byte]
   mut err : DecodeError?
 }
 
@@ -102,81 +102,50 @@ pub impl Show for DecodeError with output(self : DecodeError, logger : &Logger) 
 
 ///|
 /// Read a uint8
-fn Buf::uint8(self : Buf) -> UInt {
+fn Buf::uint8(self : Buf) -> UInt raise {
   if self.data.length() < 1 {
-    ignore(self.error("underflow"))
-    return 0U
+    raise self.error("underflow")
   }
   let val = self.data[0].to_uint()
-  // Create new Bytes from remaining data
-  let bytes_array : Array[Byte] = []
-  for i = 1; i < self.data.length(); i = i + 1 {
-    bytes_array.push(self.data[i])
-  }
-  self.data = Bytes::from_array(bytes_array)
-  self.off = self.off + 1L
+  self.data = self.data[1:]
+  self.off += 1
   val
 }
 
 ///|
 /// Read n bytes
-fn Buf::bytes(self : Buf, n : Int) -> Bytes {
+fn Buf::bytes(self : Buf, n : Int) -> @slice.Slice[Byte] raise {
   if n < 0 || self.data.length() < n {
-    ignore(self.error("underflow"))
-    return b""
+    raise self.error("underflow")
   }
-  // Copy requested bytes
-  let data_array : Array[Byte] = []
-  for i = 0; i < n; i = i + 1 {
-    data_array.push(self.data[i])
-  }
-  let data = Bytes::from_array(data_array)
-
-  // Copy remaining bytes
-  let remaining_array : Array[Byte] = []
-  for i = n; i < self.data.length(); i = i + 1 {
-    remaining_array.push(self.data[i])
-  }
-  self.data = Bytes::from_array(remaining_array)
-  self.off = self.off + Int64::from_int(n)
+  let data = self.data[:n]
+  self.data = self.data[n:]
+  self.off += n.to_int64()
   data
 }
 
 ///|
 /// Skip n bytes
-fn Buf::skip(self : Buf, n : Int) -> Unit {
-  let _discarded = self.bytes(n)
-  ()
+fn Buf::skip(self : Buf, n : Int) -> Unit raise {
+  ignore(self.bytes(n))
 }
 
 ///|
 /// Read a null-terminated string
-fn Buf::string(self : Buf) -> String {
-  let mut i = -1
-  for j = 0; j < self.data.length(); j = j + 1 {
-    if self.data[j] == 0 {
-      i = j
-      break
-    }
-  }
+fn Buf::string(self : Buf) -> @slice.Slice[Byte] raise {
+  let i = @bytes.index_byte(self.data, 0)
   if i < 0 {
-    ignore(self.error("underflow"))
-    return ""
+    raise self.error("underflow")
   }
-  let s = self.data[:i].to_string()
-  // Copy remaining bytes after null terminator
-  let remaining_array : Array[Byte] = []
-  for j = i + 1; j < self.data.length(); j = j + 1 {
-    remaining_array.push(self.data[j])
-  }
-  self.data = Bytes::from_array(remaining_array)
-  self.off = self.off + Int64::from_int(i + 1)
+  let s = self.data[:i]
+  self.data = self.data[i + 1:]
+  self.off += (i + 1).to_int64()
   s
 }
 
 ///|
 /// Read a uint16
-fn Buf::uint16(self : Buf) -> UInt {
+fn Buf::uint16(self : Buf) -> UInt raise {
   let a = self.bytes(2)
   if a.length() == 0 {
     return 0U
@@ -189,7 +158,7 @@ fn Buf::uint16(self : Buf) -> UInt {
 
 ///|
 /// Read a uint24
-fn Buf::uint24(self : Buf) -> UInt {
+fn Buf::uint24(self : Buf) -> UInt raise {
   let a = self.bytes(3)
   if a.length() == 0 {
     return 0U
@@ -203,7 +172,7 @@ fn Buf::uint24(self : Buf) -> UInt {
 
 ///|
 /// Read a uint32
-fn Buf::uint32(self : Buf) -> UInt {
+fn Buf::uint32(self : Buf) -> UInt raise {
   let a = self.bytes(4)
   if a.length() == 0 {
     return 0U
@@ -224,7 +193,7 @@ fn Buf::uint32(self : Buf) -> UInt {
 
 ///|
 /// Read a uint64
-fn Buf::uint64(self : Buf) -> UInt64 {
+fn Buf::uint64(self : Buf) -> UInt64 raise {
   let a = self.bytes(8)
   if a.length() == 0 {
     return 0UL
@@ -266,12 +235,7 @@ fn Buf::varint(self : Buf) -> (UInt64, UInt) {
     bits = bits + 7U
     if (byte.to_uint() & 0x80U) == 0U {
       self.off = self.off + Int64::from_int(i + 1)
-      // Copy remaining bytes after varint
-      let remaining_array : Array[Byte] = []
-      for j = i + 1; j < self.data.length(); j = j + 1 {
-        remaining_array.push(self.data[j])
-      }
-      self.data = Bytes::from_array(remaining_array)
+      self.data = self.data[i + 1:]
       return (c, bits)
     }
   }
@@ -298,7 +262,7 @@ fn Buf::int(self : Buf) -> Int64 {
 
 ///|
 /// Read address-sized uint
-fn Buf::addr(self : Buf) -> UInt64 {
+fn Buf::addr(self : Buf) -> UInt64 raise {
   match self.format.addrsize() {
     1 => self.uint8().to_uint64()
     2 => self.uint16().to_uint64()
@@ -313,7 +277,7 @@ fn Buf::addr(self : Buf) -> UInt64 {
 
 ///|
 /// Read unit length
-fn Buf::unit_length(self : Buf) -> (Offset, Bool) {
+fn Buf::unit_length(self : Buf) -> (Offset, Bool) raise {
   let mut length = self.uint32().reinterpret_as_int().to_int64()
   let mut dwarf64 = false
   if length == 0xffffffffL {
@@ -331,7 +295,7 @@ fn Buf::error(self : Buf, s : String) -> DecodeError {
   if self.err is Some(err) {
     return err
   } else {
-    self.data = ""
+    self.data = @slice.new()
     let err = DecodeError::new(name=self.name, offset=self.off, s)
     self.err = Some(err)
     return err
