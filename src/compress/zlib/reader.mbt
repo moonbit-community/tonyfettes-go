@@ -5,7 +5,7 @@
 ///|
 pub struct Reader {
   mut r : &@flate.Reader
-  mut decompressor : &@io.ReadCloser?
+  mut decompressor : @flate.Decompressor?
   mut digest : Adler32
   mut err : Error?
   scratch : FixedArray[Byte]
@@ -195,14 +195,7 @@ pub impl Resetter for Reader with reset(self, r, dict : ArrayView[Byte]) {
       } else {
         self.decompressor = Some(@flate.new_reader(self.r))
       }
-    Some(decompressor) =>
-      // Reset existing decompressor using flate.Resetter interface
-      // FIXME: Need to check if flate readers implement Resetter trait
-      if have_dict {
-        self.decompressor = Some(@flate.new_reader_dict(self.r, dict[0:]))
-      } else {
-        self.decompressor = Some(@flate.new_reader(self.r))
-      }
+    Some(decompressor) => decompressor.reset(self.r, dict)
   }
   self.digest = Adler32::new()
 }

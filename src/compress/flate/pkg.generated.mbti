@@ -16,9 +16,9 @@ const HuffmanOnly : Int = -2
 
 const NoCompression : Int = 0
 
-fn[R : @io.Reader + @io.ByteReader] new_reader(R) -> &@io.ReadCloser
+fn[R : @io.Reader + @io.ByteReader] new_reader(R) -> Decompressor
 
-fn[R : @io.Reader + @io.ByteReader] new_reader_dict(R, ArrayView[Byte]) -> &@io.ReadCloser
+fn[R : @io.Reader + @io.ByteReader] new_reader_dict(R, ArrayView[Byte]) -> Decompressor
 
 fn new_writer(&@io.Writer, Int) -> Writer raise
 
@@ -30,6 +30,11 @@ pub suberror CorruptInputError Int64
 pub suberror InternalError String
 
 // Types and methods
+type Decompressor
+impl Resetter for Decompressor
+impl @io.Closer for Decompressor
+impl @io.Reader for Decompressor
+
 type Writer
 fn Writer::flush(Self) -> Unit raise
 fn Writer::reset(Self, &@io.Writer) -> Unit

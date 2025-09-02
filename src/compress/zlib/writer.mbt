@@ -191,7 +191,7 @@ pub impl @io.Writer for Writer with write(self, p) {
 ///|
 /// Flush flushes the Writer to its underlying io.Writer.
 pub fn Writer::flush(self : Writer) -> Unit raise {
-  if not(self.wrote_header) {
+  if !self.wrote_header {
     self.write_header()
   }
   match self.err {
@@ -208,7 +208,7 @@ pub fn Writer::flush(self : Writer) -> Unit raise {
 /// Close closes the Writer, flushing any unwritten data to the underlying
 /// io.Writer, but does not close the underlying io.Writer.
 pub impl @io.Closer for Writer with close(self) {
-  if not(self.wrote_header) {
+  if !self.wrote_header {
     self.write_header()
   }
   match self.err {
@@ -235,7 +235,7 @@ pub impl @io.Closer for Writer with close(self) {
 }
 
 ///|
-suberror InvalidCompressionLevel Int
+priv suberror InvalidCompressionLevel Int
 
 ///|
-suberror InternalError String
+priv suberror InternalError String

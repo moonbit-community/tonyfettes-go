@@ -58,10 +58,6 @@ impl Show for DictionaryError
 pub suberror HeaderError
 impl Show for HeaderError
 
-type InternalError
-
-type InvalidCompressionLevel
-
 // Types and methods
 pub struct Adler32 {
   mut a : UInt
@@ -79,7 +75,7 @@ impl Show for Adler32
 
 pub struct Reader {
   mut r : &@flate.Reader
-  mut decompressor : &@io.ReadCloser?
+  mut decompressor : @flate.Decompressor?
   mut digest : Adler32
   mut err : Error?
   scratch : FixedArray[Byte]

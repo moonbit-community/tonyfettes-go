@@ -206,7 +206,7 @@ let fixed_huffman_decoder : Ref[HuffmanDecoder?] = Ref::new(None)
 
 ///|
 /// Decompressor state - removed derive(Show) due to trait constraints
-priv struct Decompressor {
+struct Decompressor {
   // Input source
   mut r : &Reader
   mut roffset : Int64
@@ -397,7 +397,7 @@ fn Decompressor::next_block(f : Decompressor) -> Unit raise {
 
 ///|
 /// read reads from the decompressor
-impl @io.Reader for Decompressor with read(
+pub impl @io.Reader for Decompressor with read(
   self : Decompressor,
   b : ArrayView[Byte],
 ) -> Int raise {
@@ -442,7 +442,7 @@ impl @io.Reader for Decompressor with read(
 
 ///|
 /// close closes the decompressor
-impl @io.Closer for Decompressor with close(self : Decompressor) -> Unit raise {
+pub impl @io.Closer for Decompressor with close(self : Decompressor) -> Unit raise {
   match self.err {
     Some(@io.EOF) => ()
     Some(err) => raise err
@@ -760,7 +760,7 @@ fn reverse_bits_8(b : Byte) -> Byte {
 
 ///|
 /// reset resets the decompressor for a new stream
-impl Resetter for Decompressor with reset(
+pub impl Resetter for Decompressor with reset(
   self : Decompressor,
   r : &Reader,
   dict : ArrayView[Byte],
@@ -797,7 +797,7 @@ impl Resetter for Decompressor with reset(
 /// new_reader returns a new ReadCloser that can be used to read the uncompressed
 /// version of r. If r does not also implement io.ByteReader, the decompressor may
 /// read more data than necessary from r.
-pub fn[R : @io.Reader + @io.ByteReader] new_reader(r : R) -> &@io.ReadCloser {
+pub fn[R : @io.Reader + @io.ByteReader] new_reader(r : R) -> Decompressor {
   fixed_huffman_decoder_init()
   let f = Decompressor::new(r)
   for i = 0; i < MaxNumLit + MaxNumDist; i = i + 1 {
@@ -818,7 +818,7 @@ pub fn[R : @io.Reader + @io.ByteReader] new_reader(r : R) -> &@io.ReadCloser {
 pub fn[R : @io.Reader + @io.ByteReader] new_reader_dict(
   r : R,
   dict : ArrayView[Byte],
-) -> &@io.ReadCloser {
+) -> Decompressor {
   fixed_huffman_decoder_init()
   let f = Decompressor::new(r)
   for i = 0; i < MaxNumLit + MaxNumDist; i = i + 1 {
