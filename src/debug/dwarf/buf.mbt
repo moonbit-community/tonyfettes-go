@@ -4,23 +4,21 @@
 ///|
 /// Data format, other than byte order. This affects the handling of
 /// certain field formats.
-pub trait DataFormat {
+priv trait DataFormat {
   /// DWARF version number. Zero means unknown.
-  version(Self) -> Int
-
+  version(self : Self) -> Int
   /// 64-bit DWARF format?
-  dwarf64(Self) -> (Bool, Bool) // (dwarf64, isKnown)
-
+  dwarf64(self : Self) -> (Bool, Bool) // (dwarf64, isKnown)
   /// Size of an address, in bytes. Zero means unknown.
-  addrsize(Self) -> Int
+  addrsize(self : Self) -> Int
 }
 
 ///|
 /// Some parts of DWARF have no data format, e.g., abbrevs.
-pub struct UnknownFormat {} derive(Show)
+priv struct UnknownFormat {} derive(Show)
 
 ///|
-pub fn UnknownFormat::new() -> UnknownFormat {
+fn UnknownFormat::new() -> UnknownFormat {
   UnknownFormat::{  }
 }
 
@@ -44,47 +42,14 @@ impl DataFormat for UnknownFormat with addrsize(_) {
 
 ///|
 /// Data buffer being decoded.
-pub struct Buffer {
+priv struct Buf {
   dwarf : Data?
   order : ByteOrder
-  format : DataFormatRef
+  format : &DataFormat
   name : String
   mut off : Offset
   mut data : Bytes
   mut err : DecodeError?
-} derive(Show)
-
-///|
-/// Reference to a data format implementation
-pub enum DataFormatRef {
-  UnknownFormatRef(UnknownFormat)
-  DataFormatRefFromUnit(DataFormatRefFromUnit)
-  // Add more format types as needed
-} derive(Show)
-
-///|
-/// Helper functions for DataFormatRef
-pub fn data_format_ref_version(format_ref : DataFormatRef) -> Int {
-  match format_ref {
-    UnknownFormatRef(f) => DataFormat::version(f)
-    DataFormatRefFromUnit(f) => DataFormat::version(f)
-  }
-}
-
-///|
-pub fn data_format_ref_dwarf64(format_ref : DataFormatRef) -> (Bool, Bool) {
-  match format_ref {
-    UnknownFormatRef(f) => DataFormat::dwarf64(f)
-    DataFormatRefFromUnit(f) => DataFormat::dwarf64(f)
-  }
-}
-
-///|
-pub fn data_format_ref_addrsize(format_ref : DataFormatRef) -> Int {
-  match format_ref {
-    UnknownFormatRef(f) => DataFormat::addrsize(f)
-    DataFormatRefFromUnit(f) => DataFormat::addrsize(f)
-  }
 }
 
 ///|
@@ -96,13 +61,13 @@ pub enum ByteOrder {
 
 ///|
 /// Create a new buffer
-pub fn make_buf(
+fn[DataFormat : DataFormat] make_buf(
   d : Data?,
-  format : DataFormatRef,
+  format : DataFormat,
   name : String,
   off : Offset,
   data : Bytes,
-) -> Buffer {
+) -> Buf {
   let order = match d {
     Some(data) => if data.big_endian { BigEndian } else { LittleEndian }
     None => LittleEndian
@@ -136,7 +101,7 @@ pub fn DecodeError::to_string(self : DecodeError) -> String {
 
 ///|
 /// Read a uint8
-pub fn Buffer::uint8(self : Buffer) -> UInt {
+fn Buf::uint8(self : Buf) -> UInt {
   if self.data.length() < 1 {
     ignore(self.error("underflow"))
     return 0U
@@ -154,7 +119,7 @@ pub fn Buffer::uint8(self : Buffer) -> UInt {
 
 ///|
 /// Read n bytes
-pub fn Buffer::bytes(self : Buffer, n : Int) -> Bytes {
+fn Buf::bytes(self : Buf, n : Int) -> Bytes {
   if n < 0 || self.data.length() < n {
     ignore(self.error("underflow"))
     return b""
@@ -177,15 +142,15 @@ pub fn Buffer::bytes(self : Buffer, n : Int) -> Bytes {
 }
 
 ///|
-/// Skip n bytes  
-pub fn Buffer::skip(self : Buffer, n : Int) -> Unit {
+/// Skip n bytes
+fn Buf::skip(self : Buf, n : Int) -> Unit {
   let _discarded = self.bytes(n)
   ()
 }
 
 ///|
 /// Read a null-terminated string
-pub fn Buffer::string(self : Buffer) -> String {
+fn Buf::string(self : Buf) -> String {
   let mut i = -1
   for j = 0; j < self.data.length(); j = j + 1 {
     if self.data[j] == 0 {
@@ -210,7 +175,7 @@ pub fn Buffer::string(self : Buffer) -> String {
 
 ///|
 /// Read a uint16
-pub fn Buffer::uint16(self : Buffer) -> UInt {
+fn Buf::uint16(self : Buf) -> UInt {
   let a = self.bytes(2)
   if a.length() == 0 {
     return 0U
@@ -223,7 +188,7 @@ pub fn Buffer::uint16(self : Buffer) -> UInt {
 
 ///|
 /// Read a uint24
-pub fn Buffer::uint24(self : Buffer) -> UInt {
+fn Buf::uint24(self : Buf) -> UInt {
   let a = self.bytes(3)
   if a.length() == 0 {
     return 0U
@@ -237,7 +202,7 @@ pub fn Buffer::uint24(self : Buffer) -> UInt {
 
 ///|
 /// Read a uint32
-pub fn Buffer::uint32(self : Buffer) -> UInt {
+fn Buf::uint32(self : Buf) -> UInt {
   let a = self.bytes(4)
   if a.length() == 0 {
     return 0U
@@ -258,7 +223,7 @@ pub fn Buffer::uint32(self : Buffer) -> UInt {
 
 ///|
 /// Read a uint64
-pub fn Buffer::uint64(self : Buffer) -> UInt64 {
+fn Buf::uint64(self : Buf) -> UInt64 {
   let a = self.bytes(8)
   if a.length() == 0 {
     return 0UL
@@ -291,7 +256,7 @@ pub fn Buffer::uint64(self : Buffer) -> UInt64 {
 
 ///|
 /// Read a varint (7 bits per byte, little endian, 0x80 bit means read another byte)
-pub fn Buffer::varint(self : Buffer) -> (UInt64, UInt) {
+fn Buf::varint(self : Buf) -> (UInt64, UInt) {
   let mut c : UInt64 = 0UL
   let mut bits : UInt = 0U
   for i = 0; i < self.data.length(); i = i + 1 {
@@ -314,14 +279,14 @@ pub fn Buffer::varint(self : Buffer) -> (UInt64, UInt) {
 
 ///|
 /// Read unsigned int (just a varint)
-pub fn Buffer::uint(self : Buffer) -> UInt64 {
+fn Buf::uint(self : Buf) -> UInt64 {
   let (x, _) = self.varint()
   x
 }
 
 ///|
 /// Read signed int (sign-extended varint)
-pub fn Buffer::int(self : Buffer) -> Int64 {
+fn Buf::int(self : Buf) -> Int64 {
   let (ux, bits) = self.varint()
   let mut x = ux.reinterpret_as_int64()
   if (x & (1L << (bits.reinterpret_as_int() - 1))) != 0L {
@@ -332,7 +297,7 @@ pub fn Buffer::int(self : Buffer) -> Int64 {
 
 ///|
 /// Read address-sized uint
-pub fn Buffer::addr(self : Buffer) -> UInt64 {
+fn Buf::addr(self : Buf) -> UInt64 {
   match data_format_ref_addrsize(self.format) {
     1 => self.uint8().to_uint64()
     2 => self.uint16().to_uint64()
@@ -347,7 +312,7 @@ pub fn Buffer::addr(self : Buffer) -> UInt64 {
 
 ///|
 /// Read unit length
-pub fn Buffer::unit_length(self : Buffer) -> (Offset, Bool) {
+fn Buf::unit_length(self : Buf) -> (Offset, Bool) {
   let mut length = self.uint32().reinterpret_as_int().to_int64()
   let mut dwarf64 = false
   if length == 0xffffffffL {
@@ -361,7 +326,7 @@ pub fn Buffer::unit_length(self : Buffer) -> (Offset, Bool) {
 
 ///|
 /// Set error
-pub fn Buffer::error(self : Buffer, s : String) -> Unit {
+fn Buf::error(self : Buf, s : String) -> Unit {
   if self.err is None {
     self.data = b""
     self.err = Some(DecodeError::new(self.name, self.off, s))
@@ -373,7 +338,7 @@ pub fn Buffer::error(self : Buffer, s : String) -> Unit {
 
 ///|
 /// Check if there's an error
-pub fn Buffer::has_error(self : Buffer) -> Bool {
+fn Buf::has_error(self : Buf) -> Bool {
   match self.err {
     Some(_) => true
     None => false
@@ -382,18 +347,18 @@ pub fn Buffer::has_error(self : Buffer) -> Bool {
 
 ///|
 /// Get the error
-pub fn Buffer::get_error(self : Buffer) -> DecodeError? {
+fn Buf::get_error(self : Buf) -> DecodeError? {
   self.err
 }
 
 ///|
 /// Get remaining data length
-pub fn Buffer::length(self : Buffer) -> Int {
+fn Buf::length(self : Buf) -> Int {
   self.data.length()
 }
 
 ///|
 /// Get current offset
-pub fn Buffer::offset(self : Buffer) -> Offset {
+fn Buf::offset(self : Buf) -> Offset {
   self.off
 }

@@ -8,7 +8,7 @@
 /// If an entry has children, its children field will be true, and the children
 /// follow, terminated by an Entry with tag 0.
 pub struct Reader {
-  mut buf : Buffer
+  mut buf : Buf
   data : Data
   mut err : String?
   mut unit : Int

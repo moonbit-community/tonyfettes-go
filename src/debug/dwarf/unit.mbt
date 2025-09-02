@@ -206,7 +206,7 @@ pub fn parse_units(data : Data) -> Result[Array[DwarfUnit], String] {
 
 ///|
 /// Parse a single compilation unit
-fn parse_single_unit(data : Data, buf : Buffer) -> Result[DwarfUnit, String] {
+fn parse_single_unit(data : Data, buf : Buf) -> Result[DwarfUnit, String] {
   let u_base = buf.offset()
   let (n, is64) = buf.unit_length()
   if buf.has_error() {
