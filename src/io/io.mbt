@@ -111,10 +111,10 @@ pub(all) suberror Eof
 pub(all) suberror UnexpectedEof
 
 ///|
-pub suberror ShortWrite
+pub(all) suberror ShortWrite
 
 ///|
-pub suberror ShortBuffer
+pub(all) suberror ShortBuffer
 
 ///|
 /// read_full reads exactly bytes.length() bytes from r into bytes.
@@ -217,11 +217,11 @@ pub(open) trait Resetter {
 /// NoProgress is returned by some clients of a Reader when
 /// many calls to Read have failed to return any data or error,
 /// usually the sign of a broken Reader implementation.
-pub suberror NoProgress
+pub(all) suberror NoProgress
 
 ///|
 /// InvalidWrite means that a write returned an impossible count.
-pub suberror InvalidWrite
+pub(all) suberror InvalidWrite
 
 ///|
 /// ReadWriteCloser is the interface that groups the basic Read, Write and Close methods.
