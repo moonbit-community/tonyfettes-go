@@ -29,7 +29,7 @@ const BufferReset : Int = 2147483647 - MaxStoreBlockSize * 2 // math.MaxInt32 - 
 
 ///|
 /// Load 32 bits from byte array at given position
-fn load32(b : @bytes.View, i : Int) -> UInt {
+fn load32(b : ArrayView[Byte], i : Int) -> UInt {
   // Help the compiler eliminate bounds checks on the next line.
   let slice = Array::new()
   for idx = i; idx < i + 4 && idx < b.length(); idx = idx + 1 {
@@ -43,7 +43,7 @@ fn load32(b : @bytes.View, i : Int) -> UInt {
 
 ///|
 /// Load 64 bits from byte array at given position
-fn load64(b : @bytes.View, i : Int) -> UInt64 {
+fn load64(b : ArrayView[Byte], i : Int) -> UInt64 {
   // Help the compiler eliminate bounds checks on the next line.
   let slice = Array::new()
   for idx = i; idx < i + 8 && idx < b.length(); idx = idx + 1 {
@@ -87,7 +87,7 @@ priv struct TableEntry {
 /// and the previous byte block for cross block matching.
 priv struct DeflateFast {
   table : Array[TableEntry] // [tableSize]tableEntry
-  mut prev : @bytes.View // Previous block, zero length if unknown.
+  mut prev : ArrayView[Byte] // Previous block, zero length if unknown.
   mut cur : Int // Current match offset.
 } derive(Show)
 
@@ -96,7 +96,7 @@ priv struct DeflateFast {
 fn DeflateFast::new() -> DeflateFast {
   DeflateFast::{
     table: Array::make(TableSize, TableEntry::{ val: 0, offset: 0 }),
-    prev: Bytes::make(MaxStoreBlockSize, 0),
+    prev: Array::make(MaxStoreBlockSize, (0 : Byte)),
     cur: MaxStoreBlockSize,
   }
 }
@@ -107,7 +107,7 @@ fn DeflateFast::new() -> DeflateFast {
 fn DeflateFast::encode(
   self : DeflateFast,
   dst : Array[Token],
-  src : @bytes.View,
+  src : ArrayView[Byte],
 ) -> Unit {
   // Ensure that e.cur doesn't wrap.
   if self.cur >= BufferReset {
@@ -269,7 +269,7 @@ fn DeflateFast::encode(
 }
 
 ///|
-fn copy(dst : @bytes.View, src : @bytes.View) -> Int {
+fn copy(dst : ArrayView[Byte], src : ArrayView[Byte]) -> Int {
   let len = @cmp.minimum(dst.length(), src.length())
   for i = 0; i < len; i = i + 1 {
     dst[i] = src[i]
@@ -279,7 +279,7 @@ fn copy(dst : @bytes.View, src : @bytes.View) -> Int {
 
 ///|
 /// Emit literal tokens for the given byte slice
-fn emit_literal(dst : Array[Token], lit : @bytes.View) -> Unit {
+fn emit_literal(dst : Array[Token], lit : ArrayView[Byte]) -> Unit {
   for i = 0; i < lit.length(); i = i + 1 {
     dst.push(literal_token(lit[i].to_uint()))
   }
@@ -293,7 +293,7 @@ fn DeflateFast::match_len(
   self : DeflateFast,
   s : Int,
   t : Int,
-  src : @bytes.View,
+  src : ArrayView[Byte],
 ) -> Int {
   let mut s1 = s + MaxMatchLength - 4
   if s1 > src.length() {

@@ -25,7 +25,7 @@ test "Compressor fill_window basic functionality" {
   d.init(w, 6) // Use compression level 6
 
   // Test basic fill_window functionality
-  let dict = Array::new()
+  let dict = []
   for i = 0; i < 100; i = i + 1 {
     dict.push(i.to_byte())
   }
@@ -47,8 +47,7 @@ test "Compressor fill_window empty data" {
   let w = MockWriter::new()
   let d = Compressor::new(w)
   d.init(w, 6)
-  let empty_dict : Array[Byte] = Array::new()
-  d.fill_window(empty_dict)
+  d.fill_window([])
   inspect(d.window_end, content="0")
   inspect(d.index, content="0")
 }
@@ -61,7 +60,7 @@ test "Compressor fill_window large data" {
   d.init(w, 6)
 
   // Create data larger than WindowSize (32768)
-  let large_dict = Array::new()
+  let large_dict = []
   for i = 0; i < WindowSize + 1000; i = i + 1 {
     large_dict.push((i % 256).to_byte())
   }
@@ -81,7 +80,7 @@ test "Compressor fill_window store mode" {
   let w = MockWriter::new()
   let d = Compressor::new(w)
   d.init(w, 0) // NoCompression level
-  let dict = Array::new()
+  let dict = []
   for i = 0; i < 50; i = i + 1 {
     dict.push(i.to_byte())
   }
@@ -102,8 +101,7 @@ test "panic Compressor fill_window with stale data" {
   // Set stale data
   d.index = 10
   d.window_end = 5
-  let dict : Array[Byte] = Array::new()
-  dict.push(b'a')
+  let dict : Array[Byte] = ['a']
 
   // This should panic with "internal error: fillWindow called with stale data"
   d.fill_window(dict)
@@ -117,7 +115,7 @@ test "Compressor fill_window hash table" {
   d.init(w, 6)
 
   // Create repeating pattern that should generate hashes
-  let dict : Array[Byte] = Array::new()
+  let dict = []
   let pattern : Bytes = "abcdefghijklmnopqrstuvwxyz"
   for rep = 0; rep < 10; rep = rep + 1 {
     for i = 0; i < pattern.length(); i = i + 1 {
@@ -156,10 +154,7 @@ test "Compressor fill_window minimal data" {
   let w = MockWriter::new()
   let d = Compressor::new(w)
   d.init(w, 6)
-  let small_dict = Array::new()
-  small_dict.push(b'a')
-  small_dict.push(b'b')
-  small_dict.push(b'c')
+  let small_dict : ArrayView[Byte] = ['a', 'b', 'c']
   d.fill_window(small_dict)
   inspect(d.window_end, content="3")
   inspect(d.index, content="3")

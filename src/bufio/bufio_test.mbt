@@ -72,8 +72,8 @@ test "reader basic functionality" {
   let test_data : Bytes = "Hello, World!"
   let tr = TestReader::new(test_data)
   let reader = new_reader(tr)
-  let buf = Bytes::make(5, 0)
-  let n = reader.read(buf[:]) catch { _ => 0 }
+  let buf = Array::make(5, (0 : Byte))
+  let n = reader.read(buf) catch { _ => 0 }
   inspect(n, content="5")
   inspect(
     buf,
@@ -97,8 +97,8 @@ test "reader peek functionality" {
   )
 
   // Data should still be available for reading
-  let buf = Bytes::make(5, 0)
-  let n = reader.read(buf[:]) catch { _ => 0 }
+  let buf = Array::make(5, (0 : Byte))
+  let n = reader.read(buf) catch { _ => 0 }
   inspect(n, content="5")
   inspect(
     buf,
@@ -175,8 +175,8 @@ test "reader buffered functionality" {
 test "writer basic functionality" {
   let tw = TestWriter::new()
   let writer = new_writer(tw)
-  let test_data : Bytes = "Hello, World!"
-  let n = writer.write(test_data[:]) catch { _ => 0 }
+  let test_data : Array[Byte] = b"Hello, World!".to_array()
+  let n = writer.write(test_data) catch { _ => 0 }
   inspect(n, content="13")
 
   // Flush to make sure data is written
@@ -198,8 +198,8 @@ test "writer buffered functionality" {
 
   // Initially no data is buffered
   inspect(writer.buffered(), content="0")
-  let test_data : Bytes = "Hello"
-  let _ = writer.write(test_data[:]) catch { _ => 0 }
+  let test_data : Array[Byte] = b"Hello".to_array()
+  let _ = writer.write(test_data) catch { _ => 0 }
 
   // Data should be buffered
   inspect(writer.buffered(), content="5")
@@ -316,10 +316,10 @@ test "read_writer functionality" {
   let reader = new_reader(tr)
   let writer = new_writer(tw)
   let rw = new_read_writer(reader, writer)
-  let buf = Bytes::make(5, 0)
-  let n = rw.read(buf[:]) catch { _ => 0 }
+  let buf : Array[Byte] = Array::make(5, 0)
+  let n = rw.read(buf) catch { _ => 0 }
   inspect(n, content="5")
-  let n2 = rw.write(buf[:]) catch { _ => 0 }
+  let n2 = rw.write(buf) catch { _ => 0 }
   inspect(n2, content="5")
   rw.writer.flush() catch {
     _ => ()

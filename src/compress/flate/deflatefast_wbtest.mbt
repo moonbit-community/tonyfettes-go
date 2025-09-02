@@ -14,8 +14,8 @@ test "DeflateFast::new" {
 /// Test DeflateFast with empty input
 test "DeflateFast encode empty" {
   let df = DeflateFast::new()
-  let dst = Array::new()
-  df.encode(dst, "")
+  let dst = []
+  df.encode(dst, [])
   inspect(dst.length(), content="0")
 }
 
@@ -23,8 +23,8 @@ test "DeflateFast encode empty" {
 /// Test DeflateFast with small input (below minimum)
 test "DeflateFast encode small input" {
   let df = DeflateFast::new()
-  let dst = Array::new()
-  df.encode(dst, "abc")
+  let dst = []
+  df.encode(dst, b"abc".to_array())
   // Should emit literals for small input
   inspect(dst.length(), content="3")
 }
@@ -33,11 +33,11 @@ test "DeflateFast encode small input" {
 /// Test DeflateFast with larger input
 test "DeflateFast encode larger input" {
   let df = DeflateFast::new()
-  let dst = Array::new()
+  let dst = []
 
   // Create input with some repeated patterns
-  let src : @bytes.View = "Hello, World! This is a test string with some repeated patterns. Hello, World!"
-  df.encode(dst, src)
+  let src : Bytes = "Hello, World! This is a test string with some repeated patterns. Hello, World!"
+  df.encode(dst, src.to_array())
   // Should have some matches found
   inspect(dst.length() > 0, content="true")
   inspect(dst.length() <= src.length(), content="true") // Some compression or same size
@@ -47,17 +47,16 @@ test "DeflateFast encode larger input" {
 /// Test DeflateFast with highly repetitive input
 test "DeflateFast encode repetitive input" {
   let df = DeflateFast::new()
-  let dst = Array::new()
-  let src = @buffer.new()
+  let dst = []
+  let src = []
 
   // Create highly repetitive input
   for i = 0; i < 100; i = i + 1 {
-    src.write_byte(b'a')
-    src.write_byte(b'b')
-    src.write_byte(b'c')
-    src.write_byte(b'd')
+    src.push(b'a')
+    src.push(b'b')
+    src.push(b'c')
+    src.push(b'd')
   }
-  let src : Bytes = src.contents()
   df.encode(dst, src)
   // Should find many matches
   inspect(dst.length() > 0, content="true")
@@ -68,14 +67,13 @@ test "DeflateFast encode repetitive input" {
 /// Test DeflateFast reset functionality
 test "DeflateFast reset" {
   let df = DeflateFast::new()
-  let dst = Array::new()
-  let src = @buffer.new()
+  let dst = []
+  let src = []
 
   // Add some data to prev buffer
   for i = 0; i < 20; i = i + 1 {
-    src.write_byte(b'x')
+    src.push(b'x')
   }
-  let src = src.contents()
   ignore(df.encode(dst, src))
 
   // Reset should clear previous data
@@ -87,8 +85,8 @@ test "DeflateFast reset" {
 ///|
 /// Test emit_literal function
 test "emit_literal" {
-  let dst = Array::new()
-  let lit : Bytes = "Hi"
+  let dst = []
+  let lit : Array[Byte] = b"Hi".to_array()
   emit_literal(dst, lit)
   inspect(dst.length(), content="2")
 }
@@ -96,7 +94,7 @@ test "emit_literal" {
 ///|
 /// Test load32 function
 test "load32" {
-  let bytes : Bytes = [0x01, 0x02, 0x03, 0x04]
+  let bytes : Array[Byte] = [0x01, 0x02, 0x03, 0x04]
   let result = load32(bytes, 0)
   // Little endian: 0x04030201
   inspect(result, content="67305985")
@@ -105,7 +103,7 @@ test "load32" {
 ///|
 /// Test load64 function
 test "load64" {
-  let bytes : Bytes = [0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07, 0x08]
+  let bytes : Array[Byte] = [0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07, 0x08]
   let result = load64(bytes, 0)
   // Little endian: 0x0807060504030201
   inspect(result, content="578437695752307201")
@@ -134,11 +132,11 @@ test "DeflateFast match_len" {
   let src : Bytes = "abcdefghijklmnopqrstuvwxyz"
 
   // Test match within current block
-  let match_len1 = df.match_len(0, 0, src)
+  let match_len1 = df.match_len(0, 0, src.to_array())
   inspect(match_len1 >= 0, content="true")
 
   // Test no match scenario
-  let match_len2 = df.match_len(0, 10, src)
+  let match_len2 = df.match_len(0, 10, src.to_array())
   inspect(match_len2 >= 0, content="true")
 }
 
@@ -148,14 +146,14 @@ test "DeflateFast cross block matching" {
   let df = DeflateFast::new()
 
   // First block
-  let src1 : @bytes.View = "pattern"
+  let src1 : Bytes = "pattern"
   let dst1 = []
-  df.encode(dst1, src1)
+  df.encode(dst1, src1.to_array())
 
   // Second block with same pattern - should find matches in previous block
-  let src2 : @bytes.View = "pattern"
+  let src2 : Bytes = "pattern"
   let dst2 = []
-  df.encode(dst2, src2)
+  df.encode(dst2, src2.to_array())
   inspect(dst2.length() > dst1.length(), content="false")
 }
 
@@ -204,14 +202,13 @@ test "DeflateFast shift_offsets" {
 /// Test DeflateFast with exact minimum input size
 test "DeflateFast minimum input size" {
   let df = DeflateFast::new()
-  let dst = Array::new()
-  let src = @buffer.new()
+  let dst = []
+  let src = []
 
   // Create input exactly at minimum size
   for i = 0; i < MinNonLiteralBlockSize; i = i + 1 {
-    src.write_byte((i % 256).to_byte())
+    src.push((i % 256).to_byte())
   }
-  let src = src.contents()
   df.encode(dst, src)
   inspect(dst.length() >= MinNonLiteralBlockSize, content="true")
 }

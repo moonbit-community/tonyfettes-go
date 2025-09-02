@@ -8,7 +8,7 @@
 
 ///|
 // Constants
-let default_buf_size = 4096
+const DefaultBufSize = 4096
 
 ///|
 let min_read_buffer_size = 16
@@ -35,7 +35,7 @@ pub(all) suberror NegativeCount
 // alternatively the zero value of a Reader may be used after calling reset
 // on it.
 pub struct Reader {
-  mut buf : Bytes // buffer for reads
+  mut buf : ArrayView[Byte] // buffer for reads
   mut rd : &@io.Reader // underlying reader
   mut r : Int // buffer read position
   mut w : Int // buffer write position
@@ -55,7 +55,7 @@ pub fn new_reader_size(rd : &@io.Reader, size : Int) -> Reader {
     size
   }
   Reader::{
-    buf: Bytes::make(actual_size, 0),
+    buf: Array::make(actual_size, (0 : Byte)),
     rd,
     r: 0,
     w: 0,
@@ -68,7 +68,7 @@ pub fn new_reader_size(rd : &@io.Reader, size : Int) -> Reader {
 ///|
 // new_reader returns a new Reader whose buffer has the default size.
 pub fn new_reader(rd : &@io.Reader) -> Reader {
-  new_reader_size(rd, default_buf_size)
+  new_reader_size(rd, DefaultBufSize)
 }
 
 ///|
@@ -84,13 +84,17 @@ pub fn Reader::size(self : Reader) -> Int {
 // to the default size.
 pub fn Reader::reset(self : Reader, r : &@io.Reader) -> Unit {
   if self.buf.length() == 0 {
-    self.buf = Bytes::make(default_buf_size, 0)
+    self.buf = Array::make(DefaultBufSize, (0 : Byte))
   }
   self.reset_with_buf(self.buf, r)
 }
 
 ///|
-fn Reader::reset_with_buf(self : Reader, buf : Bytes, r : &@io.Reader) -> Unit {
+fn Reader::reset_with_buf(
+  self : Reader,
+  buf : ArrayView[Byte],
+  r : &@io.Reader,
+) -> Unit {
   self.buf = buf
   self.rd = r
   self.r = 0
@@ -256,7 +260,7 @@ pub impl @io.Reader for Reader with read(self, p) {
     // Do not use b.fill, which will loop.
     self.r = 0
     self.w = 0
-    let view = self.buf[:]
+    let view = self.buf
     let buf_n = self.rd.read(view) catch {
       e => {
         self.err = true
@@ -486,7 +490,7 @@ pub fn Reader::read_string(self : Reader, delim : Byte) -> String raise {
 // the underlying io.Writer.
 pub struct Writer {
   mut err : Bool
-  mut buf : Bytes
+  mut buf : ArrayView[Byte]
   mut n : Int
   mut wr : &@io.Writer
 }
@@ -496,8 +500,8 @@ pub struct Writer {
 // size. If the argument io.Writer is already a Writer with large enough
 // size, it returns the underlying Writer.
 pub fn new_writer_size(w : &@io.Writer, size : Int) -> Writer {
-  let actual_size = if size <= 0 { default_buf_size } else { size }
-  Writer::{ buf: Bytes::make(actual_size, 0), wr: w, err: false, n: 0 }
+  let actual_size = if size <= 0 { DefaultBufSize } else { size }
+  Writer::{ buf: Array::make(actual_size, (0 : Byte)), wr: w, err: false, n: 0 }
 }
 
 ///|
@@ -505,7 +509,7 @@ pub fn new_writer_size(w : &@io.Writer, size : Int) -> Writer {
 // If the argument io.Writer is already a Writer with large enough buffer size,
 // it returns the underlying Writer.
 pub fn new_writer(w : &@io.Writer) -> Writer {
-  new_writer_size(w, default_buf_size)
+  new_writer_size(w, DefaultBufSize)
 }
 
 ///|
@@ -522,7 +526,7 @@ pub fn Writer::size(self : Writer) -> Int {
 // Calling w.reset(w) (that is, resetting a Writer to itself) does nothing.
 pub fn Writer::reset(self : Writer, w : &@io.Writer) -> Unit {
   if self.buf.length() == 0 {
-    self.buf = Bytes::make(default_buf_size, 0)
+    self.buf = Array::make(DefaultBufSize, (0 : Byte))
   }
   self.err = false
   self.n = 0
@@ -648,7 +652,7 @@ pub impl @io.ByteWriter for Writer with write_byte(self, c) {
 // why the write is short.
 pub impl @io.StringWriter for Writer with write_string(self, s) {
   let bytes = s.to_bytes()
-  self.write(bytes[:])
+  self.write(Array::make(bytes.length(), (0 : Byte)))
 }
 
 ///|

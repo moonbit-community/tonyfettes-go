@@ -2,7 +2,8 @@
   "import": [
     "moonbitlang/x/fs",
     "tonyfettes/go/io",
-    "tonyfettes/go/compress/zlib"
+    "tonyfettes/go/compress/zlib",
+    "tonyfettes/go/bytes"
   ],
   "test-import": [
     "moonbitlang/x/encoding"

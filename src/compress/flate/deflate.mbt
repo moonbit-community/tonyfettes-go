@@ -158,10 +158,10 @@ impl Show for WriterClosed with output(_ : WriterClosed, logger : &Logger) {
 priv struct Compressor {
   mut compression_level : CompressionLevel
   mut w : HuffmanBitWriter
-  mut bulk_hasher : (Array[Byte], Array[UInt]) -> Unit
+  mut bulk_hasher : (ArrayView[Byte], ArrayView[UInt]) -> Unit
 
   // compression algorithm
-  mut fill : (Compressor, Array[Byte]) -> Int // copy data to window
+  mut fill : (Compressor, ArrayView[Byte]) -> Int // copy data to window
   mut step : (Compressor) -> Unit // process window
   mut best_speed : DeflateFast // Encoder for BestSpeed
 
@@ -177,7 +177,7 @@ priv struct Compressor {
 
   // input window: unprocessed data is window[index:window_end]
   mut index : Int
-  mut window : @bytes.View
+  mut window : ArrayView[Byte]
   mut window_end : Int
   mut block_start : Int // window index where current tokens start
   mut byte_available : Bool // if true, still need to process window[index-1].
@@ -200,7 +200,7 @@ priv struct Compressor {
 /// hash4 returns a hash representation of the first 4 bytes
 /// of the supplied slice.
 /// The caller must ensure that len(b) >= 4.
-fn hash4(b : Array[Byte]) -> UInt {
+fn hash4(b : ArrayView[Byte]) -> UInt {
   (
     (
       b[3].to_uint() |
@@ -215,7 +215,7 @@ fn hash4(b : Array[Byte]) -> UInt {
 
 ///|
 /// bulk_hash4 will compute hashes using the same algorithm as hash4.
-fn bulk_hash4(b : Array[Byte], dst : Array[UInt]) -> Unit {
+fn bulk_hash4(b : ArrayView[Byte], dst : ArrayView[UInt]) -> Unit {
   if b.length() < MinMatchLength {
     return
   }
@@ -234,7 +234,7 @@ fn bulk_hash4(b : Array[Byte], dst : Array[UInt]) -> Unit {
 ///|
 /// match_len returns the number of matching bytes in a and b
 /// up to length 'max'. Both slices must be at least 'max' bytes in size.
-fn match_len(a : Array[Byte], b : Array[Byte], max : Int) -> Int {
+fn match_len(a : ArrayView[Byte], b : ArrayView[Byte], max : Int) -> Int {
   let max_len = if a.length() < max { a.length() } else { max }
   let max_len = if b.length() < max_len { b.length() } else { max_len }
   for i = 0; i < max_len; i = i + 1 {
@@ -287,7 +287,7 @@ fn Compressor::new(w : &@io.Writer) -> Compressor {
     hash_prev: Array::make(WindowSize, 0),
     hash_offset: 1,
     index: 0,
-    window: "",
+    window: [],
     window_end: 0,
     block_start: 0,
     byte_available: false,
@@ -314,18 +314,18 @@ fn Compressor::init(
   d.w = HuffmanBitWriter::new(w)
   match level {
     NoCompression => {
-      d.window = Bytes::make(MaxStoreBlockSize, 0)
+      d.window = Array::make(MaxStoreBlockSize, (0 : Byte))
       d.fill = Compressor::fill_store
       d.step = Compressor::store
     }
     HuffmanOnly => {
-      d.window = Bytes::make(MaxStoreBlockSize, 0)
+      d.window = Array::make(MaxStoreBlockSize, (0 : Byte))
       d.fill = Compressor::fill_store
       d.step = Compressor::store_huff
     }
     BestSpeed => {
       d.compression_level = levels[level]
-      d.window = Bytes::make(MaxStoreBlockSize, 0)
+      d.window = Array::make(MaxStoreBlockSize, (0 : Byte))
       d.fill = Compressor::fill_store
       d.step = Compressor::enc_speed
       d.best_speed = DeflateFast::new()
@@ -348,7 +348,7 @@ fn Compressor::init(
 ///|
 /// Initialize deflate state
 fn Compressor::init_deflate(self : Compressor) -> Unit {
-  self.window = Bytes::make(2 * WindowSize, 0)
+  self.window = Array::make(2 * WindowSize, (0 : Byte))
   self.hash_offset = 1
   self.tokens = Array::make(MaxFlateBlockTokens + 1, literal_token(0))
   self.length = MinMatchLength - 1
@@ -361,7 +361,7 @@ fn Compressor::init_deflate(self : Compressor) -> Unit {
 
 ///|
 /// Store fill function
-fn Compressor::fill_store(self : Compressor, b : Array[Byte]) -> Int {
+fn Compressor::fill_store(self : Compressor, b : ArrayView[Byte]) -> Int {
   let available = self.window.length() - self.window_end
   let n = if b.length() < available { b.length() } else { available }
   for i = 0; i < n; i = i + 1 {
@@ -373,7 +373,7 @@ fn Compressor::fill_store(self : Compressor, b : Array[Byte]) -> Int {
 
 ///|
 /// Deflate fill function
-fn Compressor::fill_deflate(self : Compressor, b : Array[Byte]) -> Int {
+fn Compressor::fill_deflate(self : Compressor, b : ArrayView[Byte]) -> Int {
   if self.index >= 2 * WindowSize - (MinMatchLength + MaxMatchLength) {
     // shift the window by windowSize
     for i = 0; i < WindowSize; i = i + 1 {
@@ -773,7 +773,7 @@ fn Compressor::write_block(
 /// Write stored block
 fn Compressor::write_stored_block(
   self : Compressor,
-  buf : @bytes.View,
+  buf : ArrayView[Byte],
 ) -> Unit raise {
   self.w.write_stored_header(buf.length(), false)
   if self.w.err is Some(err) {
@@ -786,7 +786,10 @@ fn Compressor::write_stored_block(
 }
 
 ///|
-pub impl @io.Writer for Writer with write(self : Writer, bytes : @bytes.View) -> Int raise {
+pub impl @io.Writer for Writer with write(
+  self : Writer,
+  bytes : ArrayView[Byte],
+) -> Int raise {
   let array_bytes = Array::new()
   for i = 0; i < bytes.length(); i = i + 1 {
     array_bytes.push(bytes[i])
@@ -796,7 +799,7 @@ pub impl @io.Writer for Writer with write(self : Writer, bytes : @bytes.View) ->
 
 ///|
 /// Write method for Compressor
-fn Compressor::write(self : Compressor, b : Array[Byte]) -> Int raise {
+fn Compressor::write(self : Compressor, b : ArrayView[Byte]) -> Int raise {
   if self.err is Some(err) {
     raise err
   }
@@ -827,7 +830,7 @@ fn Compressor::write(self : Compressor, b : Array[Byte]) -> Int raise {
 pub fn new_writer_dict(
   w : &@io.Writer,
   level : Int,
-  dict : Array[Byte],
+  dict : ArrayView[Byte],
 ) -> Writer raise {
   let dw = DictWriter::new(w)
   let zw = new_writer(dw, level)
@@ -855,7 +858,7 @@ fn DictWriter::new(w : &@io.Writer) -> DictWriter {
 /// Implement Writer trait for DictWriter
 impl @io.Writer for DictWriter with write(
   self : DictWriter,
-  bytes : @bytes.View,
+  bytes : ArrayView[Byte],
 ) -> Int raise {
   self.w.write(bytes)
 }
@@ -923,33 +926,29 @@ pub impl @io.Closer for Writer with close(self) {
 /// dictionary and calculate all hashes.
 /// This is much faster than doing a full encode.
 /// Should only be used after a reset.
-fn Compressor::fill_window(self : Compressor, b : Array[Byte]) -> Unit {
+fn Compressor::fill_window(d : Compressor, b : ArrayView[Byte]) -> Unit {
   // Do not fill window if we are in store-only mode.
-  if self.compression_level.level < 2 {
+  if d.compression_level.level < 2 {
     return
   }
-  if self.index != 0 || self.window_end != 0 {
+  if d.index != 0 || d.window_end != 0 {
     abort("internal error: fillWindow called with stale data")
   }
 
   // If we are given too much, cut it.
-  let mut input = b
+  let mut b = b
   if b.length() > WindowSize {
-    input = Array::new()
-    let start = b.length() - WindowSize
-    for i = start; i < b.length(); i = i + 1 {
-      input.push(b[i])
-    }
+    b = b[b.length() - WindowSize:]
   }
 
   // Add all to window.
-  let n = if input.length() < self.window.length() {
-    input.length()
+  let n = if b.length() < d.window.length() {
+    b.length()
   } else {
-    self.window.length()
+    d.window.length()
   }
   for i = 0; i < n; i = i + 1 {
-    self.window[i] = input[i]
+    d.window[i] = b[i]
   }
 
   // Calculate 256 hashes at the time (more L1 cache hits)
@@ -960,33 +959,27 @@ fn Compressor::fill_window(self : Compressor, b : Array[Byte]) -> Unit {
     if end > n {
       end = n
     }
-    let to_check_slice = Array::new()
-    for i = index; i < end; i = i + 1 {
-      to_check_slice.push(self.window[i])
-    }
-    let dst_size = to_check_slice.length() - MinMatchLength + 1
+    let to_check = d.window[index:end]
+    let dst_size = to_check.length() - MinMatchLength + 1
     if dst_size <= 0 {
       continue
     }
-    let dst = Array::new()
-    for i = 0; i < dst_size; i = i + 1 {
-      dst.push(0U)
-    }
-    (self.bulk_hasher)(to_check_slice, dst)
+    let dst = d.hash_match[:dst_size]
+    (d.bulk_hasher)(to_check, dst)
     for i = 0; i < dst.length(); i = i + 1 {
       let val = dst[i]
       let di = i + index
       let hash_index = (val & HashMask.reinterpret_as_uint()).reinterpret_as_int()
       // Get previous value with the same hash.
       // Our chain should point to the previous value.
-      self.hash_prev[di & WindowMask] = self.hash_head[hash_index]
+      d.hash_prev[di & WindowMask] = d.hash_head[hash_index]
       // Set the head of the hash chain to us.
-      self.hash_head[hash_index] = (di + self.hash_offset).reinterpret_as_uint()
+      d.hash_head[hash_index] = (di + d.hash_offset).reinterpret_as_uint()
     }
   }
   // Update window information.
-  self.window_end = n
-  self.index = n
+  d.window_end = n
+  d.index = n
 }
 
 ///|

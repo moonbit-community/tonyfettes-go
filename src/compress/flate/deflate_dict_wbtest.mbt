@@ -42,8 +42,7 @@ test "new_writer_dict basic functionality" {
 ///|
 test "new_writer_dict empty dictionary" {
   let w = TestWriter::new()
-  let empty_dict : Array[Byte] = Array::new()
-  let writer = new_writer_dict(w, 6, empty_dict)
+  let writer = new_writer_dict(w, 6, [])
 
   // Verify empty dictionary handling
   inspect(writer.dict.length(), content="0")
@@ -54,7 +53,7 @@ test "new_writer_dict empty dictionary" {
 ///|
 test "new_writer_dict large dictionary" {
   let w = TestWriter::new()
-  let large_dict : Array[Byte] = Array::new()
+  let large_dict = []
   for i = 0; i < WindowSize + 100; i = i + 1 {
     large_dict.push((i % 256).to_byte())
   }
@@ -72,7 +71,7 @@ test "new_writer_dict large dictionary" {
 test "new_writer_dict different compression levels" {
   let w1 = TestWriter::new()
   let w2 = TestWriter::new()
-  let dict : Array[Byte] = Array::new()
+  let dict = []
   for i = 0; i < 20; i = i + 1 {
     dict.push(i.to_byte())
   }
@@ -93,7 +92,7 @@ test "DictWriter functionality" {
   let w = TestWriter::new()
   let dict_writer = DictWriter::new(w)
   let test_data : Bytes = "hello world"
-  ignore(dict_writer.write(test_data))
+  ignore(dict_writer.write(test_data.to_array()))
 
   // Verify data was written through to underlying writer
   inspect(w.buffer.val.length(), content="11")
@@ -105,7 +104,7 @@ test "DictWriter functionality" {
 test "Writer reset with dictionary" {
   let w1 = TestWriter::new()
   let w2 = TestWriter::new()
-  let dict : Array[Byte] = Array::new()
+  let dict = []
   for i = 0; i < 15; i = i + 1 {
     dict.push((i + 97).to_byte()) // 'a' to 'o'
   }

@@ -1,15 +1,30 @@
 // Generated using `moon info`, DON'T EDIT IT
-package "tonyfettes/debugo/zlib"
+package "tonyfettes/go/compress/zlib"
 
 import(
   "moonbitlang/core/bytes"
-  "tonyfettes/debugo/io"
+  "tonyfettes/go/compress/flate"
+  "tonyfettes/go/io"
 )
 
 // Values
-fn checksum(@bytes.View) -> UInt
+const BestCompression : Int = 9
+
+const BestSpeed : Int = 1
+
+const DefaultCompression : Int = -1
+
+const HuffmanOnly : Int = -2
+
+const NoCompression : Int = 0
+
+fn checksum(ArrayView[Byte]) -> UInt
 
 fn checksum_array(FixedArray[Byte]) -> UInt
+
+fn checksum_bytes(ArrayView[Byte]) -> UInt
+
+fn checksum_bytesview(ArrayView[Byte]) -> UInt
 
 fn get_uint16_be(@bytes.View, Int) -> UInt
 
@@ -19,16 +34,33 @@ fn get_uint32_be(@bytes.View, Int) -> UInt
 
 fn get_uint32_be_array(FixedArray[Byte], Int) -> UInt
 
+fn[R : @io.Reader + @io.ByteReader] new_reader(R) -> &@io.ReadCloser raise
+
+fn[R : @io.Reader + @io.ByteReader] new_reader_dict(R, ArrayView[Byte]) -> &@io.ReadCloser raise
+
+fn new_writer(&@io.Writer) -> Writer
+
+fn new_writer_level(&@io.Writer, Int) -> (Writer, Error?)
+
+fn new_writer_level_dict(&@io.Writer, Int, ArrayView[Byte]) -> (Writer, Error?)
+
 fn put_uint16_be(FixedArray[Byte], Int, UInt) -> Unit
 
 fn put_uint32_be(FixedArray[Byte], Int, UInt) -> Unit
 
 // Errors
-pub suberror ChecksumError String
+pub suberror ChecksumError
+impl Show for ChecksumError
 
-pub suberror DictionaryError String
+pub suberror DictionaryError
+impl Show for DictionaryError
 
-pub suberror HeaderError String
+pub suberror HeaderError
+impl Show for HeaderError
+
+type InternalError
+
+type InvalidCompressionLevel
 
 // Types and methods
 pub struct Adler32 {
@@ -38,44 +70,43 @@ pub struct Adler32 {
 fn Adler32::new() -> Self
 fn Adler32::reset(Self) -> Unit
 fn Adler32::sum32(Self) -> UInt
-fn Adler32::write(Self, @bytes.View) -> Unit
+fn Adler32::write(Self, ArrayView[Byte]) -> Unit
 fn Adler32::write_array(Self, Array[Byte]) -> Unit
 fn Adler32::write_arrayview(Self, ArrayView[Byte]) -> Unit
-fn Adler32::write_bytes(Self, Bytes) -> Unit
+fn Adler32::write_bytes(Self, ArrayView[Byte]) -> Unit
 fn Adler32::write_fixedarray(Self, FixedArray[Byte]) -> Unit
 impl Show for Adler32
 
 pub struct Reader {
-  mut reader : Bytes
-  mut offset : Int
-  digest : Adler32
+  mut r : &@flate.Reader
+  mut decompressor : &@io.ReadCloser?
+  mut digest : Adler32
+  mut err : Error?
   scratch : FixedArray[Byte]
-  mut header_read : Bool
 }
-fn Reader::new(Bytes) -> Self
-fn Reader::new_dict(Bytes, Bytes) -> Self
-fn Reader::read(Self, FixedArray[Byte]) -> Int raise
-fn Reader::reset(Self, Bytes, Bytes) -> Unit
-impl Show for Reader
+impl Resetter for Reader
+impl @io.Closer for Reader
+impl @io.Reader for Reader
 
 pub struct Writer {
   mut w : &@io.Writer
-  digest : Adler32
-  mut dict : Bytes
-  scratch : FixedArray[Byte]
-  mut header_written : Bool
+  level : Int
+  dict : ArrayView[Byte]
+  mut compressor : @flate.Writer?
+  mut digest : Adler32
   mut err : Error?
+  scratch : FixedArray[Byte]
+  mut wrote_header : Bool
 }
-fn Writer::close(Self) -> Unit raise
 fn Writer::flush(Self) -> Unit raise
-fn Writer::new(&@io.Writer) -> Self
-fn Writer::new_dict(&@io.Writer, Bytes) -> Self
 fn Writer::reset(Self, &@io.Writer) -> Unit
-fn Writer::reset_dict(Self, &@io.Writer, Bytes) -> Unit
-fn Writer::write(Self, Bytes) -> Int raise
-impl Show for Writer
+impl @io.Closer for Writer
+impl @io.Writer for Writer
 
 // Type aliases
 
 // Traits
+pub(open) trait Resetter {
+  reset(Self, &@flate.Reader, ArrayView[Byte]) -> Unit raise
+}
 

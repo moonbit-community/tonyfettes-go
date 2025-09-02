@@ -72,7 +72,7 @@ pub struct Scanner {
   mut split : SplitFunc // The function to split the tokens.
   mut max_token_size : Int // Maximum size of a token; modified by tests.
   mut token : Bytes? // Last token returned by split.
-  mut buf : Bytes // Buffer used as argument to split.
+  mut buf : ArrayView[Byte] // Buffer used as argument to split.
   mut start : Int // First non-processed byte in buf.
   mut end : Int // End of data in buf.
   mut err : Bool // Sticky error.
@@ -90,7 +90,7 @@ pub fn new_scanner(r : &@io.Reader) -> Scanner {
     split: scan_lines,
     max_token_size: max_scan_token_size,
     token: None,
-    buf: Bytes::make(0, 0),
+    buf: [],
     start: 0,
     end: 0,
     err: false,
@@ -207,7 +207,7 @@ pub fn Scanner::scan(self : Scanner) -> Bool {
           doubled
         }
       }
-      let new_buf = Bytes::make(new_size, 0)
+      let new_buf : ArrayView[Byte] = Array::make(new_size, (0 : Byte))
       for i = 0; i < self.end - self.start; i = i + 1 {
         new_buf[i] = self.buf[self.start + i]
       }
@@ -280,7 +280,11 @@ fn Scanner::set_err(self : Scanner) -> Unit {
 // maximum token size to max_scan_token_size.
 //
 // buffer panics if it is called after scanning has started.
-pub fn Scanner::buffer(self : Scanner, buf : Bytes, max : Int) -> Unit {
+pub fn Scanner::buffer(
+  self : Scanner,
+  buf : ArrayView[Byte],
+  max : Int,
+) -> Unit {
   if self.scan_called {
     abort("buffer called after scan")
   }

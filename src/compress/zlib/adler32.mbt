@@ -20,7 +20,7 @@ pub fn Adler32::new() -> Adler32 {
 
 ///|
 /// Update the checksum with new data from a View
-pub fn Adler32::write(self : Adler32, data : @bytes.View) -> Unit {
+pub fn Adler32::write(self : Adler32, data : ArrayView[Byte]) -> Unit {
   for i = 0; i < data.length(); i = i + 1 {
     self.a = (self.a + data[i].to_uint()) % mod_adler
     self.b = (self.b + self.a) % mod_adler
@@ -28,7 +28,7 @@ pub fn Adler32::write(self : Adler32, data : @bytes.View) -> Unit {
 }
 
 ///|
-pub fn Adler32::write_bytes(self : Adler32, data : Bytes) -> Unit {
+pub fn Adler32::write_bytes(self : Adler32, data : ArrayView[Byte]) -> Unit {
   for i = 0; i < data.length(); i = i + 1 {
     self.a = (self.a + data[i].to_uint()) % mod_adler
     self.b = (self.b + self.a) % mod_adler
@@ -79,7 +79,7 @@ pub fn Adler32::reset(self : Adler32) -> Unit {
 
 ///|
 /// Compute Adler32 checksum of data in one go (View)
-pub fn checksum(data : @bytes.View) -> UInt {
+pub fn checksum(data : ArrayView[Byte]) -> UInt {
   let adler = Adler32::new()
   adler.write(data)
   adler.sum32()
@@ -95,7 +95,7 @@ pub fn checksum_array(data : FixedArray[Byte]) -> UInt {
 
 ///|
 /// Compute Adler32 checksum of data in one go (bytes.View)
-pub fn checksum_bytesview(data : @bytes.View) -> UInt {
+pub fn checksum_bytesview(data : ArrayView[Byte]) -> UInt {
   let adler = Adler32::new()
   adler.write(data)
   adler.sum32()
@@ -103,7 +103,7 @@ pub fn checksum_bytesview(data : @bytes.View) -> UInt {
 
 ///|
 /// Compute Adler32 checksum of data in one go (Bytes)
-pub fn checksum_bytes(data : Bytes) -> UInt {
+pub fn checksum_bytes(data : ArrayView[Byte]) -> UInt {
   let adler = Adler32::new()
   adler.write_bytes(data)
   adler.sum32()

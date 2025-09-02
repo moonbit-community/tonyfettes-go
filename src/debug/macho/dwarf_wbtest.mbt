@@ -62,14 +62,14 @@ test "dwarf module basic functionality" {
 ///|
 test "dwarf data structure" {
   // Test DwarfData creation and access
-  let sections : Map[Bytes, Bytes] = Map::new()
-  sections[b"info"] = b"dummy debug info"
-  sections[b"str"] = b"dummy debug strings"
+  let sections : Map[Bytes, ArrayView[Byte]] = Map::new()
+  sections[b"info"] = b"dummy debug info".to_array()
+  sections[b"str"] = b"dummy debug strings".to_array()
   let dwarf_data = DwarfData::{ sections, }
 
   // Test section access
   match dwarf_data.get_section(b"info") {
-    Some(data) => assert_eq(data, b"dummy debug info")
+    Some(data) => assert_eq(data, b"dummy debug info".to_array())
     None => assert_false(true)
   }
 
@@ -86,7 +86,7 @@ test "dwarf data structure" {
 ///|
 test "big endian uint64 reading" {
   // Test reading 64-bit big-endian integers
-  let data = Bytes::from_array([0x01, 0x23, 0x45, 0x67, 0x89, 0xab, 0xcd, 0xef])
+  let data : ArrayView[Byte] = [0x01, 0x23, 0x45, 0x67, 0x89, 0xab, 0xcd, 0xef]
   let result = read_uint64_be(data, 0)
   let expected = 0x0123456789abcdef_UL
   assert_eq(result, expected)

@@ -3,7 +3,19 @@
 /// read reads up to bytes.length() bytes into bytes. It returns the number of bytes
 /// read (0 <= n <= bytes.length()) and any error encountered.
 pub(open) trait Reader {
-  read(self : Self, bytes : @bytes.View) -> Int raise
+  read(self : Self, bytes : ArrayView[Byte]) -> Int raise
+}
+
+///|
+pub impl Reader for @moonbitlang/core/bytes.View with read(
+  self : @moonbitlang/core/bytes.View,
+  bytes : ArrayView[Byte],
+) -> Int {
+  let n = @cmp.minimum(bytes.length(), self.length())
+  for i in 0..<n {
+    bytes[i] = self[i]
+  }
+  n
 }
 
 ///|
@@ -12,12 +24,17 @@ pub(open) trait Reader {
 /// It returns the number of bytes written from bytes (0 <= n <= bytes.length())
 /// and any error encountered that caused the write to stop early.
 pub(open) trait Writer {
-  write(self : Self, bytes : @bytes.View) -> Int raise
+  write(self : Self, bytes : ArrayView[Byte]) -> Int raise
 }
 
 ///|
-pub impl Writer for @buffer.T with write(self : @buffer.T, bytes : @bytes.View) -> Int {
-  self.write_bytesview(bytes)
+pub impl Writer for @buffer.T with write(
+  self : @buffer.T,
+  bytes : ArrayView[Byte],
+) -> Int {
+  for i in 0..<bytes.length() {
+    self.write_byte(bytes[i])
+  }
   bytes.length()
 }
 
@@ -35,7 +52,7 @@ pub(open) trait ByteReader {
 /// read_at reads bytes.length() bytes into bytes starting at offset off in the
 /// underlying input source. It returns the number of bytes read and any error encountered.
 pub(open) trait ReaderAt {
-  read_at(self : Self, bytes : @bytes.View, off : Int64) -> Int raise
+  read_at(self : Self, bytes : ArrayView[Byte], off : Int64) -> Int raise
 }
 
 ///|
@@ -62,7 +79,7 @@ pub fn SectionReader::new(
 }
 
 ///|
-pub fn SectionReader::read(s : SectionReader, p : @bytes.View) -> Int raise {
+pub fn SectionReader::read(s : SectionReader, p : ArrayView[Byte]) -> Int raise {
   if s.off >= s.limit {
     return 0
   }
@@ -119,7 +136,7 @@ pub(all) suberror ShortBuffer
 ///|
 /// read_full reads exactly bytes.length() bytes from r into bytes.
 /// It returns the number of bytes copied and an error if fewer bytes were read.
-pub fn[R : Reader] read_full(r : R, bytes : @bytes.View) -> Int raise {
+pub fn[R : Reader] read_full(r : R, bytes : ArrayView[Byte]) -> Int raise {
   let mut total = 0
   let mut remaining = bytes
   while remaining.length() > 0 {
@@ -143,7 +160,7 @@ pub fn[R : Reader] read_full(r : R, bytes : @bytes.View) -> Int raise {
 ///|
 pub fn SectionReader::read_at(
   s : SectionReader,
-  p : @bytes.View,
+  p : ArrayView[Byte],
   off : Int64,
 ) -> Int raise {
   if off < 0 || off >= s.size() {
@@ -232,7 +249,7 @@ pub(open) trait ReadWriteCloser: Reader + Writer + Closer {}
 /// write_at writes bytes.length() bytes from bytes to the underlying data stream
 /// at offset off. It returns the number of bytes written from bytes and any error encountered.
 pub(open) trait WriterAt {
-  write_at(self : Self, bytes : @bytes.View, off : Int64) -> Int raise
+  write_at(self : Self, bytes : ArrayView[Byte], off : Int64) -> Int raise
 }
 
 ///|
@@ -271,7 +288,7 @@ pub impl Reader for LimitedReader with read(self, p) {
 /// It returns the number of bytes copied and an error if fewer bytes were read.
 pub fn[R : Reader] read_at_least(
   r : R,
-  buf : @bytes.View,
+  buf : ArrayView[Byte],
   min : Int,
 ) -> Int raise {
   if buf.length() < min {
@@ -317,7 +334,7 @@ pub fn[R : Reader, W : Writer] copy_n(
 ) -> Int64 raise {
   let mut written = 0L
   let mut remaining = n
-  let buf = Bytes::make(8192, 0) // 8KB buffer
+  let buf : ArrayView[Byte] = Array::make(8192, (0 : Byte)) // 8KB buffer
   while remaining > 0 {
     let to_read = if remaining > buf.length().to_int64() {
       buf.length()

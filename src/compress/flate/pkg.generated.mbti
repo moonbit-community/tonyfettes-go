@@ -1,9 +1,8 @@
 // Generated using `moon info`, DON'T EDIT IT
-package "tonyfettes/debugo/flate"
+package "tonyfettes/go/compress/flate"
 
 import(
-  "moonbitlang/core/bytes"
-  "tonyfettes/debugo/io"
+  "tonyfettes/go/io"
 )
 
 // Values
@@ -19,11 +18,11 @@ const NoCompression : Int = 0
 
 fn[R : @io.Reader + @io.ByteReader] new_reader(R) -> &@io.ReadCloser
 
-fn[R : @io.Reader + @io.ByteReader] new_reader_dict(R, @bytes.View) -> &@io.ReadCloser
+fn[R : @io.Reader + @io.ByteReader] new_reader_dict(R, ArrayView[Byte]) -> &@io.ReadCloser
 
 fn new_writer(&@io.Writer, Int) -> Writer raise
 
-fn new_writer_dict(&@io.Writer, Int, Array[Byte]) -> Writer raise
+fn new_writer_dict(&@io.Writer, Int, ArrayView[Byte]) -> Writer raise
 
 // Errors
 pub suberror CorruptInputError Int64
@@ -34,7 +33,6 @@ pub suberror InternalError String
 type Writer
 fn Writer::flush(Self) -> Unit raise
 fn Writer::reset(Self, &@io.Writer) -> Unit
-impl Show for Writer
 impl @io.Closer for Writer
 impl @io.Writer for Writer
 
@@ -45,6 +43,6 @@ pub(open) trait Reader : @io.Reader + @io.ByteReader {
 }
 
 pub(open) trait Resetter {
-  reset(Self, &Reader, @bytes.View) -> Unit raise
+  reset(Self, &Reader, ArrayView[Byte]) -> Unit raise
 }
 

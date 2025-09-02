@@ -1,0 +1,115 @@
+// Generated using `moon info`, DON'T EDIT IT
+package "tonyfettes/go/bufio"
+
+import(
+  "tonyfettes/go/io"
+)
+
+// Values
+fn new_read_writer(Reader, Writer) -> ReadWriter
+
+fn new_reader(&@io.Reader) -> Reader
+
+fn new_reader_size(&@io.Reader, Int) -> Reader
+
+fn new_scanner(&@io.Reader) -> Scanner
+
+fn new_writer(&@io.Writer) -> Writer
+
+fn new_writer_size(&@io.Writer, Int) -> Writer
+
+fn scan_bytes(Bytes, Bool) -> (Int, Bytes?, Unit)
+
+fn scan_lines(Bytes, Bool) -> (Int, Bytes?, Unit)
+
+fn scan_runes(Bytes, Bool) -> (Int, Bytes?, Unit)
+
+fn scan_words(Bytes, Bool) -> (Int, Bytes?, Unit)
+
+// Errors
+pub(all) suberror AdvanceTooFar
+
+pub(all) suberror BadReadCount
+
+pub(all) suberror BufferFull
+
+pub(all) suberror FinalToken
+
+pub(all) suberror InvalidUnreadByte
+
+pub(all) suberror InvalidUnreadRune
+
+pub(all) suberror NegativeAdvance
+
+pub(all) suberror NegativeCount
+
+pub(all) suberror TooLong
+
+// Types and methods
+pub struct ReadWriter {
+  reader : Reader
+  writer : Writer
+}
+impl @io.Reader for ReadWriter
+impl @io.Writer for ReadWriter
+
+pub struct Reader {
+  mut buf : ArrayView[Byte]
+  mut rd : &@io.Reader
+  mut r : Int
+  mut w : Int
+  mut err : Bool
+  mut last_byte : Int
+  mut last_rune_size : Int
+}
+fn Reader::buffered(Self) -> Int
+fn Reader::discard(Self, Int) -> Int raise
+fn Reader::peek(Self, Int) -> Bytes raise
+fn Reader::read_bytes(Self, Byte) -> Bytes raise
+fn Reader::read_slice(Self, Byte) -> Bytes raise
+fn Reader::read_string(Self, Byte) -> String raise
+fn Reader::reset(Self, &@io.Reader) -> Unit
+fn Reader::size(Self) -> Int
+fn Reader::unread_byte(Self) -> Unit raise InvalidUnreadByte
+impl @io.ByteReader for Reader
+impl @io.Reader for Reader
+
+pub struct Scanner {
+  r : &@io.Reader
+  mut split : (Bytes, Bool) -> (Int, Bytes?, Unit)
+  mut max_token_size : Int
+  mut token : Bytes?
+  mut buf : ArrayView[Byte]
+  mut start : Int
+  mut end : Int
+  mut err : Bool
+  mut empties : Int
+  mut scan_called : Bool
+  mut done : Bool
+}
+fn Scanner::buffer(Self, ArrayView[Byte], Int) -> Unit
+fn Scanner::bytes(Self) -> Bytes
+fn Scanner::err(Self) -> Bool
+fn Scanner::scan(Self) -> Bool
+fn Scanner::split(Self, (Bytes, Bool) -> (Int, Bytes?, Unit)) -> Unit
+fn Scanner::text(Self) -> String
+
+pub struct Writer {
+  mut err : Bool
+  mut buf : ArrayView[Byte]
+  mut n : Int
+  mut wr : &@io.Writer
+}
+fn Writer::available(Self) -> Int
+fn Writer::buffered(Self) -> Int
+fn Writer::flush(Self) -> Unit raise
+fn Writer::reset(Self, &@io.Writer) -> Unit
+fn Writer::size(Self) -> Int
+impl @io.ByteWriter for Writer
+impl @io.StringWriter for Writer
+impl @io.Writer for Writer
+
+// Type aliases
+
+// Traits
+

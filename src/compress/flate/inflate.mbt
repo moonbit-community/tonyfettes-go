@@ -197,7 +197,7 @@ pub(open) trait Reader: @io.Reader + @io.ByteReader {}
 ///|
 /// Resetter trait for resetting a ReadCloser
 pub(open) trait Resetter {
-  reset(self : Self, r : &Reader, dict : @bytes.View) -> Unit raise
+  reset(self : Self, r : &Reader, dict : ArrayView[Byte]) -> Unit raise
 }
 
 ///|
@@ -227,7 +227,7 @@ priv struct Decompressor {
   mut dict : DictDecoder
 
   // Temporary buffer (avoids repeated allocation)
-  buf : @bytes.View // Size: 4
+  buf : ArrayView[Byte] // Size: 4
 
   // Next step in the decompression, and decompression state
   mut step : (Decompressor) -> Unit raise
@@ -256,7 +256,7 @@ fn[Reader : @io.Reader + @io.ByteReader] Decompressor::new(
     bits: Array::make(MaxNumLit + MaxNumDist, 0),
     codebits: Array::make(NumCodes, 0),
     dict: DictDecoder::new(),
-    buf: Bytes::make(4, 0),
+    buf: Array::make(4, (0 : Byte)),
     step: _ => (),
     step_state: StepState::StateInit,
     final_: false,
@@ -397,7 +397,10 @@ fn Decompressor::next_block(f : Decompressor) -> Unit raise {
 
 ///|
 /// read reads from the decompressor
-impl @io.Reader for Decompressor with read(self : Decompressor, b : @bytes.View) -> Int raise {
+impl @io.Reader for Decompressor with read(
+  self : Decompressor,
+  b : ArrayView[Byte],
+) -> Int raise {
   for {
     if self.to_read.length() > 0 {
       let n = if b.length() < self.to_read.length() {
@@ -760,7 +763,7 @@ fn reverse_bits_8(b : Byte) -> Byte {
 impl Resetter for Decompressor with reset(
   self : Decompressor,
   r : &Reader,
-  dict : @bytes.View,
+  dict : ArrayView[Byte],
 ) -> Unit raise {
   self.roffset = 0
   self.b = 0
@@ -787,7 +790,7 @@ impl Resetter for Decompressor with reset(
   self.copy_len = 0
   self.copy_dist = 0
   self.r = r
-  self.dict.init(MaxMatchOffset, dict)
+  self.dict.init(MaxMatchOffset, [])
 }
 
 ///|
@@ -814,7 +817,7 @@ pub fn[R : @io.Reader + @io.ByteReader] new_reader(r : R) -> &@io.ReadCloser {
 /// started with the given dictionary, which has already been read.
 pub fn[R : @io.Reader + @io.ByteReader] new_reader_dict(
   r : R,
-  dict : @bytes.View,
+  dict : ArrayView[Byte],
 ) -> &@io.ReadCloser {
   fixed_huffman_decoder_init()
   let f = Decompressor::new(r)

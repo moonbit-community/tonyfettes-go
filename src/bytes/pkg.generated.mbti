@@ -1,0 +1,18 @@
+// Generated using `moon info`, DON'T EDIT IT
+package "tonyfettes/go/bytes"
+
+// Values
+fn new_buffer(ArrayView[Byte]) -> Buffer
+
+// Errors
+
+// Types and methods
+type Buffer
+fn Buffer::reset(Self) -> Unit
+impl @tonyfettes/go/io.ByteReader for Buffer
+impl @tonyfettes/go/io.Reader for Buffer
+
+// Type aliases
+
+// Traits
+

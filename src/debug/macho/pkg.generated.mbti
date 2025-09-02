@@ -1,5 +1,5 @@
 // Generated using `moon info`, DON'T EDIT IT
-package "tonyfettes/debugo/macho"
+package "tonyfettes/go/debug/macho"
 
 // Values
 const FlagAllModsBound : UInt = 0x1000
@@ -96,9 +96,9 @@ impl Eq for Cpu
 impl Show for Cpu
 
 pub struct DwarfData {
-  sections : Map[Bytes, Bytes]
+  sections : Map[Bytes, ArrayView[Byte]]
 }
-fn DwarfData::get_section(Self, Bytes) -> Bytes?
+fn DwarfData::get_section(Self, Bytes) -> ArrayView[Byte]?
 fn DwarfData::get_section_names(Self) -> Array[Bytes]
 fn DwarfData::has_section(Self, Bytes) -> Bool
 impl Show for DwarfData

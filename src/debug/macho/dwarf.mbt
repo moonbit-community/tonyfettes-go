@@ -8,21 +8,22 @@
 /// DwarfData represents extracted DWARF debug information
 pub struct DwarfData {
   /// DWARF sections mapped by name (without prefix)
-  sections : Map[Bytes, Bytes]
+  sections : Map[Bytes, ArrayView[Byte]]
 } derive(Show)
 
 ///|
 /// Extract DWARF debug information from a Mach-O file
 /// Returns DwarfData containing all DWARF sections found in the file
 pub fn File::dwarf(self : File, file_data : Bytes) -> DwarfData? raise {
-  fn section_data(s : Section, file_data : Bytes) -> Bytes raise {
-    let b = s.data(file_data)
+  fn section_data(s : Section, file_data : Bytes) -> ArrayView[Byte] raise {
+    let b = s.data(file_data).to_array()
     if b.length() >= 12 && b is [.. "ZLIB", ..] {
       let dlen = read_uint64_be(b, 4)
-      let r = @zlib.Reader::new([..b[12:]])
-      let output_buffer = @buffer.new(size_hint=dlen.to_int())
-      let _ = @io.copy_n(output_buffer, r, dlen.to_int())
-      output_buffer.to_bytes()
+      let r = @zlib.new_reader(@bytes.new_buffer(b[12:]))
+      let dbuf : Array[Byte] = Array::make(dlen.to_int(), 0)
+      let _ = @io.read_full(r, dbuf)
+      r.close()
+      dbuf
     } else {
       b
     }
@@ -87,7 +88,7 @@ fn expand_dwarf_section_name_bytes(suffix : Bytes) -> Bytes {
 
 ///|
 /// Read a 64-bit big-endian unsigned integer from bytes at offset
-fn read_uint64_be(data : Bytes, offset : Int) -> UInt64 {
+fn read_uint64_be(data : ArrayView[Byte], offset : Int) -> UInt64 {
   let b0 = data.op_get(offset).to_uint64()
   let b1 = data.op_get(offset + 1).to_uint64()
   let b2 = data.op_get(offset + 2).to_uint64()
@@ -108,7 +109,10 @@ fn read_uint64_be(data : Bytes, offset : Int) -> UInt64 {
 
 ///|
 /// Get a specific DWARF section by name
-pub fn DwarfData::get_section(self : DwarfData, name : Bytes) -> Bytes? {
+pub fn DwarfData::get_section(
+  self : DwarfData,
+  name : Bytes,
+) -> ArrayView[Byte]? {
   self.sections.get(name)
 }
 
