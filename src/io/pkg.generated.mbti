@@ -2,6 +2,7 @@
 package "tonyfettes/debugo/io"
 
 import(
+  "moonbitlang/core/buffer"
   "moonbitlang/core/bytes"
 )
 
@@ -113,6 +114,7 @@ pub(open) trait WriteTo {
 pub(open) trait Writer : Show {
   write(Self, @bytes.View) -> Int raise
 }
+impl Writer for @buffer.T
 
 pub(open) trait WriterAt {
   write_at(Self, @bytes.View, Int64) -> Int raise

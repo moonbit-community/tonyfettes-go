@@ -976,12 +976,12 @@ fn Compressor::fill_window(self : Compressor, b : Array[Byte]) -> Unit {
     for i = 0; i < dst.length(); i = i + 1 {
       let val = dst[i]
       let di = i + index
-      let hash_index = (val & HashMask.to_uint()).to_int()
+      let hash_index = (val & HashMask.reinterpret_as_uint()).reinterpret_as_int()
       // Get previous value with the same hash.
       // Our chain should point to the previous value.
       self.hash_prev[di & WindowMask] = self.hash_head[hash_index]
       // Set the head of the hash chain to us.
-      self.hash_head[hash_index] = (di + self.hash_offset).to_uint()
+      self.hash_head[hash_index] = (di + self.hash_offset).reinterpret_as_uint()
     }
   }
   // Update window information.
