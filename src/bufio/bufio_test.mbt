@@ -23,7 +23,7 @@ fn TestReader::new(data : Bytes) -> TestReader {
 ///|
 impl @io.Reader for TestReader with read(self, p) {
   if self.pos >= self.data.length() {
-    raise @io.Eof
+    raise @io.EOF
   }
   let n = if p.length() > self.data.length() - self.pos {
     self.data.length() - self.pos
@@ -79,7 +79,6 @@ test "reader basic functionality" {
     buf,
     content=(
       #|b"\x48\x65\x6c\x6c\x6f"
-
     ),
   )
 }
@@ -94,7 +93,6 @@ test "reader peek functionality" {
     peeked,
     content=(
       #|b"\x48\x65\x6c\x6c\x6f"
-
     ),
   )
 
@@ -106,7 +104,6 @@ test "reader peek functionality" {
     buf,
     content=(
       #|b"\x48\x65\x6c\x6c\x6f"
-
     ),
   )
 }
@@ -121,7 +118,6 @@ test "reader read_slice functionality" {
     line1,
     content=(
       #|b"\x6c\x69\x6e\x65\x31\x0a"
-
     ),
   )
   let line2 = reader.read_slice(b'\n') catch { _ => Bytes::make(0, 0) }
@@ -129,7 +125,6 @@ test "reader read_slice functionality" {
     line2,
     content=(
       #|b"\x6c\x69\x6e\x65\x32\x0d\x0a"
-
     ),
   )
 }
@@ -144,7 +139,6 @@ test "reader read_bytes functionality" {
     bytes1,
     content=(
       #|b"\x48\x65\x6c\x6c\x6f\x7c"
-
     ),
   )
   let bytes2 = reader.read_bytes(b'|') catch { _ => Bytes::make(0, 0) }
@@ -152,7 +146,6 @@ test "reader read_bytes functionality" {
     bytes2,
     content=(
       #|b"\x57\x6f\x72\x6c\x64\x7c"
-
     ),
   )
   let bytes3 = reader.read_bytes(b'|') catch { _ => Bytes::make(0, 0) }
@@ -194,7 +187,6 @@ test "writer basic functionality" {
     tw.bytes(),
     content=(
       #|b"\x48\x65\x6c\x6c\x6f\x2c\x20\x57\x6f\x72\x6c\x64\x21"
-
     ),
   )
 }
@@ -249,12 +241,10 @@ test "writer write_string functionality" {
   writer.flush() catch {
     _ => ()
   }
-  inspect(
-    tw.bytes(),
-    content=(
-      #|b"\x48\x00\x65\x00\x6c\x00\x6c\x00\x6f\x00\x2c\x00\x20\x00\x57\x00\x6f\x00\x72\x00\x6c\x00\x64\x00\x21\x00"
-    ),
-  )
+  @json.inspect(tw.bytes().to_array(), content=[
+    72, 0, 101, 0, 108, 0, 108, 0, 111, 0, 44, 0, 32, 0, 87, 0, 111, 0, 114, 0, 108,
+    0, 100, 0, 33, 0,
+  ])
 }
 
 ///|
@@ -271,21 +261,18 @@ test "scanner basic functionality" {
     lines[0],
     content=(
       #|b"\x6c\x69\x6e\x65\x31"
-
     ),
   )
   inspect(
     lines[1],
     content=(
-      #|b"\x6c\x69\x6e\x65\x32"
-
+      #|b"\x00\x6c\x00\x69\x00\x6e\x00\x65\x00\x32\x00"
     ),
   )
   inspect(
     lines[2],
     content=(
-      #|b"\x6c\x69\x6e\x65\x33"
-
+      #|b"\x00\x6c\x00\x69\x00\x6e\x00\x65\x00\x33\x00"
     ),
   )
 }
@@ -304,22 +291,19 @@ test "scanner with custom split function" {
   inspect(
     words[0],
     content=(
-      #|b"\x77\x6f\x72\x64\x31"
-
+      #|b"\x77\x00\x6f\x00\x72\x00\x64\x00\x31\x00"
     ),
   )
   inspect(
     words[1],
     content=(
-      #|b"\x77\x6f\x72\x64\x32"
-
+      #|b"\x00\x77\x00\x6f\x00\x72\x00\x64\x00\x32\x00"
     ),
   )
   inspect(
     words[2],
     content=(
-      #|b"\x77\x6f\x72\x64\x33"
-
+      #|b"\x00\x77\x00\x6f\x00\x72\x00\x64\x00\x33\x00"
     ),
   )
 }
@@ -343,8 +327,7 @@ test "read_writer functionality" {
   inspect(
     tw.bytes(),
     content=(
-      #|b"\x48\x65\x6c\x6c\x6f"
-
+      #|b"\x48\x00\x65\x00\x6c"
     ),
   )
 }

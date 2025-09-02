@@ -105,7 +105,7 @@ pub fn SectionReader::seek(
 
 ///|
 /// Standard io errors
-pub(all) suberror Eof
+pub(all) suberror EOF
 
 ///|
 pub(all) suberror UnexpectedEof
@@ -124,12 +124,12 @@ pub fn[R : Reader] read_full(r : R, bytes : @bytes.View) -> Int raise {
   let mut remaining = bytes
   while remaining.length() > 0 {
     let n = r.read(remaining) catch {
-      Eof if total > 0 => raise UnexpectedEof
+      EOF if total > 0 => raise UnexpectedEof
       e => raise e
     }
     if n == 0 {
       if total == 0 {
-        raise Eof
+        raise EOF
       } else {
         raise UnexpectedEof
       }
@@ -147,7 +147,7 @@ pub fn SectionReader::read_at(
   off : Int64,
 ) -> Int raise {
   if off < 0 || off >= s.size() {
-    raise Eof
+    raise EOF
   }
   let max = s.limit - off
   if p.length().to_int64() > max {
@@ -257,7 +257,7 @@ pub fn limit_reader(r : &Reader, n : Int64) -> LimitedReader {
 ///|
 pub impl Reader for LimitedReader with read(self, p) {
   if self.n <= 0 {
-    raise Eof
+    raise EOF
   }
   let max = p.length().to_int64()
   let to_read = if max > self.n { self.n.to_int() } else { p.length() }
@@ -281,12 +281,12 @@ pub fn[R : Reader] read_at_least(
   let mut buf = buf
   while n < min {
     let nn = r.read(buf) catch {
-      Eof if n > 0 => raise UnexpectedEof
+      EOF if n > 0 => raise UnexpectedEof
       e => raise e
     }
     if nn == 0 {
       if n == 0 {
-        raise Eof
+        raise EOF
       } else {
         raise UnexpectedEof
       }
@@ -325,7 +325,7 @@ pub fn[R : Reader, W : Writer] copy_n(
       remaining.to_int()
     }
     let nr = src.read(buf[0:to_read]) catch {
-      Eof => break
+      EOF => break
       e => raise e
     }
     if nr == 0 {

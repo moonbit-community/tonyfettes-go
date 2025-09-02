@@ -441,7 +441,7 @@ impl @io.Reader for Decompressor with read(self : Decompressor, b : @bytes.View)
 /// close closes the decompressor
 impl @io.Closer for Decompressor with close(self : Decompressor) -> Unit raise {
   match self.err {
-    Some(@io.Eof) => ()
+    Some(@io.EOF) => ()
     Some(err) => raise err
     None => ()
   }
@@ -457,7 +457,7 @@ fn Decompressor::data_block(self : Decompressor) -> Unit raise {
 
   // Length then ones-complement of length.
   let nr = @io.read_full(self.r, self.buf[0:4]) catch {
-    @io.Eof => {
+    @io.EOF => {
       self.err = Some(@io.UnexpectedEof)
       return
     }
@@ -490,7 +490,7 @@ fn Decompressor::copy_data(self : Decompressor) -> Unit raise {
     buf = buf[:self.copy_len]
   }
   let cnt = @io.read_full(self.r, buf) catch {
-    @io.Eof => raise @io.UnexpectedEof
+    @io.EOF => raise @io.UnexpectedEof
     err => raise err
   }
   self.roffset += cnt.to_int64()
@@ -511,7 +511,7 @@ fn Decompressor::finish_block(self : Decompressor) -> Unit {
     if self.dict.avail_read() > 0 {
       self.to_read = self.dict.read_flush()
     }
-    self.err = Some(@io.Eof)
+    self.err = Some(@io.EOF)
   }
   self.step = Decompressor::next_block
 }

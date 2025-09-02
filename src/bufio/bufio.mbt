@@ -225,13 +225,13 @@ pub impl @io.Reader for Reader with read(self, p) {
       return 0
     }
     if self.err {
-      raise @io.Eof
+      raise @io.EOF
     }
     return 0
   }
   if self.r == self.w {
     if self.err {
-      raise @io.Eof
+      raise @io.EOF
     }
     if p.length() >= self.buf.length() {
       // Large read, empty buffer.
@@ -268,7 +268,7 @@ pub impl @io.Reader for Reader with read(self, p) {
     }
     if buf_n == 0 {
       if self.err {
-        raise @io.Eof
+        raise @io.EOF
       }
       return 0
     }
@@ -297,7 +297,7 @@ pub impl @io.ByteReader for Reader with read_byte(self) {
   self.last_rune_size = -1
   while self.r == self.w {
     if self.err {
-      raise @io.Eof
+      raise @io.EOF
     }
     self.fill() catch {
       e => raise e
@@ -533,7 +533,7 @@ pub fn Writer::reset(self : Writer, w : &@io.Writer) -> Unit {
 // flush writes any buffered data to the underlying io.Writer.
 pub fn Writer::flush(self : Writer) -> Unit raise {
   if self.err {
-    raise @io.Eof
+    raise @io.EOF
   }
   if self.n == 0 {
     return
@@ -608,7 +608,7 @@ pub impl @io.Writer for Writer with write(self, p) {
     remaining = remaining[n:]
   }
   if self.err {
-    raise @io.Eof
+    raise @io.EOF
   }
   let n = if remaining.length() > self.available() {
     self.available()
@@ -627,7 +627,7 @@ pub impl @io.Writer for Writer with write(self, p) {
 // write_byte writes a single byte.
 pub impl @io.ByteWriter for Writer with write_byte(self, c) {
   if self.err {
-    raise @io.Eof
+    raise @io.EOF
   }
   if self.available() <= 0 {
     self.flush() catch {

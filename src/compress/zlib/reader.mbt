@@ -107,18 +107,18 @@ impl @io.Reader for Reader with read(self, p) {
     e => {
       self.err = Some(e)
       match e {
-        @io.Eof => () // Handle EOF specially
+        @io.EOF => () // Handle EOF specially
         _ => raise e
       }
     }
   }
   match self.err {
-    Some(@io.Eof) => {
+    Some(@io.EOF) => {
       // Finished file; check checksum.
       // Create a temporary bytes buffer for the scratch operation
       let scratch_bytes = Bytes::make(4, 0)
       ignore(@io.read_full(self.r, scratch_bytes)) catch {
-        @io.Eof => {
+        @io.EOF => {
           self.err = Some(@io.UnexpectedEof)
           raise @io.UnexpectedEof
         }
@@ -138,7 +138,7 @@ impl @io.Reader for Reader with read(self, p) {
         self.err = Some(ChecksumError)
         raise ChecksumError
       }
-      raise @io.Eof
+      raise @io.EOF
     }
     Some(e) => raise e
     None => n
@@ -151,7 +151,7 @@ impl @io.Reader for Reader with read(self, p) {
 /// fully consumed until the io.EOF.
 impl @io.Closer for Reader with close(self) {
   match self.err {
-    Some(@io.Eof) => ()
+    Some(@io.EOF) => ()
     Some(e) => raise e
     None => ()
   }
@@ -177,7 +177,7 @@ impl Resetter for Reader with reset(
   // Read the header (RFC 1950 section 2.2.).
   let header_bytes = Bytes::make(2, 0)
   ignore(@io.read_full(self.r, header_bytes)) catch {
-    @io.Eof => {
+    @io.EOF => {
       self.err = Some(@io.UnexpectedEof)
       raise @io.UnexpectedEof
     }
@@ -201,7 +201,7 @@ impl Resetter for Reader with reset(
   if have_dict {
     let dict_bytes = Bytes::make(4, 0)
     ignore(@io.read_full(self.r, dict_bytes)) catch {
-      @io.Eof => {
+      @io.EOF => {
         self.err = Some(@io.UnexpectedEof)
         raise @io.UnexpectedEof
       }
