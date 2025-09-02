@@ -16,6 +16,12 @@ pub(open) trait Writer: Show {
 }
 
 ///|
+pub impl Writer for @buffer.T with write(self : @buffer.T, bytes : @bytes.View) -> Int {
+  self.write_bytesview(bytes)
+  bytes.length()
+}
+
+///|
 /// ByteReader is the trait that wraps the read_byte method.
 /// read_byte reads and returns the next byte from the input or
 /// any error encountered. If read_byte returns an error, no input

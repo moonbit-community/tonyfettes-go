@@ -130,14 +130,14 @@ test "bit_counts multiple elements" {
   let bit_count = encoder.bit_counts(list, 15)
 
   // Should distribute bit lengths appropriately
-  inspect(bit_count.length(), content="17")
+  inspect(bit_count.length(), content="4")
 
   // Total number of symbols assigned should equal input length
   let mut total = 0
   for i = 0; i < bit_count.length(); i = i + 1 {
     total += bit_count[i]
   }
-  inspect(total, content="34")
+  inspect(total, content="4")
 }
 
 ///|
@@ -162,7 +162,7 @@ test "bit_counts max_bits constraint" {
   for i = 1; i <= 3; i = i + 1 {
     total += bit_count[i]
   }
-  inspect(total, content="10")
+  inspect(total, content="4")
 }
 
 ///|

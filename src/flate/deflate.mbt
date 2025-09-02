@@ -824,6 +824,77 @@ pub impl @io.Closer for Writer with close(self) {
 }
 
 ///|
+/// fill_window will fill the current window with the supplied
+/// dictionary and calculate all hashes.
+/// This is much faster than doing a full encode.
+/// Should only be used after a reset.
+fn Compressor::fill_window(self : Compressor, b : Array[Byte]) -> Unit {
+  // Do not fill window if we are in store-only mode.
+  if self.compression_level.level < 2 {
+    return
+  }
+  if self.index != 0 || self.window_end != 0 {
+    abort("internal error: fillWindow called with stale data")
+  }
+
+  // If we are given too much, cut it.
+  let mut input = b
+  if b.length() > WindowSize {
+    input = Array::new()
+    let start = b.length() - WindowSize
+    for i = start; i < b.length(); i = i + 1 {
+      input.push(b[i])
+    }
+  }
+
+  // Add all to window.
+  let n = if input.length() < self.window.length() {
+    input.length()
+  } else {
+    self.window.length()
+  }
+  for i = 0; i < n; i = i + 1 {
+    self.window[i] = input[i]
+  }
+
+  // Calculate 256 hashes at the time (more L1 cache hits)
+  let loops = (n + 256 - MinMatchLength) / 256
+  for j = 0; j < loops; j = j + 1 {
+    let index = j * 256
+    let mut end = index + 256 + MinMatchLength - 1
+    if end > n {
+      end = n
+    }
+    let to_check_slice = Array::new()
+    for i = index; i < end; i = i + 1 {
+      to_check_slice.push(self.window[i])
+    }
+    let dst_size = to_check_slice.length() - MinMatchLength + 1
+    if dst_size <= 0 {
+      continue
+    }
+    let dst = Array::new()
+    for i = 0; i < dst_size; i = i + 1 {
+      dst.push(0U)
+    }
+    (self.bulk_hasher)(to_check_slice, dst)
+    for i = 0; i < dst.length(); i = i + 1 {
+      let val = dst[i]
+      let di = i + index
+      let hash_index = (val & HashMask.to_uint()).to_int()
+      // Get previous value with the same hash.
+      // Our chain should point to the previous value.
+      self.hash_prev[di & WindowMask] = self.hash_head[hash_index]
+      // Set the head of the hash chain to us.
+      self.hash_head[hash_index] = (di + self.hash_offset).to_uint()
+    }
+  }
+  // Update window information.
+  self.window_end = n
+  self.index = n
+}
+
+///|
 /// Close method for Compressor
 fn Compressor::close(self : Compressor) -> Unit raise {
   if self.err is Some(err) {
