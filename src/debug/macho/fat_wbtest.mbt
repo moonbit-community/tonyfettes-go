@@ -1,28 +1,28 @@
 ///|
 test "is_fat true cases" {
   assert_true(is_fat(MagicFat))
-  assert_true(is_fat(0xbebafeca_U)) // swapped fat magic
+  assert_true(is_fat(0xbebafeca)) // swapped fat magic
 }
 
 ///|
 test "is_fat false cases" {
   assert_false(is_fat(Magic32))
   assert_false(is_fat(Magic64))
-  assert_false(is_fat(0x12345678_U))
+  assert_false(is_fat(0x12345678))
 }
 
 ///|
 test "FatHeader::parse/success" {
   // Create minimal fat header: magic + nfat_arch
-  let data : Bytes = b"\xca\xfe\xba\xbe\x00\x00\x00\x02"
+  let data = @slice.bytes(b"\xca\xfe\xba\xbe\x00\x00\x00\x02")
   let header = FatHeader::parse(data, 0)
-  assert_eq(header.magic, 0xcafebabe_U)
-  assert_eq(header.nfat_arch, 2_U)
+  assert_eq(header.magic, 0xcafebabe)
+  assert_eq(header.nfat_arch, 2)
 }
 
 ///|
 test "FatHeader::parse/file-too-small" {
-  let data : Bytes = "123" // Only 3 bytes
+  let data = @slice.bytes("123") // Only 3 bytes
   try {
     let _ = FatHeader::parse(data, 0)
     fail("Expected FileTooSmall error")
@@ -37,7 +37,7 @@ test "FatHeader::parse/file-too-small" {
 
 ///|
 test "FatHeader::parse/invalid-magic" {
-  let data : Bytes = b"\x12\x34\x56\x78\x00\x00\x00\x02"
+  let data = @slice.bytes(b"\x12\x34\x56\x78\x00\x00\x00\x02")
   try {
     let _ = FatHeader::parse(data, 0)
     fail("Expected InvalidMagic error")
@@ -50,7 +50,9 @@ test "FatHeader::parse/invalid-magic" {
 ///|
 test "FatArch::parse/success" {
   // Create minimal fat arch: cpu_type + sub_cpu + offset + size + align
-  let data : Bytes = b"\x00\x00\x00\x07\x00\x00\x00\x03\x00\x00\x10\x00\x00\x00\x20\x00\x00\x00\x00\x0c"
+  let data = @slice.bytes(
+    b"\x00\x00\x00\x07\x00\x00\x00\x03\x00\x00\x10\x00\x00\x00\x20\x00\x00\x00\x00\x0c",
+  )
   let arch = FatArch::parse(data, 0)
   assert_eq(arch.cpu, I386)
   assert_eq(arch.sub_cpu, 3_U)
@@ -61,7 +63,7 @@ test "FatArch::parse/success" {
 
 ///|
 test "FatArch::parse/file-too-small" {
-  let data : Bytes = "123456789012345" // Only 15 bytes, need 20
+  let data = @slice.bytes("123456789012345") // Only 15 bytes, need 20
   try {
     let _ = FatArch::parse(data, 0)
     fail("Expected FileTooSmall error")
@@ -77,12 +79,12 @@ test "FatArch::parse/file-too-small" {
 ///|
 test "FatFile::new/complete-with-valid-data" {
   // Create a complete fat file with header + arch + embedded mach-o files
-  let fat_header : Bytes = b"\xca\xfe\xba\xbe\x00\x00\x00\x01" // magic + 1 arch
-  let fat_arch : Bytes = b"\x00\x00\x00\x07\x00\x00\x00\x00\x00\x00\x00\x1c\x00\x00\x00\x20\x00\x00\x00\x0c" // i386 arch at offset 28, size 32
+  let fat_header = b"\xca\xfe\xba\xbe\x00\x00\x00\x01" // magic + 1 arch
+  let fat_arch = b"\x00\x00\x00\x07\x00\x00\x00\x00\x00\x00\x00\x1c\x00\x00\x00\x20\x00\x00\x00\x0c" // i386 arch at offset 28, size 32)
   // Embedded Mach-O file (minimal 32-bit header, 32 bytes)
-  let macho_data : Bytes = b"\xce\xfa\xed\xfe\x07\x00\x00\x00\x00\x00\x00\x00\x02\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00"
+  let macho_data = b"\xce\xfa\xed\xfe\x07\x00\x00\x00\x00\x00\x00\x00\x02\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00"
   let complete_data = fat_header + fat_arch + macho_data
-  let fat_file = FatFile::new(complete_data)
+  let fat_file = FatFile::new(@slice.bytes(complete_data))
   assert_eq(fat_file.arches.length(), 1)
   assert_eq(fat_file.files.length(), 1)
   assert_eq(fat_file.arches[0].cpu, I386)
@@ -92,11 +94,11 @@ test "FatFile::new/complete-with-valid-data" {
 ///|
 test "FatFile::new/file-too-small-for-embedded macho" {
   // Create fat file where embedded file would exceed bounds
-  let fat_header : Bytes = b"\xca\xfe\xba\xbe\x00\x00\x00\x01" // magic + 1 arch
-  let fat_arch : Bytes = b"\x00\x00\x00\x07\x00\x00\x00\x00\x00\x00\x00\x1c\x00\x00\x01\x00\x00\x00\x00\x0c" // i386 arch at offset 28, size 256 (too big)
+  let fat_header = b"\xca\xfe\xba\xbe\x00\x00\x00\x01" // magic + 1 arch)
+  let fat_arch = b"\x00\x00\x00\x07\x00\x00\x00\x00\x00\x00\x00\x1c\x00\x00\x01\x00\x00\x00\x00\x0c" // i386 arch at offset 28, size 256 (too big))
   let short_data = fat_header + fat_arch + b"short"
   try {
-    let _ = FatFile::new(short_data)
+    let _ = FatFile::new(@slice.bytes(short_data))
     fail("Expected FileTooSmall error")
   } catch {
     FileTooSmall(actual_size~, required_size~) => {

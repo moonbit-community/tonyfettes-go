@@ -1,9 +1,9 @@
-// Copyright 2013 The Go Authors. All rights reserved.
-// Use of this source code is governed by a BSD-style
-// license that can be found in the LICENSE file.
+/// Copyright 2013 The Go Authors. All rights reserved.
+/// Use of this source code is governed by a BSD-style
+/// license that can be found in the LICENSE file.
 
 ///|
-// Scanner error types
+/// Scanner error types
 pub(all) suberror TooLong
 
 ///|
@@ -19,31 +19,31 @@ pub(all) suberror BadReadCount
 pub(all) suberror FinalToken
 
 ///|
-// SplitFunc is the signature of the split function used to tokenize the
-// input. The arguments are an initial substring of the remaining unprocessed
-// data and a flag, at_eof, that reports whether the Reader has no more data
-// to give. The return values are the number of bytes to advance the input
-// and the next token to return to the user, if any, plus an error, if any.
-//
-// Scanning stops if the function returns an error, in which case some of
-// the input may be discarded. If that error is FinalToken, scanning
-// stops with no error. A non-nil token delivered with FinalToken
-// will be the last token, and a nil token with FinalToken
-// immediately stops the scanning.
-//
-// Otherwise, the Scanner advances the input. If the token is not nil,
-// the Scanner returns it to the user. If the token is nil, the
-// Scanner reads more data and continues scanning; if there is no more
-// data--if at_eof was true--the Scanner returns. If the data does not
-// yet hold a complete token, for instance if it has no newline while
-// scanning lines, a SplitFunc can return (0, nil, nil) to signal the
-// Scanner to read more data into the slice and try again with a
-// longer slice starting at the same point in the input.
-//
-// The function is never called with an empty data slice unless at_eof
-// is true. If at_eof is true, however, data may be non-empty and,
-// as always, holds unprocessed text.
-typealias (Bytes, Bool) -> (Int, Bytes?, Unit) as SplitFunc
+/// SplitFunc is the signature of the split function used to tokenize the
+/// input. The arguments are an initial substring of the remaining unprocessed
+/// data and a flag, at_eof, that reports whether the Reader has no more data
+/// to give. The return values are the number of bytes to advance the input
+/// and the next token to return to the user, if any, plus an error, if any.
+///
+/// Scanning stops if the function returns an error, in which case some of
+/// the input may be discarded. If that error is FinalToken, scanning
+/// stops with no error. A non-nil token delivered with FinalToken
+/// will be the last token, and a nil token with FinalToken
+/// immediately stops the scanning.
+///
+/// Otherwise, the Scanner advances the input. If the token is not nil,
+/// the Scanner returns it to the user. If the token is nil, the
+/// Scanner reads more data and continues scanning; if there is no more
+/// data--if at_eof was true--the Scanner returns. If the data does not
+/// yet hold a complete token, for instance if it has no newline while
+/// scanning lines, a SplitFunc can return (0, nil, nil) to signal the
+/// Scanner to read more data into the slice and try again with a
+/// longer slice starting at the same point in the input.
+///
+/// The function is never called with an empty data slice unless at_eof
+/// is true. If at_eof is true, however, data may be non-empty and,
+/// as always, holds unprocessed text.
+typealias (@slice.Slice[Byte], Bool) -> (Int, @slice.Slice[Byte]?) as SplitFunc
 
 ///|
 let max_scan_token_size : Int = 64 * 1024
@@ -52,27 +52,27 @@ let max_scan_token_size : Int = 64 * 1024
 let start_buf_size : Int = 4096
 
 ///|
-// Scanner provides a convenient interface for reading data such as
-// a file of newline-delimited lines of text. Successive calls to
-// the Scanner.scan method will step through the 'tokens' of a file, skipping
-// the bytes between the tokens. The specification of a token is
-// defined by a split function of type SplitFunc; the default split
-// function breaks the input into lines with line termination stripped. Scanner.Split
-// functions are defined in this package for scanning a file into
-// lines, bytes, UTF-8-encoded runes, and space-delimited words. The
-// client may instead provide a custom split function.
-//
-// Scanning stops unrecoverably at EOF, the first I/O error, or a token too
-// large to fit in the Scanner.buffer. When a scan stops, the reader may have
-// advanced arbitrarily far past the last token. Programs that need more
-// control over error handling or large tokens, or must run sequential scans
-// on a reader, should use bufio.Reader instead.
+/// Scanner provides a convenient interface for reading data such as
+/// a file of newline-delimited lines of text. Successive calls to
+/// the Scanner.scan method will step through the 'tokens' of a file, skipping
+/// the bytes between the tokens. The specification of a token is
+/// defined by a split function of type SplitFunc; the default split
+/// function breaks the input into lines with line termination stripped. Scanner.Split
+/// functions are defined in this package for scanning a file into
+/// lines, bytes, UTF-8-encoded runes, and space-delimited words. The
+/// client may instead provide a custom split function.
+///
+/// Scanning stops unrecoverably at EOF, the first I/O error, or a token too
+/// large to fit in the Scanner.buffer. When a scan stops, the reader may have
+/// advanced arbitrarily far past the last token. Programs that need more
+/// control over error handling or large tokens, or must run sequential scans
+/// on a reader, should use bufio.Reader instead.
 pub struct Scanner {
   r : &@io.Reader // The reader provided by the client.
   mut split : SplitFunc // The function to split the tokens.
   mut max_token_size : Int // Maximum size of a token; modified by tests.
-  mut token : Bytes? // Last token returned by split.
-  mut buf : ArrayView[Byte] // Buffer used as argument to split.
+  mut token : @slice.Slice[Byte]? // Last token returned by split.
+  mut buf : FixedArray[Byte] // Buffer used as argument to split.
   mut start : Int // First non-processed byte in buf.
   mut end : Int // End of data in buf.
   mut err : Bool // Sticky error.
@@ -82,8 +82,8 @@ pub struct Scanner {
 }
 
 ///|
-// new_scanner returns a new Scanner to read from r.
-// The split function defaults to scan_lines.
+/// new_scanner returns a new Scanner to read from r.
+/// The split function defaults to scan_lines.
 pub fn new_scanner(r : &@io.Reader) -> Scanner {
   Scanner::{
     r,
@@ -101,39 +101,39 @@ pub fn new_scanner(r : &@io.Reader) -> Scanner {
 }
 
 ///|
-// err returns the first non-EOF error that was encountered by the Scanner.
+/// err returns the first non-EOF error that was encountered by the Scanner.
 pub fn Scanner::err(self : Scanner) -> Bool {
   self.err
 }
 
 ///|
-// bytes returns the most recent token generated by a call to Scanner.scan.
-// The underlying array may point to data that will be overwritten
-// by a subsequent call to scan. It does no allocation.
-pub fn Scanner::bytes(self : Scanner) -> Bytes {
+/// bytes returns the most recent token generated by a call to Scanner.scan.
+/// The underlying array may point to data that will be overwritten
+/// by a subsequent call to scan. It does no allocation.
+pub fn Scanner::bytes(self : Scanner) -> @slice.Slice[Byte] {
   match self.token {
     Some(t) => t
-    None => Bytes::make(0, 0)
+    None => @slice.new()
   }
 }
 
 ///|
-// text returns the most recent token generated by a call to Scanner.scan
-// as a newly allocated string holding its bytes.
+/// text returns the most recent token generated by a call to Scanner.scan
+/// as a newly allocated string holding its bytes.
 pub fn Scanner::text(self : Scanner) -> String {
   self.bytes().to_string()
 }
 
 ///|
-// scan advances the Scanner to the next token, which will then be
-// available through the Scanner.bytes or Scanner.text method. It returns false when
-// there are no more tokens, either by reaching the end of the input or an error.
-// After scan returns false, the Scanner.err method will return any error that
-// occurred during scanning, except that if it was io.EOF, Scanner.err
-// will return nil.
-// scan panics if the split function returns too many empty
-// tokens without advancing the input. This is a common error mode for
-// scanners.
+/// scan advances the Scanner to the next token, which will then be
+/// available through the Scanner.bytes or Scanner.text method. It returns false when
+/// there are no more tokens, either by reaching the end of the input or an error.
+/// After scan returns false, the Scanner.err method will return any error that
+/// occurred during scanning, except that if it was io.EOF, Scanner.err
+/// will return nil.
+/// scan panics if the split function returns too many empty
+/// tokens without advancing the input. This is a common error mode for
+/// scanners.
 pub fn Scanner::scan(self : Scanner) -> Bool {
   if self.done {
     return false
@@ -145,12 +145,10 @@ pub fn Scanner::scan(self : Scanner) -> Bool {
     // If we've run out of data but have an error, give the split function
     // a chance to recover any remaining, possibly empty token.
     if self.end > self.start || self.err {
-      let slice_view = self.buf[self.start:self.end]
-      let slice_bytes = Bytes::make(slice_view.length(), 0)
-      for i = 0; i < slice_view.length(); i = i + 1 {
-        slice_bytes[i] = slice_view[i]
-      }
-      let (advance, token, _) = (self.split)(slice_bytes, self.err)
+      let (advance, token) = (self.split)(
+        @slice.array(self.buf)[self.start:self.end],
+        self.err,
+      )
       if not(self.advance(advance)) {
         return false
       }
@@ -207,7 +205,7 @@ pub fn Scanner::scan(self : Scanner) -> Bool {
           doubled
         }
       }
-      let new_buf : ArrayView[Byte] = Array::make(new_size, (0 : Byte))
+      let new_buf : FixedArray[Byte] = FixedArray::make(new_size, 0)
       for i = 0; i < self.end - self.start; i = i + 1 {
         new_buf[i] = self.buf[self.start + i]
       }
@@ -220,7 +218,7 @@ pub fn Scanner::scan(self : Scanner) -> Bool {
     // be extra careful: Scanner is for safe, simple jobs.
     let mut loop_count = 0
     while true {
-      let n = self.r.read(self.buf[self.end:]) catch {
+      let n = self.r.read(@slice.array(self.buf)[self.end:]) catch {
         _ => {
           self.set_err()
           break
@@ -245,7 +243,7 @@ pub fn Scanner::scan(self : Scanner) -> Bool {
 }
 
 ///|
-// advance consumes n bytes of the buffer. It reports whether the advance was legal.
+/// advance consumes n bytes of the buffer. It reports whether the advance was legal.
 fn Scanner::advance(self : Scanner, n : Int) -> Bool {
   if n < 0 {
     self.set_err()
@@ -260,7 +258,7 @@ fn Scanner::advance(self : Scanner, n : Int) -> Bool {
 }
 
 ///|
-// set_err records the first error encountered.
+/// set_err records the first error encountered.
 fn Scanner::set_err(self : Scanner) -> Unit {
   if not(self.err) {
     self.err = true
@@ -268,21 +266,21 @@ fn Scanner::set_err(self : Scanner) -> Unit {
 }
 
 ///|
-// buffer controls memory allocation by the Scanner.
-// It sets the initial buffer to use when scanning
-// and the maximum size of buffer that may be allocated during scanning.
-// The contents of the buffer are ignored.
-//
-// The maximum token size must be less than the larger of max and cap(buf).
-// If max <= cap(buf), Scanner.scan will use this buffer only and do no allocation.
-//
-// By default, Scanner.scan uses an internal buffer and sets the
-// maximum token size to max_scan_token_size.
-//
-// buffer panics if it is called after scanning has started.
+/// buffer controls memory allocation by the Scanner.
+/// It sets the initial buffer to use when scanning
+/// and the maximum size of buffer that may be allocated during scanning.
+/// The contents of the buffer are ignored.
+///
+/// The maximum token size must be less than the larger of max and cap(buf).
+/// If max <= cap(buf), Scanner.scan will use this buffer only and do no allocation.
+///
+/// By default, Scanner.scan uses an internal buffer and sets the
+/// maximum token size to max_scan_token_size.
+///
+/// buffer panics if it is called after scanning has started.
 pub fn Scanner::buffer(
   self : Scanner,
-  buf : ArrayView[Byte],
+  buf : FixedArray[Byte],
   max : Int,
 ) -> Unit {
   if self.scan_called {
@@ -292,11 +290,12 @@ pub fn Scanner::buffer(
   self.max_token_size = max
 }
 
-///|
-// split sets the split function for the Scanner.
-// The default split function is scan_lines.
+/// split sets the split function for the Scanner.
+/// The default split function is scan_lines.
 //
-// split panics if it is called after scanning has started.
+
+///|
+/// split panics if it is called after scanning has started.
 pub fn Scanner::split(self : Scanner, split : SplitFunc) -> Unit {
   if self.scan_called {
     abort("split called after scan")
@@ -304,15 +303,18 @@ pub fn Scanner::split(self : Scanner, split : SplitFunc) -> Unit {
   self.split = split
 }
 
-///|
-// Split functions
+/// Split functions
 
-// scan_bytes is a split function for a Scanner that returns each byte as a token.
-pub fn scan_bytes(data : Bytes, at_eof : Bool) -> (Int, Bytes?, Unit) {
+///|
+/// scan_bytes is a split function for a Scanner that returns each byte as a token.
+pub fn scan_bytes(
+  data : Array[Byte],
+  at_eof : Bool,
+) -> (Int, Array[Byte]?, Unit) {
   if at_eof && data.length() == 0 {
     return (0, None, ())
   }
-  let result = Bytes::make(1, 0)
+  let result : Array[Byte] = Array::make(1, 0)
   result[0] = data[0]
   (1, Some(result), ())
 }
@@ -321,27 +323,30 @@ pub fn scan_bytes(data : Bytes, at_eof : Bool) -> (Int, Bytes?, Unit) {
 let error_rune_bytes : Bytes = "\u{FFFD}".to_bytes()
 
 ///|
-// scan_runes is a split function for a Scanner that returns each
-// UTF-8-encoded rune as a token. The sequence of runes returned is
-// equivalent to that from a range loop over the input as a string, which
-// means that erroneous UTF-8 encodings translate to U+FFFD = "\xef\xbf\xbd".
-// Because of the scan interface, this makes it impossible for the client to
-// distinguish correctly encoded replacement runes from encoding errors.
-pub fn scan_runes(data : Bytes, at_eof : Bool) -> (Int, Bytes?, Unit) {
+/// scan_runes is a split function for a Scanner that returns each
+/// UTF-8-encoded rune as a token. The sequence of runes returned is
+/// equivalent to that from a range loop over the input as a string, which
+/// means that erroneous UTF-8 encodings translate to U+FFFD = "\xef\xbf\xbd".
+/// Because of the scan interface, this makes it impossible for the client to
+/// distinguish correctly encoded replacement runes from encoding errors.
+pub fn scan_runes(
+  data : Array[Byte],
+  at_eof : Bool,
+) -> (Int, Array[Byte]?, Unit) {
   if at_eof && data.length() == 0 {
     return (0, None, ())
   }
 
   // Fast path 1: ASCII.
   if data[0].to_int() < 128 {
-    let result = Bytes::make(1, 0)
+    let result : Array[Byte] = Array::make(1, 0)
     result[0] = data[0]
     return (1, Some(result), ())
   }
 
   // For now, return the replacement character for non-ASCII
   // In a full implementation, we would decode UTF-8 properly
-  let result = Bytes::make(error_rune_bytes.length(), 0)
+  let result : Array[Byte] = Array::make(error_rune_bytes.length(), 0)
   for i = 0; i < error_rune_bytes.length(); i = i + 1 {
     result[i] = error_rune_bytes[i]
   }
@@ -349,29 +354,28 @@ pub fn scan_runes(data : Bytes, at_eof : Bool) -> (Int, Bytes?, Unit) {
 }
 
 ///|
-// drop_cr drops a terminal \r from the data.
-fn drop_cr(data : Bytes) -> Bytes {
-  if data.length() > 0 && data[data.length() - 1] == b'\r' {
-    let result = Bytes::make(data.length() - 1, 0)
-    for i = 0; i < data.length() - 1; i = i + 1 {
-      result[i] = data[i]
-    }
-    result
+/// drop_cr drops a terminal \r from the data.
+fn drop_cr(data : @slice.Slice[Byte]) -> @slice.Slice[Byte] {
+  if data.length() > 0 && data[data.length() - 1] == '\r' {
+    return data[0:data.length() - 1]
   } else {
     data
   }
 }
 
 ///|
-// scan_lines is a split function for a Scanner that returns each line of
-// text, stripped of any trailing end-of-line marker. The returned line may
-// be empty. The end-of-line marker is one optional carriage return followed
-// by one mandatory newline. In regular expression notation, it is `\r?\n`.
-// The last non-empty line of input will be returned even if it has no
-// newline.
-pub fn scan_lines(data : Bytes, at_eof : Bool) -> (Int, Bytes?, Unit) {
+/// scan_lines is a split function for a Scanner that returns each line of
+/// text, stripped of any trailing end-of-line marker. The returned line may
+/// be empty. The end-of-line marker is one optional carriage return followed
+/// by one mandatory newline. In regular expression notation, it is `\r?\n`.
+/// The last non-empty line of input will be returned even if it has no
+/// newline.
+pub fn scan_lines(
+  data : @slice.Slice[Byte],
+  at_eof : Bool,
+) -> (Int, @slice.Slice[Byte]?) {
   if at_eof && data.length() == 0 {
-    return (0, None, ())
+    return (0, None)
   }
   let mut i = -1
   for j = 0; j < data.length(); j = j + 1 {
@@ -382,28 +386,20 @@ pub fn scan_lines(data : Bytes, at_eof : Bool) -> (Int, Bytes?, Unit) {
   }
   if i >= 0 {
     // We have a full newline-terminated line.
-    let line_data = Bytes::make(i, 0)
-    for k = 0; k < i; k = k + 1 {
-      line_data[k] = data[k]
-    }
-    return (i + 1, Some(drop_cr(line_data)), ())
+    return (i + 1, Some(drop_cr(data[0:i + 1])))
   }
   // If we're at EOF, we have a final, non-terminated line. Return it.
   if at_eof {
-    let result = Bytes::make(data.length(), 0)
-    for k = 0; k < data.length(); k = k + 1 {
-      result[k] = data[k]
-    }
-    return (data.length(), Some(drop_cr(result)), ())
+    return (data.length(), Some(drop_cr(data)))
   }
   // Request more data.
-  (0, None, ())
+  (0, None)
 }
 
 ///|
-// is_space reports whether the character is a Unicode white space character.
-// We avoid dependency on the unicode package, but check validity of the implementation
-// in the tests.
+/// is_space reports whether the character is a Unicode white space character.
+/// We avoid dependency on the unicode package, but check validity of the implementation
+/// in the tests.
 fn is_space(r : Char) -> Bool {
   let code = r.to_int()
   if code <= 0xFF {
@@ -427,16 +423,19 @@ fn is_space(r : Char) -> Bool {
 }
 
 ///|
-// scan_words is a split function for a Scanner that returns each
-// space-separated word of text, with surrounding spaces deleted. It will
-// never return an empty string. The definition of space is set by
-// unicode.is_space.
-pub fn scan_words(data : Bytes, at_eof : Bool) -> (Int, Bytes?, Unit) {
+/// scan_words is a split function for a Scanner that returns each
+/// space-separated word of text, with surrounding spaces deleted. It will
+/// never return an empty string. The definition of space is set by
+/// unicode.is_space.
+pub fn scan_words(
+  data : @slice.Slice[Byte],
+  at_eof : Bool,
+) -> (Int, @slice.Slice[Byte]?) {
   // Skip leading spaces.
   let mut start = 0
   while start < data.length() {
     let c = Int::unsafe_to_char(data[start].to_int())
-    if not(is_space(c)) {
+    if !is_space(c) {
       break
     }
     start += 1
@@ -446,24 +445,14 @@ pub fn scan_words(data : Bytes, at_eof : Bool) -> (Int, Bytes?, Unit) {
   while i < data.length() {
     let c = Int::unsafe_to_char(data[i].to_int())
     if is_space(c) {
-      let word_len = i - start
-      let result = Bytes::make(word_len, 0)
-      for k = 0; k < word_len; k = k + 1 {
-        result[k] = data[start + k]
-      }
-      return (i + 1, Some(result), ())
+      return (i + 1, Some(data[start:i]))
     }
     i += 1
   }
   // If we're at EOF, we have a final, non-empty, non-terminated word. Return it.
   if at_eof && data.length() > start {
-    let word_len = data.length() - start
-    let result = Bytes::make(word_len, 0)
-    for k = 0; k < word_len; k = k + 1 {
-      result[k] = data[start + k]
-    }
-    return (data.length(), Some(result), ())
+    return (data.length(), Some(data[start:]))
   }
   // Request more data.
-  (start, None, ())
+  (start, None)
 }

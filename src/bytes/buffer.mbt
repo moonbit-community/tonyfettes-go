@@ -32,7 +32,7 @@ pub fn Buffer::reset(b : Buffer) -> Unit {
 }
 
 ///|
-pub impl @io.Reader for Buffer with read(b : Buffer, p : ArrayView[Byte]) -> Int raise {
+pub impl @io.Reader for Buffer with read(b : Buffer, p : @slice.Slice[Byte]) -> Int raise {
   b.last_read = ReadOp::Invalid
   if b.empty() {
     b.reset()
@@ -53,7 +53,7 @@ pub impl @io.Reader for Buffer with read(b : Buffer, p : ArrayView[Byte]) -> Int
 }
 
 ///|
-pub fn new_buffer(bytes : ArrayView[Byte]) -> Buffer {
+pub fn new_buffer(bytes : @slice.Slice[Byte]) -> Buffer {
   let buf : FixedArray[Byte] = FixedArray::make(bytes.length(), 0)
   for i in 0..<bytes.length() {
     buf[i] = bytes[i]

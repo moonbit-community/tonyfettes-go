@@ -29,7 +29,7 @@ const BufferReset : Int = 2147483647 - MaxStoreBlockSize * 2 // math.MaxInt32 - 
 
 ///|
 /// Load 32 bits from byte array at given position
-fn load32(b : ArrayView[Byte], i : Int) -> UInt {
+fn load32(b : @slice.Slice[Byte], i : Int) -> UInt {
   // Help the compiler eliminate bounds checks on the next line.
   let slice = Array::new()
   for idx = i; idx < i + 4 && idx < b.length(); idx = idx + 1 {
@@ -43,7 +43,7 @@ fn load32(b : ArrayView[Byte], i : Int) -> UInt {
 
 ///|
 /// Load 64 bits from byte array at given position
-fn load64(b : ArrayView[Byte], i : Int) -> UInt64 {
+fn load64(b : @slice.Slice[Byte], i : Int) -> UInt64 {
   // Help the compiler eliminate bounds checks on the next line.
   let slice = Array::new()
   for idx = i; idx < i + 8 && idx < b.length(); idx = idx + 1 {
@@ -80,23 +80,23 @@ const MinNonLiteralBlockSize : Int = 1 + 1 + InputMargin
 priv struct TableEntry {
   val : UInt // Value at destination
   offset : Int // Offset position
-} derive(Show)
+}
 
 ///|
 /// deflateFast maintains the table for matches,
 /// and the previous byte block for cross block matching.
 priv struct DeflateFast {
   table : Array[TableEntry] // [tableSize]tableEntry
-  mut prev : ArrayView[Byte] // Previous block, zero length if unknown.
+  mut prev : @slice.Slice[Byte] // Previous block, zero length if unknown.
   mut cur : Int // Current match offset.
-} derive(Show)
+}
 
 ///|
 /// Create a new DeflateFast encoder
 fn DeflateFast::new() -> DeflateFast {
   DeflateFast::{
     table: Array::make(TableSize, TableEntry::{ val: 0, offset: 0 }),
-    prev: Array::make(MaxStoreBlockSize, (0 : Byte)),
+    prev: @slice.make(MaxStoreBlockSize),
     cur: MaxStoreBlockSize,
   }
 }
@@ -107,7 +107,7 @@ fn DeflateFast::new() -> DeflateFast {
 fn DeflateFast::encode(
   self : DeflateFast,
   dst : Array[Token],
-  src : ArrayView[Byte],
+  src : @slice.Slice[Byte],
 ) -> Unit {
   // Ensure that e.cur doesn't wrap.
   if self.cur >= BufferReset {
@@ -269,7 +269,7 @@ fn DeflateFast::encode(
 }
 
 ///|
-fn copy(dst : ArrayView[Byte], src : ArrayView[Byte]) -> Int {
+fn copy(dst : @slice.Slice[Byte], src : @slice.Slice[Byte]) -> Int {
   let len = @cmp.minimum(dst.length(), src.length())
   for i = 0; i < len; i = i + 1 {
     dst[i] = src[i]
@@ -279,7 +279,7 @@ fn copy(dst : ArrayView[Byte], src : ArrayView[Byte]) -> Int {
 
 ///|
 /// Emit literal tokens for the given byte slice
-fn emit_literal(dst : Array[Token], lit : ArrayView[Byte]) -> Unit {
+fn emit_literal(dst : Array[Token], lit : @slice.Slice[Byte]) -> Unit {
   for i = 0; i < lit.length(); i = i + 1 {
     dst.push(literal_token(lit[i].to_uint()))
   }
@@ -293,7 +293,7 @@ fn DeflateFast::match_len(
   self : DeflateFast,
   s : Int,
   t : Int,
-  src : ArrayView[Byte],
+  src : @slice.Slice[Byte],
 ) -> Int {
   let mut s1 = s + MaxMatchLength - 4
   if s1 > src.length() {

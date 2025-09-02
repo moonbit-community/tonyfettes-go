@@ -25,9 +25,9 @@ test "Compressor fill_window basic functionality" {
   d.init(w, 6) // Use compression level 6
 
   // Test basic fill_window functionality
-  let dict = []
+  let mut dict = @slice.new()
   for i = 0; i < 100; i = i + 1 {
-    dict.push(i.to_byte())
+    dict = dict.append(i.to_byte())
   }
   d.fill_window(dict)
 
@@ -47,7 +47,7 @@ test "Compressor fill_window empty data" {
   let w = MockWriter::new()
   let d = Compressor::new(w)
   d.init(w, 6)
-  d.fill_window([])
+  d.fill_window(@slice.new())
   inspect(d.window_end, content="0")
   inspect(d.index, content="0")
 }
@@ -60,9 +60,9 @@ test "Compressor fill_window large data" {
   d.init(w, 6)
 
   // Create data larger than WindowSize (32768)
-  let large_dict = []
+  let mut large_dict = @slice.new()
   for i = 0; i < WindowSize + 1000; i = i + 1 {
-    large_dict.push((i % 256).to_byte())
+    large_dict = large_dict.append((i % 256).to_byte())
   }
   d.fill_window(large_dict)
 
@@ -80,9 +80,9 @@ test "Compressor fill_window store mode" {
   let w = MockWriter::new()
   let d = Compressor::new(w)
   d.init(w, 0) // NoCompression level
-  let dict = []
+  let mut dict = @slice.new()
   for i = 0; i < 50; i = i + 1 {
-    dict.push(i.to_byte())
+    dict = dict.append(i.to_byte())
   }
   d.fill_window(dict)
 
@@ -101,7 +101,7 @@ test "panic Compressor fill_window with stale data" {
   // Set stale data
   d.index = 10
   d.window_end = 5
-  let dict : Array[Byte] = ['a']
+  let dict : @slice.Slice[Byte] = @slice.array(['a'])
 
   // This should panic with "internal error: fillWindow called with stale data"
   d.fill_window(dict)
@@ -115,11 +115,11 @@ test "Compressor fill_window hash table" {
   d.init(w, 6)
 
   // Create repeating pattern that should generate hashes
-  let dict = []
+  let mut dict = @slice.new()
   let pattern : Bytes = "abcdefghijklmnopqrstuvwxyz"
   for rep = 0; rep < 10; rep = rep + 1 {
     for i = 0; i < pattern.length(); i = i + 1 {
-      dict.push(pattern[i])
+      dict = dict.append(pattern[i])
     }
   }
   d.fill_window(dict)
@@ -154,7 +154,7 @@ test "Compressor fill_window minimal data" {
   let w = MockWriter::new()
   let d = Compressor::new(w)
   d.init(w, 6)
-  let small_dict : ArrayView[Byte] = ['a', 'b', 'c']
+  let small_dict : @slice.Slice[Byte] = @slice.array(['a', 'b', 'c'])
   d.fill_window(small_dict)
   inspect(d.window_end, content="3")
   inspect(d.index, content="3")

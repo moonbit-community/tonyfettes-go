@@ -4,8 +4,8 @@ test "dwarf module basic functionality" {
   // Test DWARF section suffix extraction
   let section_debug_info = Section::{
     header: {
-      name: b"__debug_info",
-      seg: b"__DWARF",
+      name: @slice.bytes("__debug_info"),
+      seg: @slice.bytes("__DWARF"),
       addr: 0_UL,
       size: 100_UL,
       offset: 1000_U,
@@ -23,8 +23,8 @@ test "dwarf module basic functionality" {
   // Test compressed DWARF section
   let section_zdebug_str = Section::{
     header: {
-      name: b"__zdebug_str",
-      seg: b"__DWARF",
+      name: @slice.bytes("__zdebug_str"),
+      seg: @slice.bytes("__DWARF"),
       addr: 0_UL,
       size: 100_UL,
       offset: 1000_U,
@@ -42,8 +42,8 @@ test "dwarf module basic functionality" {
   // Test non-DWARF section
   let section_text = Section::{
     header: {
-      name: b"__text",
-      seg: b"__TEXT",
+      name: @slice.bytes("__text"),
+      seg: @slice.bytes("__TEXT"),
       addr: 0_UL,
       size: 100_UL,
       offset: 1000_U,
@@ -62,14 +62,14 @@ test "dwarf module basic functionality" {
 ///|
 test "dwarf data structure" {
   // Test DwarfData creation and access
-  let sections : Map[Bytes, ArrayView[Byte]] = Map::new()
-  sections[b"info"] = b"dummy debug info".to_array()
-  sections[b"str"] = b"dummy debug strings".to_array()
+  let sections : Map[Bytes, @slice.Slice[Byte]] = Map::new()
+  sections[b"info"] = @slice.bytes("dummy debug info")
+  sections[b"str"] = @slice.bytes("dummy debug strings")
   let dwarf_data = DwarfData::{ sections, }
 
   // Test section access
   match dwarf_data.get_section(b"info") {
-    Some(data) => assert_eq(data, b"dummy debug info".to_array())
+    Some(data) => assert_eq(data, @slice.bytes("dummy debug info"))
     None => assert_false(true)
   }
 
@@ -86,7 +86,9 @@ test "dwarf data structure" {
 ///|
 test "big endian uint64 reading" {
   // Test reading 64-bit big-endian integers
-  let data : ArrayView[Byte] = [0x01, 0x23, 0x45, 0x67, 0x89, 0xab, 0xcd, 0xef]
+  let data : @slice.Slice[Byte] = @slice.array([
+    0x01, 0x23, 0x45, 0x67, 0x89, 0xab, 0xcd, 0xef,
+  ])
   let result = read_uint64_be(data, 0)
   let expected = 0x0123456789abcdef_UL
   assert_eq(result, expected)

@@ -2,7 +2,7 @@
 test "File::parse too small" {
   let small_data : Bytes = "12"
   try {
-    let _ = File::parse(small_data)
+    let _ = File::parse(@slice.bytes(small_data))
     fail("Expected error for too small file")
   } catch {
     FormatError::FileTooSmall(actual_size~, required_size~) => {
@@ -17,7 +17,7 @@ test "File::parse too small" {
 test "File::parse invalid magic" {
   let invalid_data : Bytes = "\x12\x34\x56\x78extra data here"
   try {
-    let _ = File::parse(invalid_data)
+    let _ = File::parse(@slice.bytes(invalid_data))
     fail("Expected error for invalid magic")
   } catch {
     FormatError::InvalidMagic(magic~) => assert_eq(magic, 0x78563412_U)
@@ -35,7 +35,7 @@ test "parse file header basic" {
     "\x00\x00\x00\x00" +
     "\x00\x00\x00\x00"
   try {
-    let file = File::parse(header_data)
+    let file = File::parse(@slice.bytes(header_data))
     assert_eq(file.header.magic, Magic32)
     assert_eq(file.header.cpu, I386)
     assert_eq(file.header.type_, Exec)
@@ -54,7 +54,7 @@ test "parse file header basic" {
 test "File::new" {
   let small_data : Bytes = "12"
   try {
-    let _ = File::new(small_data)
+    let _ = File::new(@slice.bytes(small_data))
     fail("Expected error")
   } catch {
     FormatError::FileTooSmall(_) => ()
@@ -73,7 +73,7 @@ test "File::parse 64-bit magic" {
     "\x00\x00\x00\x00" +
     "\x00\x00\x00\x00"
   try {
-    let file = File::parse(header_data)
+    let file = File::parse(@slice.bytes(header_data))
     assert_eq(file.header.magic, Magic64)
     assert_eq(file.header.cpu, Amd64)
     assert_eq(file.header.type_, Exec)
@@ -94,7 +94,7 @@ test "File::parse with command data overflow" {
     "\x64\x00\x00\x00" + // cmdsz = 100 bytes, but file is only 28 bytes  
     "\x00\x00\x00\x00"
   try {
-    let _ = File::parse(header_data)
+    let _ = File::parse(@slice.bytes(header_data))
     fail("Expected CommandDataOverflow error")
   } catch {
     FormatError::CommandDataOverflow(offset~, size~, file_size~) => {
@@ -123,7 +123,7 @@ test "File::parse with load commands" {
     "\x0a\x00\x00\x00" + // nsyms = 10
     "\x00\x20\x00\x00" + // stroff = 0x2000  
     "\x00\x01\x00\x00" // strsize = 256
-  let file = File::parse(header_data)
+  let file = File::parse(@slice.bytes(header_data))
   assert_eq(file.header.magic, Magic32)
   assert_eq(file.header.ncmd, 1_U)
   assert_eq(file.loads.length(), 1)
@@ -141,7 +141,7 @@ test "parse_load_commands invalid command size" {
   // Create command data with invalid size
   let cmd_data : Bytes = b"\x02\x00\x00\x00\x04\x00\x00\x00" // cmd=2, len=4 (too small, min is 8)
   try {
-    let _ = parse_load_commands(cmd_data, Little, 1_U)
+    let _ = parse_load_commands(@slice.bytes(cmd_data), Little, 1)
     fail("Expected InvalidCommandSize error")
   } catch {
     ParseError::InvalidCommandSize(offset~, size~) => {

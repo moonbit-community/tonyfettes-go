@@ -162,13 +162,7 @@ pub fn parse_units(data : Data) -> Result[Array[DwarfUnit], String] {
   // Count units first
   let mut nunit = 0
   let info_data = data.get_section(".debug_info")
-  let mut b = make_buf(
-    Some(data),
-    UnknownFormatRef(UnknownFormat::new()),
-    "info",
-    0L,
-    info_data,
-  )
+  let mut b = make_buf(Some(data), UnknownFormat::new(), "info", 0L, info_data)
   while b.length() > 0 {
     let (len, _) = b.unit_length()
     if len < 0L {
@@ -187,13 +181,7 @@ pub fn parse_units(data : Data) -> Result[Array[DwarfUnit], String] {
   }
 
   // Parse the units
-  b = make_buf(
-    Some(data),
-    UnknownFormatRef(UnknownFormat::new()),
-    "info",
-    0L,
-    info_data,
-  )
+  b = make_buf(Some(data), UnknownFormat::new(), "info", 0L, info_data)
   let units : Array[DwarfUnit] = []
   for _i = 0; _i < nunit; _i = _i + 1 {
     match parse_single_unit(data, b) {
@@ -291,7 +279,7 @@ fn collect_dwarf5_base_offsets(
   updated_unit.unit5 = Some(Unit5::new())
   let b = make_buf(
     Some(data),
-    DataFormatRefFromUnit(UnitFormat(updated_unit)),
+    UnitFormat(updated_unit),
     "info",
     updated_unit.off,
     updated_unit.data,

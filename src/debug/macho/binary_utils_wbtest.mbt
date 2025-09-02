@@ -1,13 +1,13 @@
 ///|
 test "read_uint little endian" {
-  let data : Bytes = "\x01\x02\x03\x04"
+  let data = @slice.bytes("\x01\x02\x03\x04")
   let result = read_uint(data, 0, Little)
   assert_eq(result, 67305985_U)
 }
 
 ///|
 test "read_uint big endian" {
-  let data : Bytes = "\x01\x02\x03\x04"
+  let data = @slice.bytes("\x01\x02\x03\x04")
   let result = read_uint(data, 0, Big)
   assert_eq(result, 16909060_U)
 }
@@ -23,7 +23,7 @@ test "determine_byte_order" {
 
 ///|
 test "read_uint buffer overflow" {
-  let data : Bytes = "12"
+  let data = @slice.bytes("12")
   try {
     let _ = read_uint(data, 0, Little)
     fail("Expected buffer overflow error")
@@ -45,7 +45,7 @@ test "read_uint buffer overflow" {
 
 ///|
 test "read_bytes buffer overflow" {
-  let data : Bytes = "hello"
+  let data = @slice.bytes("hello")
   try {
     let _ = read_bytes(data, 0, 10)
     fail("Expected buffer overflow error")
@@ -67,21 +67,21 @@ test "read_bytes buffer overflow" {
 
 ///|
 test "read_uint64 little endian" {
-  let data : Bytes = "\x01\x02\x03\x04\x05\x06\x07\x08"
+  let data = @slice.bytes("\x01\x02\x03\x04\x05\x06\x07\x08")
   let result = read_uint64(data, 0, Little)
   assert_eq(result, 578437695752307201_UL)
 }
 
 ///|
 test "read_uint64 big endian" {
-  let data : Bytes = "\x01\x02\x03\x04\x05\x06\x07\x08"
+  let data = @slice.bytes("\x01\x02\x03\x04\x05\x06\x07\x08")
   let result = read_uint64(data, 0, Big)
   assert_eq(result, 72623859790382856_UL)
 }
 
 ///|
 test "read_uint64 buffer overflow" {
-  let data : Bytes = "1234567"
+  let data = @slice.bytes("1234567")
   try {
     let _ = read_uint64(data, 0, Little)
     fail("Expected buffer overflow error")
@@ -103,7 +103,7 @@ test "read_uint64 buffer overflow" {
 
 ///|
 test "Bytes contains" {
-  let data : Bytes = "hello world"
+  let data = @slice.bytes("hello world")
   assert_true(data.contains(b'h'))
   assert_true(data.contains(b'o'))
   assert_true(data.contains(b' '))

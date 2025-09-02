@@ -1,15 +1,5 @@
-// Tests for bufio package
-
 ///|
-fn Bytes::op_set(self : Bytes, index : Int, value : Byte) -> Unit = "%fixedarray.set"
-
-///|
-fn @bytes.View::op_set(self : @bytes.View, index : Int, value : Byte) -> Unit {
-  self.data()[self.start_offset() + index] = value
-}
-
-///|
-// Simple test reader that provides a fixed byte sequence
+/// Simple test reader that provides a fixed byte sequence
 struct TestReader {
   data : Bytes
   mut pos : Int
@@ -37,21 +27,22 @@ impl @io.Reader for TestReader with read(self, p) {
   n
 }
 
+/// Simple test writer that accumulates written bytes
+
 ///|
-// Simple test writer that accumulates written bytes
 struct TestWriter {
-  mut data : Bytes
+  mut data : @slice.Slice[Byte]
 }
 
 ///|
 fn TestWriter::new() -> TestWriter {
-  TestWriter::{ data: Bytes::make(0, 0) }
+  TestWriter::{ data: @slice.make(0) }
 }
 
 ///|
 impl @io.Writer for TestWriter with write(self, p) {
   let old_len = self.data.length()
-  let new_data = Bytes::make(old_len + p.length(), 0)
+  let new_data = @slice.make(old_len + p.length())
   for i = 0; i < old_len; i = i + 1 {
     new_data[i] = self.data[i]
   }
@@ -63,7 +54,7 @@ impl @io.Writer for TestWriter with write(self, p) {
 }
 
 ///|
-fn TestWriter::bytes(self : TestWriter) -> Bytes {
+fn TestWriter::bytes(self : TestWriter) -> @slice.Slice[Byte] {
   self.data
 }
 
@@ -72,8 +63,8 @@ test "reader basic functionality" {
   let test_data : Bytes = "Hello, World!"
   let tr = TestReader::new(test_data)
   let reader = new_reader(tr)
-  let buf = Array::make(5, (0 : Byte))
-  let n = reader.read(buf) catch { _ => 0 }
+  let buf : @slice.Slice[Byte] = @slice.make(5)
+  let n = reader.read(buf)
   inspect(n, content="5")
   inspect(
     buf,
@@ -84,11 +75,11 @@ test "reader basic functionality" {
 }
 
 ///|
-test "reader peek functionality" {
+test "Reader::peek" {
   let test_data : Bytes = "Hello, World!"
   let tr = TestReader::new(test_data)
   let reader = new_reader(tr)
-  let peeked = reader.peek(5) catch { _ => Bytes::make(0, 0) }
+  let peeked = reader.peek(5)
   inspect(
     peeked,
     content=(
@@ -97,8 +88,8 @@ test "reader peek functionality" {
   )
 
   // Data should still be available for reading
-  let buf = Array::make(5, (0 : Byte))
-  let n = reader.read(buf) catch { _ => 0 }
+  let buf : @slice.Slice[Byte] = @slice.make(5)
+  let n = reader.read(buf)
   inspect(n, content="5")
   inspect(
     buf,
@@ -113,14 +104,14 @@ test "reader read_slice functionality" {
   let test_data : Bytes = "line1\nline2\r\nline3"
   let tr = TestReader::new(test_data)
   let reader = new_reader(tr)
-  let line1 = reader.read_slice(b'\n') catch { _ => Bytes::make(0, 0) }
+  let line1 = reader.read_slice(b'\n')
   inspect(
     line1,
     content=(
       #|b"\x6c\x69\x6e\x65\x31\x0a"
     ),
   )
-  let line2 = reader.read_slice(b'\n') catch { _ => Bytes::make(0, 0) }
+  let line2 = reader.read_slice(b'\n')
   inspect(
     line2,
     content=(
@@ -134,21 +125,21 @@ test "reader read_bytes functionality" {
   let test_data : Bytes = "Hello|World|Test"
   let tr = TestReader::new(test_data)
   let reader = new_reader(tr)
-  let bytes1 = reader.read_bytes(b'|') catch { _ => Bytes::make(0, 0) }
+  let bytes1 = reader.read_bytes(b'|')
   inspect(
     bytes1,
     content=(
       #|b"\x48\x65\x6c\x6c\x6f\x7c"
     ),
   )
-  let bytes2 = reader.read_bytes(b'|') catch { _ => Bytes::make(0, 0) }
+  let bytes2 = reader.read_bytes(b'|')
   inspect(
     bytes2,
     content=(
       #|b"\x57\x6f\x72\x6c\x64\x7c"
     ),
   )
-  let bytes3 = reader.read_bytes(b'|') catch { _ => Bytes::make(0, 0) }
+  let bytes3 = reader.read_bytes(b'|')
   inspect(
     bytes3,
     content=(
@@ -167,7 +158,7 @@ test "reader buffered functionality" {
   inspect(reader.buffered(), content="0")
 
   // Peek some data to fill buffer
-  let _ = reader.peek(3) catch { _ => Bytes::make(0, 0) }
+  let _ = reader.peek(3)
   inspect(reader.buffered() >= 3, content="true")
 }
 
@@ -175,14 +166,12 @@ test "reader buffered functionality" {
 test "writer basic functionality" {
   let tw = TestWriter::new()
   let writer = new_writer(tw)
-  let test_data : Array[Byte] = b"Hello, World!".to_array()
-  let n = writer.write(test_data) catch { _ => 0 }
+  let test_data : @slice.Slice[Byte] = @slice.bytes("Hello, World!")
+  let n = writer.write(test_data)
   inspect(n, content="13")
 
   // Flush to make sure data is written
-  writer.flush() catch {
-    _ => ()
-  }
+  writer.flush()
   inspect(
     tw.bytes(),
     content=(
@@ -198,16 +187,14 @@ test "writer buffered functionality" {
 
   // Initially no data is buffered
   inspect(writer.buffered(), content="0")
-  let test_data : Array[Byte] = b"Hello".to_array()
-  let _ = writer.write(test_data) catch { _ => 0 }
+  let test_data : @slice.Slice[Byte] = @slice.bytes("Hello")
+  let _ = writer.write(test_data)
 
   // Data should be buffered
   inspect(writer.buffered(), content="5")
 
   // After flush, buffer should be empty
-  writer.flush() catch {
-    _ => ()
-  }
+  writer.flush()
   inspect(writer.buffered(), content="0")
 }
 
@@ -215,15 +202,9 @@ test "writer buffered functionality" {
 test "writer write_byte functionality" {
   let tw = TestWriter::new()
   let writer = new_writer(tw)
-  writer.write_byte(b'H') catch {
-    _ => ()
-  }
-  writer.write_byte(b'i') catch {
-    _ => ()
-  }
-  writer.flush() catch {
-    _ => ()
-  }
+  writer.write_byte(b'H')
+  writer.write_byte(b'i')
+  writer.flush()
   inspect(
     tw.bytes(),
     content=(
@@ -236,14 +217,11 @@ test "writer write_byte functionality" {
 test "writer write_string functionality" {
   let tw = TestWriter::new()
   let writer = new_writer(tw)
-  let n = writer.write_string("Hello, World!") catch { _ => 0 }
-  inspect(n, content="26")
-  writer.flush() catch {
-    _ => ()
-  }
-  @json.inspect(tw.bytes().to_array(), content=[
-    72, 0, 101, 0, 108, 0, 108, 0, 111, 0, 44, 0, 32, 0, 87, 0, 111, 0, 114, 0, 108,
-    0, 100, 0, 33, 0,
+  let n = writer.write_string("Hello, World!")
+  @json.inspect(n, content=26)
+  writer.flush()
+  @json.inspect(tw.bytes(), content=[
+    0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
   ])
 }
 
@@ -316,14 +294,12 @@ test "read_writer functionality" {
   let reader = new_reader(tr)
   let writer = new_writer(tw)
   let rw = new_read_writer(reader, writer)
-  let buf : Array[Byte] = Array::make(5, 0)
-  let n = rw.read(buf) catch { _ => 0 }
+  let buf = @slice.make(5)
+  let n = rw.read(buf)
   inspect(n, content="5")
-  let n2 = rw.write(buf) catch { _ => 0 }
+  let n2 = rw.write(buf)
   inspect(n2, content="5")
-  rw.writer.flush() catch {
-    _ => ()
-  }
+  rw.writer.flush()
   inspect(
     tw.bytes(),
     content=(

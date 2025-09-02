@@ -882,7 +882,7 @@ pub let op_xderef_size : UInt = 0x95U
 
 ///|
 pub let op_nop : UInt = 0x96U
-// DWARF 3
+/// DWARF 3
 
 ///|
 pub let op_push_obj_addr : UInt = 0x97U
@@ -904,14 +904,14 @@ pub let op_call_frame_cfa : UInt = 0x9CU
 
 ///|
 pub let op_bit_piece : UInt = 0x9DU
-// DWARF 4
+/// DWARF 4
 
 ///|
 pub let op_implicit_value : UInt = 0x9EU
 
 ///|
 pub let op_stack_value : UInt = 0x9FU
-// DWARF 5
+/// DWARF 5
 
 ///|
 pub let op_implicit_pointer : UInt = 0xA0U
@@ -967,7 +967,7 @@ pub let enc_unsigned : UInt = 0x07U
 
 ///|
 pub let enc_unsigned_char : UInt = 0x08U
-// DWARF 3
+/// DWARF 3
 
 ///|
 pub let enc_imaginary_float : UInt = 0x09U
@@ -989,11 +989,11 @@ pub let enc_unsigned_fixed : UInt = 0x0EU
 
 ///|
 pub let enc_decimal_float : UInt = 0x0FU
-// DWARF 4
+/// DWARF 4
 
 ///|
 pub let enc_utf : UInt = 0x10U
-// DWARF 5
+/// DWARF 5
 
 ///|
 pub let enc_ucs : UInt = 0x11U
@@ -1028,7 +1028,7 @@ pub let lns_const_add_pc : UInt = 8U
 
 ///|
 pub let lns_fixed_advance_pc : UInt = 9U
-// DWARF 3
+/// DWARF 3
 
 ///|
 pub let lns_set_prologue_end : UInt = 10U
@@ -1048,7 +1048,7 @@ pub let lne_set_address : UInt = 2U
 
 ///|
 pub let lne_define_file : UInt = 3U
-// DWARF 4
+/// DWARF 4
 
 ///|
 pub let lne_set_discriminator : UInt = 4U

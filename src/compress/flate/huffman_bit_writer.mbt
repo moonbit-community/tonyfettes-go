@@ -61,7 +61,7 @@ priv struct HuffmanBitWriter {
   mut writer : &@io.Writer
   mut bits : UInt64 // Data waiting to be written
   mut nbits : UInt // Number of bits in bits field
-  bytes : ArrayView[Byte]
+  bytes : @slice.Slice[Byte]
   codegen_freq : Array[Int]
   mut nbytes : Int // Number of bytes in buffer
   literal_freq : Array[Int]
@@ -80,7 +80,7 @@ fn HuffmanBitWriter::new(w : &@io.Writer) -> HuffmanBitWriter {
     writer: w,
     bits: 0,
     nbits: 0,
-    bytes: Array::make(BufferSize, (0 : Byte)),
+    bytes: @slice.make(BufferSize),
     codegen_freq: Array::make(CodegenCodeCount, 0),
     nbytes: 0,
     literal_freq: Array::make(286, 0),
@@ -102,7 +102,7 @@ fn HuffmanBitWriter::write_block(
   self : HuffmanBitWriter,
   tokens : Array[Token],
   eof : Bool,
-  input : ArrayView[Byte],
+  input : @slice.Slice[Byte],
 ) -> Unit raise {
   if self.err is Some(_) {
     return
@@ -199,7 +199,7 @@ fn HuffmanBitWriter::write_block_dynamic(
   self : HuffmanBitWriter,
   tokens : Array[Token],
   eof : Bool,
-  input : ArrayView[Byte],
+  input : @slice.Slice[Byte],
 ) -> Unit raise {
   if self.err is Some(_) {
     return
@@ -294,7 +294,7 @@ fn @bytes.View::op_set(self : @bytes.View, index : Int, value : Byte) -> Unit {
 ///|
 fn HuffmanBitWriter::write(
   w : HuffmanBitWriter,
-  b : ArrayView[Byte],
+  b : @slice.Slice[Byte],
 ) -> Unit raise {
   if w.err is Some(err) {
     raise err
@@ -306,7 +306,7 @@ fn HuffmanBitWriter::write(
 /// Write raw bytes to output
 fn HuffmanBitWriter::write_bytes(
   w : HuffmanBitWriter,
-  bytes : ArrayView[Byte],
+  bytes : @slice.Slice[Byte],
 ) -> Unit raise {
   if w.err is Some(err) {
     raise err
@@ -521,7 +521,7 @@ fn HuffmanBitWriter::fixed_size(
 /// Calculate stored size including header
 fn HuffmanBitWriter::stored_size(
   _ : HuffmanBitWriter,
-  input : ArrayView[Byte],
+  input : @slice.Slice[Byte],
 ) -> (Int, Bool) {
   if input.length() <= 65535 { // maxStoreBlockSize
     ((input.length() + 5) * 8, true)
@@ -715,7 +715,7 @@ fn HuffmanBitWriter::write_tokens(
 fn HuffmanBitWriter::write_block_huff(
   self : HuffmanBitWriter,
   eof : Bool,
-  input : ArrayView[Byte],
+  input : @slice.Slice[Byte],
 ) -> Unit raise {
   if self.err is Some(err) {
     raise err

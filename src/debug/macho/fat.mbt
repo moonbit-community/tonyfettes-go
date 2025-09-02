@@ -32,7 +32,7 @@ fn is_fat(magic : UInt) -> Bool {
 }
 
 ///|
-fn FatHeader::parse(data : Bytes, offset : Int) -> FatHeader raise {
+fn FatHeader::parse(data : @slice.Slice[Byte], offset : Int) -> FatHeader raise {
   if data.length() < offset + fat_header_size {
     raise FileTooSmall(
       actual_size=data.length(),
@@ -48,7 +48,7 @@ fn FatHeader::parse(data : Bytes, offset : Int) -> FatHeader raise {
 }
 
 ///|
-fn FatArch::parse(data : Bytes, offset : Int) -> FatArch raise {
+fn FatArch::parse(data : @slice.Slice[Byte], offset : Int) -> FatArch raise {
   if data.length() < offset + fat_arch_size {
     raise FileTooSmall(
       actual_size=data.length(),
@@ -65,7 +65,7 @@ fn FatArch::parse(data : Bytes, offset : Int) -> FatArch raise {
 }
 
 ///|
-pub fn FatFile::new(data : Bytes) -> FatFile raise {
+pub fn FatFile::new(data : @slice.Slice[Byte]) -> FatFile raise {
   let header = FatHeader::parse(data, 0)
   let arches : Array[FatArch] = []
   let files : Array[File] = []

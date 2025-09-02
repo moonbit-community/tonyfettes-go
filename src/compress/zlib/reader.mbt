@@ -1,6 +1,6 @@
-// Copyright 2009 The Go Authors. All rights reserved.
-// Use of this source code is governed by a BSD-style
-// license that can be found in the LICENSE file.
+/// Copyright 2009 The Go Authors. All rights reserved.
+/// Use of this source code is governed by a BSD-style
+/// license that can be found in the LICENSE file.
 
 ///|
 pub struct Reader {
@@ -18,7 +18,7 @@ pub struct Reader {
 pub(open) trait Resetter {
   /// Reset discards any buffered data and resets the Resetter as if it was
   /// newly initialized with the given reader.
-  reset(Self, &@flate.Reader, ArrayView[Byte]) -> Unit raise
+  reset(Self, &@flate.Reader, @slice.Slice[Byte]) -> Unit raise
 }
 
 ///|
@@ -32,7 +32,7 @@ pub(open) trait Resetter {
 pub fn[R : @io.Reader + @io.ByteReader] new_reader(
   r : R,
 ) -> &@io.ReadCloser raise {
-  new_reader_dict(r, [])
+  new_reader_dict(r, @slice.new())
 }
 
 ///|
@@ -43,7 +43,7 @@ pub fn[R : @io.Reader + @io.ByteReader] new_reader(
 /// The ReadCloser returned by NewReaderDict also implements Resetter.
 pub fn[R : @io.Reader + @io.ByteReader] new_reader_dict(
   r : R,
-  dict : ArrayView[Byte],
+  dict : @slice.Slice[Byte],
 ) -> &@io.ReadCloser raise {
   let z = Reader::{
     r,
@@ -57,7 +57,7 @@ pub fn[R : @io.Reader + @io.ByteReader] new_reader_dict(
 }
 
 ///|
-pub impl @io.Reader for Reader with read(self : Reader, p : ArrayView[Byte]) {
+pub impl @io.Reader for Reader with read(self : Reader, p : @slice.Slice[Byte]) {
   match self.err {
     Some(err) => raise err
     None => ()
@@ -86,7 +86,7 @@ pub impl @io.Reader for Reader with read(self : Reader, p : ArrayView[Byte]) {
   match self.err {
     Some(@io.EOF) => {
       // Finished file; check checksum.
-      let checksum_buf : ArrayView[Byte] = Array::make(4, (0 : Byte))
+      let checksum_buf : @slice.Slice[Byte] = @slice.make(4)
       ignore(@io.read_full(self.r, checksum_buf[0:])) catch {
         @io.EOF => {
           self.err = Some(@io.UnexpectedEof)
@@ -137,13 +137,13 @@ pub impl @io.Closer for Reader with close(self) {
 }
 
 ///|
-pub impl Resetter for Reader with reset(self, r, dict : ArrayView[Byte]) {
+pub impl Resetter for Reader with reset(self, r, dict : @slice.Slice[Byte]) {
   // Reset all fields like in Go: *z = reader{decompressor: z.decompressor}
   self.err = None
   self.r = r
 
   // Read the header (RFC 1950 section 2.2.).
-  let header_buf : ArrayView[Byte] = Array::make(2, (0 : Byte))
+  let header_buf : @slice.Slice[Byte] = @slice.make(2)
   ignore(@io.read_full(self.r, header_buf[0:])) catch {
     @io.EOF => {
       self.err = Some(@io.UnexpectedEof)
@@ -167,7 +167,7 @@ pub impl Resetter for Reader with reset(self, r, dict : ArrayView[Byte]) {
   }
   let have_dict = (self.scratch[1] & 0x20) != 0
   if have_dict {
-    let dict_checksum_buf : ArrayView[Byte] = Array::make(4, (0 : Byte))
+    let dict_checksum_buf : @slice.Slice[Byte] = @slice.make(4)
     ignore(@io.read_full(self.r, dict_checksum_buf[0:])) catch {
       @io.EOF => {
         self.err = Some(@io.UnexpectedEof)

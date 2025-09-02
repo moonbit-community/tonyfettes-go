@@ -1,6 +1,6 @@
 ///|
 fn Segment32::parse(
-  data : Bytes,
+  data : @slice.Slice[Byte],
   byte_order : ByteOrder,
 ) -> (Segment, Array[Section]) raise {
   if data.length() < 56 {
@@ -8,7 +8,7 @@ fn Segment32::parse(
   }
   let cmd = LoadCmd::from_uint(read_uint(data, 0, byte_order))
   let len = read_uint(data, 4, byte_order)
-  let name : Bytes = read_cstring(data, 8)
+  let name : @slice.Slice[Byte] = read_cstring(data, 8)
   let addr = read_uint(data, 24, byte_order).to_uint64()
   let memsz = read_uint(data, 28, byte_order).to_uint64()
   let offset = read_uint(data, 32, byte_order).to_uint64()
@@ -49,7 +49,7 @@ fn Segment32::parse(
 
 ///|
 fn Segment64::parse(
-  data : Bytes,
+  data : @slice.Slice[Byte],
   byte_order : ByteOrder,
 ) -> (Segment, Array[Section]) raise {
   if data.length() < 72 {
@@ -57,7 +57,7 @@ fn Segment64::parse(
   }
   let cmd = LoadCmd::from_uint(read_uint(data, 0, byte_order))
   let len = read_uint(data, 4, byte_order)
-  let name : Bytes = read_cstring(data, 8)
+  let name : @slice.Slice[Byte] = read_cstring(data, 8)
   let addr = read_uint64(data, 24, byte_order)
   let memsz = read_uint64(data, 32, byte_order)
   let offset = read_uint64(data, 40, byte_order)
@@ -97,12 +97,12 @@ fn Segment64::parse(
 }
 
 ///|
-fn Section32::parse(data : Bytes, byte_order : ByteOrder) -> Section raise {
+fn Section32::parse(data : @slice.Slice[Byte], byte_order : ByteOrder) -> Section raise {
   if data.length() < 68 {
     raise ParseError::MissingData(offset=0L, expected="Section32 (68 bytes)")
   }
-  let name : Bytes = read_cstring(data, 0)
-  let seg : Bytes = read_cstring(data, 16)
+  let name : @slice.Slice[Byte] = read_cstring(data, 0)
+  let seg : @slice.Slice[Byte] = read_cstring(data, 16)
   let addr = read_uint(data, 32, byte_order).to_uint64()
   let size = read_uint(data, 36, byte_order).to_uint64()
   let offset = read_uint(data, 40, byte_order)
@@ -125,12 +125,12 @@ fn Section32::parse(data : Bytes, byte_order : ByteOrder) -> Section raise {
 }
 
 ///|
-fn Section64::parse(data : Bytes, byte_order : ByteOrder) -> Section raise {
+fn Section64::parse(data : @slice.Slice[Byte], byte_order : ByteOrder) -> Section raise {
   if data.length() < 80 {
     raise ParseError::MissingData(offset=0L, expected="Section64 (80 bytes)")
   }
-  let name : Bytes = read_cstring(data, 0)
-  let seg : Bytes = read_cstring(data, 16)
+  let name : @slice.Slice[Byte] = read_cstring(data, 0)
+  let seg : @slice.Slice[Byte] = read_cstring(data, 16)
   let addr = read_uint64(data, 32, byte_order)
   let size = read_uint64(data, 40, byte_order)
   let offset = read_uint(data, 48, byte_order)
@@ -153,7 +153,7 @@ fn Section64::parse(data : Bytes, byte_order : ByteOrder) -> Section raise {
 }
 
 ///|
-fn SymtabCmd::parse(data : Bytes, byte_order : ByteOrder) -> Symtab raise {
+fn SymtabCmd::parse(data : @slice.Slice[Byte], byte_order : ByteOrder) -> Symtab raise {
   if data.length() < 24 {
     raise ParseError::MissingData(offset=0L, expected="SymtabCmd (24 bytes)")
   }
@@ -165,7 +165,7 @@ fn SymtabCmd::parse(data : Bytes, byte_order : ByteOrder) -> Symtab raise {
 }
 
 ///|
-fn DysymtabCmd::parse(data : Bytes, byte_order : ByteOrder) -> Dysymtab raise {
+fn DysymtabCmd::parse(data : @slice.Slice[Byte], byte_order : ByteOrder) -> Dysymtab raise {
   if data.length() < 80 {
     raise ParseError::MissingData(offset=0L, expected="DysymtabCmd (80 bytes)")
   }
@@ -212,7 +212,7 @@ fn DysymtabCmd::parse(data : Bytes, byte_order : ByteOrder) -> Dysymtab raise {
 }
 
 ///|
-fn DylibCmd::parse(data : Bytes, byte_order : ByteOrder) -> Dylib raise {
+fn DylibCmd::parse(data : @slice.Slice[Byte], byte_order : ByteOrder) -> Dylib raise {
   if data.length() < 24 {
     raise ParseError::MissingData(offset=0L, expected="DylibCmd (24 bytes)")
   }
@@ -232,7 +232,7 @@ fn DylibCmd::parse(data : Bytes, byte_order : ByteOrder) -> Dylib raise {
 }
 
 ///|
-fn RpathCmd::parse(data : Bytes, byte_order : ByteOrder) -> Rpath raise {
+fn RpathCmd::parse(data : @slice.Slice[Byte], byte_order : ByteOrder) -> Rpath raise {
   if data.length() < 12 {
     raise ParseError::MissingData(offset=0L, expected="RpathCmd (12 bytes)")
   }

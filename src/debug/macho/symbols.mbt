@@ -1,7 +1,7 @@
 ///|
 fn parse_symbols(
-  symdata : Bytes,
-  strtab : Bytes,
+  symdata : @slice.Slice[Byte],
+  strtab : @slice.Slice[Byte],
   nsyms : UInt,
   is_64bit : Bool,
   byte_order : ByteOrder,
@@ -28,8 +28,8 @@ fn parse_symbols(
 
 ///|
 fn parse_single_symbol(
-  symdata : Bytes,
-  strtab : Bytes,
+  symdata : @slice.Slice[Byte],
+  strtab : @slice.Slice[Byte],
   offset : Int,
   is_64bit : Bool,
   byte_order : ByteOrder,
@@ -45,23 +45,24 @@ fn parse_single_symbol(
   } else {
     read_uint(symdata, offset + 8, byte_order).to_uint64()
   }
-  let name : Bytes = if name_index.reinterpret_as_int() < strtab.length() {
+  let name : @slice.Slice[Byte] = if name_index.reinterpret_as_int() <
+    strtab.length() {
     let name_data = read_cstring(strtab, name_index.reinterpret_as_int())
     let raw_name = name_data
     if raw_name.length() > 0 && raw_name[0] == '_' && raw_name.contains('.') {
-      [..raw_name[1:]]
+      raw_name[1:]
     } else {
       raw_name
     }
   } else {
-    "<invalid>"
+    @slice.bytes("<invalid>")
   }
   { name, type_, sect, desc, value }
 }
 
 ///|
-pub fn File::imported_symbols(self : File) -> Array[Bytes] {
-  let imported : Array[Bytes] = []
+pub fn File::imported_symbols(self : File) -> Array[@slice.Slice[Byte]] {
+  let imported : Array[@slice.Slice[Byte]] = []
   match (self.symtab, self.dysymtab) {
     (Some(st), Some(dt)) => {
       let start_index = dt.iundefsym.reinterpret_as_int()
@@ -83,7 +84,7 @@ pub fn File::imported_symbols(self : File) -> Array[Bytes] {
 }
 
 ///|
-pub fn File::imported_libraries(self : File) -> Array[Bytes] {
+pub fn File::imported_libraries(self : File) -> Array[@slice.Slice[Byte]] {
   let libraries = Array::new()
   for load_cmd in self.loads {
     match load_cmd {
@@ -95,7 +96,7 @@ pub fn File::imported_libraries(self : File) -> Array[Bytes] {
 }
 
 ///|
-pub fn File::segment(self : File, name : Bytes) -> Segment? {
+pub fn File::segment(self : File, name : @slice.Slice[Byte]) -> Segment? {
   for load_cmd in self.loads {
     match load_cmd {
       LoadCommand::Segment(segment) =>
@@ -109,7 +110,7 @@ pub fn File::segment(self : File, name : Bytes) -> Segment? {
 }
 
 ///|
-pub fn File::section(self : File, name : Bytes) -> Section? {
+pub fn File::section(self : File, name : @slice.Slice[Byte]) -> Section? {
   for section in self.sections {
     if section.header.name == name {
       return Some(section)

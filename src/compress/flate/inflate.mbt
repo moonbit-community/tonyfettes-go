@@ -180,7 +180,7 @@ fn reverse_bits_16(n : UInt, bits : Int) -> UInt {
 
 ///|
 /// Additional constants from Go's deflate.go (moved from deflate.mbt to avoid duplication)
-// const MaxMatchOffset = 1 << 15 // The largest match offset (already defined in deflate.mbt)
+/// const MaxMatchOffset = 1 << 15 // The largest match offset (already defined in deflate.mbt)
 
 ///|
 /// Code order for HCLEN encoding - static array since constants can't be arrays
@@ -197,7 +197,7 @@ pub(open) trait Reader: @io.Reader + @io.ByteReader {}
 ///|
 /// Resetter trait for resetting a ReadCloser
 pub(open) trait Resetter {
-  reset(self : Self, r : &Reader, dict : ArrayView[Byte]) -> Unit raise
+  reset(self : Self, r : &Reader, dict : @slice.Slice[Byte]) -> Unit raise
 }
 
 ///|
@@ -227,7 +227,7 @@ struct Decompressor {
   mut dict : DictDecoder
 
   // Temporary buffer (avoids repeated allocation)
-  buf : ArrayView[Byte] // Size: 4
+  buf : @slice.Slice[Byte] // Size: 4
 
   // Next step in the decompression, and decompression state
   mut step : (Decompressor) -> Unit raise
@@ -256,7 +256,7 @@ fn[Reader : @io.Reader + @io.ByteReader] Decompressor::new(
     bits: Array::make(MaxNumLit + MaxNumDist, 0),
     codebits: Array::make(NumCodes, 0),
     dict: DictDecoder::new(),
-    buf: Array::make(4, (0 : Byte)),
+    buf: @slice.make(4),
     step: _ => (),
     step_state: StepState::StateInit,
     final_: false,
@@ -399,7 +399,7 @@ fn Decompressor::next_block(f : Decompressor) -> Unit raise {
 /// read reads from the decompressor
 pub impl @io.Reader for Decompressor with read(
   self : Decompressor,
-  b : ArrayView[Byte],
+  b : @slice.Slice[Byte],
 ) -> Int raise {
   for {
     if self.to_read.length() > 0 {
@@ -763,7 +763,7 @@ fn reverse_bits_8(b : Byte) -> Byte {
 pub impl Resetter for Decompressor with reset(
   self : Decompressor,
   r : &Reader,
-  dict : ArrayView[Byte],
+  dict : @slice.Slice[Byte],
 ) -> Unit raise {
   self.roffset = 0
   self.b = 0
@@ -790,7 +790,7 @@ pub impl Resetter for Decompressor with reset(
   self.copy_len = 0
   self.copy_dist = 0
   self.r = r
-  self.dict.init(MaxMatchOffset, [])
+  self.dict.init(MaxMatchOffset, @slice.new())
 }
 
 ///|
@@ -807,7 +807,7 @@ pub fn[R : @io.Reader + @io.ByteReader] new_reader(r : R) -> Decompressor {
     f.codebits[i] = 0
   }
   f.step = Decompressor::next_block
-  f.dict.init(MaxMatchOffset, [])
+  f.dict.init(MaxMatchOffset, @slice.new())
   f
 }
 
@@ -817,7 +817,7 @@ pub fn[R : @io.Reader + @io.ByteReader] new_reader(r : R) -> Decompressor {
 /// started with the given dictionary, which has already been read.
 pub fn[R : @io.Reader + @io.ByteReader] new_reader_dict(
   r : R,
-  dict : ArrayView[Byte],
+  dict : @slice.Slice[Byte],
 ) -> Decompressor {
   fixed_huffman_decoder_init()
   let f = Decompressor::new(r)

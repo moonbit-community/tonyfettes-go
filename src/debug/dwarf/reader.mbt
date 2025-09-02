@@ -7,7 +7,7 @@
 /// returns successive entries from a pre-order traversal of the tree.
 /// If an entry has children, its children field will be true, and the children
 /// follow, terminated by an Entry with tag 0.
-pub struct Reader {
+struct Reader {
   mut buf : Buf
   data : Data
   mut err : String?
@@ -17,7 +17,7 @@ pub struct Reader {
   mut last_sibling : Offset // .val(AttrSibling) of last entry returned by next
   mut cu : Entry? // current compilation unit
   units : Array[SimpleUnit]
-} derive(Show)
+}
 
 ///|
 /// Create a new Reader for Data.
@@ -25,7 +25,7 @@ pub struct Reader {
 pub fn Reader::new(data : Data, units : Array[SimpleUnit]) -> Reader {
   let buf = make_buf(
     Some(data),
-    UnknownFormatRef(UnknownFormat::new()),
+    UnknownFormat::new(),
     "info",
     0L,
     data.get_section(".debug_info"),
@@ -73,7 +73,7 @@ pub fn Reader::seek(self : Reader, off : Offset) -> Unit {
     self.unit = 0
     self.buf = make_buf(
       Some(self.data),
-      UnknownFormatRef(UnknownFormat::new()),
+      UnknownFormat::new(),
       "info",
       off,
       self.data.get_section(".debug_info"),
@@ -102,7 +102,7 @@ pub fn Reader::seek(self : Reader, off : Offset) -> Unit {
   let slice_data = Bytes::from_array(bytes_array)
   self.buf = make_buf(
     Some(self.data),
-    UnknownFormatRef(UnknownFormat::new()),
+    UnknownFormat::new(),
     "info",
     off,
     slice_data,
@@ -127,7 +127,7 @@ fn Reader::next_unit(self : Reader) -> Unit {
   let u = self.units[self.unit]
   self.buf = make_buf(
     Some(self.data),
-    UnknownFormatRef(UnknownFormat::new()),
+    UnknownFormat::new(),
     "info",
     0L, // Unit's data starts at its offset
     u.data,

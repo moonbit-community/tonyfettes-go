@@ -2,7 +2,7 @@
 package "tonyfettes/go/bytes"
 
 // Values
-fn new_buffer(ArrayView[Byte]) -> Buffer
+fn new_buffer(@slice.Slice[Byte]) -> Buffer
 
 // Errors
 

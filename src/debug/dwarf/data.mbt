@@ -174,7 +174,7 @@ pub fn SimpleUnit::is_dwarf64(self : SimpleUnit) -> Bool {
   self.is64
 }
 
-// Abbrev types are defined in abbrev.mbt
+/// Abbrev types are defined in abbrev.mbt
 
 ///|
 /// Get from abbreviation cache

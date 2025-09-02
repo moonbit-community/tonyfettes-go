@@ -27,7 +27,7 @@ fn BufferWriter::to_bytes(self : BufferWriter) -> Bytes {
 
 ///|
 test "adler32 checksum basic" {
-  let data : Array[Byte] = b"hello".to_array()
+  let data = @slice.bytes("hello")
   let adler = Adler32::new()
   adler.write_bytes(data)
   let checksum = adler.sum32()
@@ -37,7 +37,7 @@ test "adler32 checksum basic" {
 
 ///|
 test "adler32 incremental vs one-shot" {
-  let data : Array[Byte] = b"hello world".to_array()
+  let data = @slice.bytes("hello world")
 
   // One-shot calculation
   let adler1 = Adler32::new()
@@ -46,8 +46,8 @@ test "adler32 incremental vs one-shot" {
 
   // Incremental calculation
   let adler2 = Adler32::new()
-  let part1 : Array[Byte] = b"hello".to_array()
-  let part2 : Array[Byte] = b" world".to_array()
+  let part1 = @slice.bytes("hello")
+  let part2 = @slice.bytes(" world")
   adler2.write_bytes(part1)
   adler2.write_bytes(part2)
   let checksum2 = adler2.sum32()
@@ -79,7 +79,7 @@ test "writer basic functionality" {
   let writer = new_writer(buffer)
 
   // Write some test data
-  let test_data : Array[Byte] = b"hello".to_array()
+  let test_data = @slice.bytes("hello")
   ignore(writer.write(test_data[0:]))
   writer.close()
   let output = buffer.to_bytes()
@@ -97,7 +97,7 @@ test "writer basic functionality" {
 
 ///|
 test "round trip compress decompress" {
-  let original_data : Array[Byte] = b"This is a test".to_array()
+  let original_data = @slice.bytes("This is a test")
 
   // Compress
   let buffer = BufferWriter::new()

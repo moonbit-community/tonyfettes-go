@@ -1,5 +1,5 @@
 ///|
-fn File::parse(data : Bytes) -> File raise {
+fn File::parse(data : @slice.Slice[Byte]) -> File raise {
   if data.length() < 4 {
     raise FormatError::FileTooSmall(actual_size=data.length(), required_size=4)
   }
@@ -15,7 +15,7 @@ fn File::parse(data : Bytes) -> File raise {
 
 ///|
 fn FileHeader::parse(
-  data : Bytes,
+  data : @slice.Slice[Byte],
   byte_order : ByteOrder,
   magic : UInt,
 ) -> FileHeader raise {
@@ -41,7 +41,7 @@ fn FileHeader::parse(
 
 ///|
 fn parse_file_with_header(
-  data : Bytes,
+  data : @slice.Slice[Byte],
   header : FileHeader,
   byte_order : ByteOrder,
 ) -> File raise {
@@ -82,7 +82,7 @@ fn parse_file_with_header(
 
 ///|
 fn parse_load_commands(
-  data : Bytes,
+  data : @slice.Slice[Byte],
   byte_order : ByteOrder,
   ncmd : UInt,
 ) -> (Array[LoadCommand], Array[Section], Symtab?, Dysymtab?) raise {
@@ -141,19 +141,19 @@ fn parse_load_commands(
 }
 
 ///|
-pub fn File::new(data : Bytes) -> File raise {
+pub fn File::new(data : @slice.Slice[Byte]) -> File raise {
   File::parse(data)
 }
 
 ///|
 pub fn open_file(path : String) -> File raise {
   let data = @fs.read_file_to_bytes(path)
-  File::parse(data)
+  File::parse(@slice.bytes(data))
 }
 
 ///|
 fn Symtab::parse(
-  file_data : Bytes,
+  file_data : @slice.Slice[Byte],
   symtab : Symtab,
   is_64bit : Bool,
   byte_order : ByteOrder,

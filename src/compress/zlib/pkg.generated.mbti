@@ -18,13 +18,13 @@ const HuffmanOnly : Int = -2
 
 const NoCompression : Int = 0
 
-fn checksum(ArrayView[Byte]) -> UInt
+fn checksum(@slice.Slice[Byte]) -> UInt
 
 fn checksum_array(FixedArray[Byte]) -> UInt
 
-fn checksum_bytes(ArrayView[Byte]) -> UInt
+fn checksum_bytes(@slice.Slice[Byte]) -> UInt
 
-fn checksum_bytesview(ArrayView[Byte]) -> UInt
+fn checksum_bytesview(@slice.Slice[Byte]) -> UInt
 
 fn get_uint16_be(@bytes.View, Int) -> UInt
 
@@ -36,13 +36,13 @@ fn get_uint32_be_array(FixedArray[Byte], Int) -> UInt
 
 fn[R : @io.Reader + @io.ByteReader] new_reader(R) -> &@io.ReadCloser raise
 
-fn[R : @io.Reader + @io.ByteReader] new_reader_dict(R, ArrayView[Byte]) -> &@io.ReadCloser raise
+fn[R : @io.Reader + @io.ByteReader] new_reader_dict(R, @slice.Slice[Byte]) -> &@io.ReadCloser raise
 
 fn new_writer(&@io.Writer) -> Writer
 
 fn new_writer_level(&@io.Writer, Int) -> (Writer, Error?)
 
-fn new_writer_level_dict(&@io.Writer, Int, ArrayView[Byte]) -> (Writer, Error?)
+fn new_writer_level_dict(&@io.Writer, Int, @slice.Slice[Byte]) -> (Writer, Error?)
 
 fn put_uint16_be(FixedArray[Byte], Int, UInt) -> Unit
 
@@ -66,10 +66,10 @@ pub struct Adler32 {
 fn Adler32::new() -> Self
 fn Adler32::reset(Self) -> Unit
 fn Adler32::sum32(Self) -> UInt
-fn Adler32::write(Self, ArrayView[Byte]) -> Unit
+fn Adler32::write(Self, @slice.Slice[Byte]) -> Unit
 fn Adler32::write_array(Self, Array[Byte]) -> Unit
-fn Adler32::write_arrayview(Self, ArrayView[Byte]) -> Unit
-fn Adler32::write_bytes(Self, ArrayView[Byte]) -> Unit
+fn Adler32::write_arrayview(Self, @slice.Slice[Byte]) -> Unit
+fn Adler32::write_bytes(Self, @slice.Slice[Byte]) -> Unit
 fn Adler32::write_fixedarray(Self, FixedArray[Byte]) -> Unit
 impl Show for Adler32
 
@@ -87,7 +87,7 @@ impl @io.Reader for Reader
 pub struct Writer {
   mut w : &@io.Writer
   level : Int
-  dict : ArrayView[Byte]
+  dict : @slice.Slice[Byte]
   mut compressor : @flate.Writer?
   mut digest : Adler32
   mut err : Error?
@@ -103,6 +103,6 @@ impl @io.Writer for Writer
 
 // Traits
 pub(open) trait Resetter {
-  reset(Self, &@flate.Reader, ArrayView[Byte]) -> Unit raise
+  reset(Self, &@flate.Reader, @slice.Slice[Byte]) -> Unit raise
 }
 

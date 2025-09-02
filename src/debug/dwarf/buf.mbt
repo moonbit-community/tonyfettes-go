@@ -38,7 +38,7 @@ impl DataFormat for UnknownFormat with addrsize(_) {
 }
 
 ///|
-// Data struct is now defined in data.mbt
+/// Data struct is now defined in data.mbt
 
 ///|
 /// Data buffer being decoded.
@@ -298,7 +298,7 @@ fn Buf::int(self : Buf) -> Int64 {
 ///|
 /// Read address-sized uint
 fn Buf::addr(self : Buf) -> UInt64 {
-  match data_format_ref_addrsize(self.format) {
+  match self.format.addrsize() {
     1 => self.uint8().to_uint64()
     2 => self.uint16().to_uint64()
     4 => self.uint32().to_uint64()

@@ -264,7 +264,7 @@ test "verify_specific_symbols" {
       let symbol_names = []
       for symbol in symtab.syms {
         let symbol_name = StringBuilder::new()
-        @encoding.decode_to(symbol.name, symbol_name, encoding=UTF8)
+        @encoding.decode_to(symbol.name.bytesview(), symbol_name, encoding=UTF8)
         let symbol_name = symbol_name.to_string()
         symbol_names.push(symbol_name)
       }

@@ -2,7 +2,7 @@
 /// Adler-32 checksum implementation
 /// As defined in RFC 1950
 
-// adler32 mod values
+/// adler32 mod values
 let mod_adler : UInt = 65521
 
 ///|
@@ -20,7 +20,7 @@ pub fn Adler32::new() -> Adler32 {
 
 ///|
 /// Update the checksum with new data from a View
-pub fn Adler32::write(self : Adler32, data : ArrayView[Byte]) -> Unit {
+pub fn Adler32::write(self : Adler32, data : @slice.Slice[Byte]) -> Unit {
   for i = 0; i < data.length(); i = i + 1 {
     self.a = (self.a + data[i].to_uint()) % mod_adler
     self.b = (self.b + self.a) % mod_adler
@@ -28,7 +28,7 @@ pub fn Adler32::write(self : Adler32, data : ArrayView[Byte]) -> Unit {
 }
 
 ///|
-pub fn Adler32::write_bytes(self : Adler32, data : ArrayView[Byte]) -> Unit {
+pub fn Adler32::write_bytes(self : Adler32, data : @slice.Slice[Byte]) -> Unit {
   for i = 0; i < data.length(); i = i + 1 {
     self.a = (self.a + data[i].to_uint()) % mod_adler
     self.b = (self.b + self.a) % mod_adler
@@ -57,7 +57,10 @@ pub fn Adler32::write_array(self : Adler32, data : Array[Byte]) -> Unit {
 }
 
 ///|
-pub fn Adler32::write_arrayview(self : Adler32, data : ArrayView[Byte]) -> Unit {
+pub fn Adler32::write_arrayview(
+  self : Adler32,
+  data : @slice.Slice[Byte],
+) -> Unit {
   for i = 0; i < data.length(); i = i + 1 {
     self.a = (self.a + data[i].to_uint()) % mod_adler
     self.b = (self.b + self.a) % mod_adler
@@ -79,7 +82,7 @@ pub fn Adler32::reset(self : Adler32) -> Unit {
 
 ///|
 /// Compute Adler32 checksum of data in one go (View)
-pub fn checksum(data : ArrayView[Byte]) -> UInt {
+pub fn checksum(data : @slice.Slice[Byte]) -> UInt {
   let adler = Adler32::new()
   adler.write(data)
   adler.sum32()
@@ -95,7 +98,7 @@ pub fn checksum_array(data : FixedArray[Byte]) -> UInt {
 
 ///|
 /// Compute Adler32 checksum of data in one go (bytes.View)
-pub fn checksum_bytesview(data : ArrayView[Byte]) -> UInt {
+pub fn checksum_bytesview(data : @slice.Slice[Byte]) -> UInt {
   let adler = Adler32::new()
   adler.write(data)
   adler.sum32()
@@ -103,7 +106,7 @@ pub fn checksum_bytesview(data : ArrayView[Byte]) -> UInt {
 
 ///|
 /// Compute Adler32 checksum of data in one go (Bytes)
-pub fn checksum_bytes(data : ArrayView[Byte]) -> UInt {
+pub fn checksum_bytes(data : @slice.Slice[Byte]) -> UInt {
   let adler = Adler32::new()
   adler.write_bytes(data)
   adler.sum32()

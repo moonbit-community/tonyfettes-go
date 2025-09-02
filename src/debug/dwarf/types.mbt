@@ -843,7 +843,7 @@ impl DwarfType for UnsupportedType with to_string(self) {
   }
 }
 
-// Helper functions for DwarfTypeRef
+/// Helper functions for DwarfTypeRef
 
 ///|
 /// Get the size of a DwarfTypeRef

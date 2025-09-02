@@ -13,9 +13,9 @@ fn limit_reader(&Reader, Int64) -> LimitedReader
 
 fn new_section_reader(&ReaderAt, Int64, Int64) -> SectionReader
 
-fn[R : Reader] read_at_least(R, ArrayView[Byte], Int) -> Int raise
+fn[R : Reader] read_at_least(R, @slice.Slice[Byte], Int) -> Int raise
 
-fn[R : Reader] read_full(R, ArrayView[Byte]) -> Int raise
+fn[R : Reader] read_full(R, @slice.Slice[Byte]) -> Int raise
 
 // Errors
 pub(all) suberror EOF
@@ -38,8 +38,8 @@ impl Reader for LimitedReader
 
 type SectionReader
 fn SectionReader::new(&ReaderAt, Int64, Int64) -> Self
-fn SectionReader::read(Self, ArrayView[Byte]) -> Int raise
-fn SectionReader::read_at(Self, ArrayView[Byte], Int64) -> Int raise
+fn SectionReader::read(Self, @slice.Slice[Byte]) -> Int raise
+fn SectionReader::read_at(Self, @slice.Slice[Byte], Int64) -> Int raise
 fn SectionReader::seek(Self, Int64, SeekWhence) -> Int64 raise SeekError
 fn SectionReader::size(Self) -> Int64
 
@@ -82,12 +82,12 @@ pub(open) trait ReadWriter : Reader + Writer {
 }
 
 pub(open) trait Reader {
-  read(Self, ArrayView[Byte]) -> Int raise
+  read(Self, @slice.Slice[Byte]) -> Int raise
 }
 impl Reader for @bytes.View
 
 pub(open) trait ReaderAt {
-  read_at(Self, ArrayView[Byte], Int64) -> Int raise
+  read_at(Self, @slice.Slice[Byte], Int64) -> Int raise
 }
 
 pub(open) trait ReaderFrom {
@@ -114,11 +114,11 @@ pub(open) trait WriteTo {
 }
 
 pub(open) trait Writer {
-  write(Self, ArrayView[Byte]) -> Int raise
+  write(Self, @slice.Slice[Byte]) -> Int raise
 }
 impl Writer for @buffer.T
 
 pub(open) trait WriterAt {
-  write_at(Self, ArrayView[Byte], Int64) -> Int raise
+  write_at(Self, @slice.Slice[Byte], Int64) -> Int raise
 }
 

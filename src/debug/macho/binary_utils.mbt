@@ -1,5 +1,5 @@
 ///|
-fn read_uint(data : Bytes, offset : Int, byte_order : ByteOrder) -> UInt raise {
+fn read_uint(data : @slice.Slice[Byte], offset : Int, byte_order : ByteOrder) -> UInt raise {
   if offset + 4 > data.length() {
     raise BufferOverflowError::ReadOverflow(
       offset~,
@@ -24,7 +24,7 @@ fn read_uint(data : Bytes, offset : Int, byte_order : ByteOrder) -> UInt raise {
 
 ///|
 fn read_uint64(
-  data : Bytes,
+  data : @slice.Slice[Byte],
   offset : Int,
   byte_order : ByteOrder,
 ) -> UInt64 raise {
@@ -45,7 +45,11 @@ fn read_uint64(
 }
 
 ///|
-fn read_bytes(data : Bytes, offset : Int, length : Int) -> Bytes raise {
+fn read_bytes(
+  data : @slice.Slice[Byte],
+  offset : Int,
+  length : Int,
+) -> @slice.Slice[Byte] raise {
   if offset + length > data.length() {
     raise BufferOverflowError::ReadOverflow(
       offset~,
@@ -54,7 +58,7 @@ fn read_bytes(data : Bytes, offset : Int, length : Int) -> Bytes raise {
       operation="read_bytes",
     )
   }
-  [..data[offset:offset + length]]
+  data[offset:offset + length]
 }
 
 ///|
@@ -69,7 +73,7 @@ fn determine_byte_order(magic : UInt) -> ByteOrder? {
 }
 
 ///|
-fn read_cstring(data : Bytes, offset : Int) -> Bytes raise {
+fn read_cstring(data : @slice.Slice[Byte], offset : Int) -> @slice.Slice[Byte] raise {
   if offset >= data.length() {
     raise BufferOverflowError::ReadOverflow(
       offset~,
@@ -82,12 +86,12 @@ fn read_cstring(data : Bytes, offset : Int) -> Bytes raise {
   while end < data.length() && data[end] != 0 {
     end = end + 1
   }
-  [..data[offset:end]]
+  data[offset:end]
 }
 
 ///|
-fn Bytes::contains(self : Bytes, byte : Byte) -> Bool {
-  loop self[:] {
+fn @slice.Slice::contains(self : @slice.Slice[Byte], byte : Byte) -> Bool {
+  loop self.bytesview() {
     [b, ..] if b == byte => true
     [_, .. rest] => continue rest
     [] => false

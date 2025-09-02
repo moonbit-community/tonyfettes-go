@@ -1,6 +1,6 @@
-// Copyright 2009 The Go Authors. All rights reserved.
-// Use of this source code is governed by a BSD-style
-// license that can be found in the LICENSE file.
+/// Copyright 2009 The Go Authors. All rights reserved.
+/// Use of this source code is governed by a BSD-style
+/// license that can be found in the LICENSE file.
 
 ///|
 /// A Writer takes data written to it and writes the compressed
@@ -8,7 +8,7 @@
 pub struct Writer {
   mut w : &@io.Writer
   level : Int
-  dict : ArrayView[Byte]
+  dict : @slice.Slice[Byte]
   mut compressor : @flate.Writer?
   mut digest : Adler32
   mut err : Error?
@@ -23,7 +23,7 @@ pub struct Writer {
 /// It is the caller's responsibility to call Close on the Writer when done.
 /// Writes may be buffered and not flushed until Close.
 pub fn new_writer(w : &@io.Writer) -> Writer {
-  let (z, _) = new_writer_level_dict(w, DefaultCompression, [])
+  let (z, _) = new_writer_level_dict(w, DefaultCompression, @slice.new())
   z
 }
 
@@ -35,7 +35,7 @@ pub fn new_writer(w : &@io.Writer) -> Writer {
 /// or any integer value between BestSpeed and BestCompression inclusive.
 /// The error returned will be nil if the level is valid.
 pub fn new_writer_level(w : &@io.Writer, level : Int) -> (Writer, Error?) {
-  new_writer_level_dict(w, level, [])
+  new_writer_level_dict(w, level, @slice.new())
 }
 
 ///|
@@ -47,14 +47,14 @@ pub fn new_writer_level(w : &@io.Writer, level : Int) -> (Writer, Error?) {
 pub fn new_writer_level_dict(
   w : &@io.Writer,
   level : Int,
-  dict : ArrayView[Byte],
+  dict : @slice.Slice[Byte],
 ) -> (Writer, Error?) {
   if level < HuffmanOnly || level > BestCompression {
     return (
       Writer::{
         w,
         level: DefaultCompression,
-        dict: [],
+        dict: @slice.new(),
         compressor: None,
         digest: Adler32::new(),
         err: None,
@@ -122,7 +122,7 @@ fn Writer::write_header(self : Writer) -> Unit raise {
   }
   self.scratch[1] = self.scratch[1] +
     (31 - get_uint16_be_array(self.scratch, 0).reinterpret_as_int() % 31).to_byte()
-  let header_bytes : ArrayView[Byte] = Array::make(2, (0 : Byte))
+  let header_bytes : @slice.Slice[Byte] = @slice.make(2)
   header_bytes[0] = self.scratch[0]
   header_bytes[1] = self.scratch[1]
   ignore(self.w.write(header_bytes[0:])) catch {
@@ -131,7 +131,7 @@ fn Writer::write_header(self : Writer) -> Unit raise {
   if self.dict.length() != 0 {
     // The next four bytes are the Adler-32 checksum of the dictionary.
     put_uint32_be(self.scratch, 0, checksum_bytes(self.dict))
-    let checksum_bytes : ArrayView[Byte] = Array::make(4, (0 : Byte))
+    let checksum_bytes : @slice.Slice[Byte] = @slice.make(4)
     for i = 0; i < 4; i = i + 1 {
       checksum_bytes[i] = self.scratch[i]
     }
@@ -222,7 +222,7 @@ pub impl @io.Closer for Writer with close(self) {
   let checksum = self.digest.sum32()
   // ZLIB (RFC 1950) is big-endian, unlike GZIP (RFC 1952).
   put_uint32_be(self.scratch, 0, checksum)
-  let checksum_bytes : ArrayView[Byte] = Array::make(4, (0 : Byte))
+  let checksum_bytes : @slice.Slice[Byte] = @slice.make(4)
   for i = 0; i < 4; i = i + 1 {
     checksum_bytes[i] = self.scratch[i]
   }

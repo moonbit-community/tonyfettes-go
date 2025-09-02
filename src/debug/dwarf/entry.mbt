@@ -3,7 +3,7 @@
 
 ///|
 /// Parse a single DWARF entry from a buffer
-pub fn parse_entry(
+fn parse_entry(
   buf : Buf,
   cu : Entry?,
   unit : SimpleUnit,
@@ -219,17 +219,17 @@ fn parse_strx(buf : Buf, index : UInt64, unit : SimpleUnit) -> String {
   "strx_index_\{index}"
 }
 
-// uint_to_format is defined in abbrev.mbt
+/// uint_to_format is defined in abbrev.mbt
 
 ///|
 /// Check if buffer has data remaining
-pub fn Buf::has_data(self : Buf) -> Bool {
+fn Buf::has_data(self : Buf) -> Bool {
   self.length() > 0
 }
 
 ///|
 /// Peek at next entry ID without consuming it
-pub fn Buf::peek_entry_id(self : Buf) -> UInt? {
+fn Buf::peek_entry_id(self : Buf) -> UInt? {
   if self.length() < 1 {
     return None
   }
@@ -329,7 +329,7 @@ pub typealias Map[UInt, Abbrev] as AbbrevTable
 
 ///|
 /// Parse abbreviation table from the .debug_abbrev section
-pub fn parse_abbrev(
+fn parse_abbrev(
   data : Data,
   off : UInt64,
   vers : Int,

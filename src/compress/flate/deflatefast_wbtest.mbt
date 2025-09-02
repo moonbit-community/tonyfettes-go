@@ -15,7 +15,7 @@ test "DeflateFast::new" {
 test "DeflateFast encode empty" {
   let df = DeflateFast::new()
   let dst = []
-  df.encode(dst, [])
+  df.encode(dst, @slice.new())
   inspect(dst.length(), content="0")
 }
 
@@ -24,7 +24,7 @@ test "DeflateFast encode empty" {
 test "DeflateFast encode small input" {
   let df = DeflateFast::new()
   let dst = []
-  df.encode(dst, b"abc".to_array())
+  df.encode(dst, @slice.bytes("abc"))
   // Should emit literals for small input
   inspect(dst.length(), content="3")
 }
@@ -36,8 +36,10 @@ test "DeflateFast encode larger input" {
   let dst = []
 
   // Create input with some repeated patterns
-  let src : Bytes = "Hello, World! This is a test string with some repeated patterns. Hello, World!"
-  df.encode(dst, src.to_array())
+  let src = @slice.bytes(
+    "Hello, World! This is a test string with some repeated patterns. Hello, World!",
+  )
+  df.encode(dst, src)
   // Should have some matches found
   inspect(dst.length() > 0, content="true")
   inspect(dst.length() <= src.length(), content="true") // Some compression or same size
@@ -57,7 +59,7 @@ test "DeflateFast encode repetitive input" {
     src.push(b'c')
     src.push(b'd')
   }
-  df.encode(dst, src)
+  df.encode(dst, @slice.bytes(@bytes.from_array(src)))
   // Should find many matches
   inspect(dst.length() > 0, content="true")
   inspect(dst.length() <= src.length(), content="true") // Should compress well
@@ -68,11 +70,9 @@ test "DeflateFast encode repetitive input" {
 test "DeflateFast reset" {
   let df = DeflateFast::new()
   let dst = []
-  let src = []
-
-  // Add some data to prev buffer
+  let mut src = @slice.new()
   for i = 0; i < 20; i = i + 1 {
-    src.push(b'x')
+    src = src.append(b'x')
   }
   ignore(df.encode(dst, src))
 
@@ -86,7 +86,7 @@ test "DeflateFast reset" {
 /// Test emit_literal function
 test "emit_literal" {
   let dst = []
-  let lit : Array[Byte] = b"Hi".to_array()
+  let lit = @slice.bytes("Hi")
   emit_literal(dst, lit)
   inspect(dst.length(), content="2")
 }
@@ -94,7 +94,7 @@ test "emit_literal" {
 ///|
 /// Test load32 function
 test "load32" {
-  let bytes : Array[Byte] = [0x01, 0x02, 0x03, 0x04]
+  let bytes : @slice.Slice[Byte] = @slice.array([0x01, 0x02, 0x03, 0x04])
   let result = load32(bytes, 0)
   // Little endian: 0x04030201
   inspect(result, content="67305985")
@@ -103,7 +103,9 @@ test "load32" {
 ///|
 /// Test load64 function
 test "load64" {
-  let bytes : Array[Byte] = [0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07, 0x08]
+  let bytes : @slice.Slice[Byte] = @slice.array([
+    0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07, 0x08,
+  ])
   let result = load64(bytes, 0)
   // Little endian: 0x0807060504030201
   inspect(result, content="578437695752307201")
@@ -129,14 +131,14 @@ test "DeflateFast match_len" {
   let df = DeflateFast::new()
 
   // Add test data
-  let src : Bytes = "abcdefghijklmnopqrstuvwxyz"
+  let src = @slice.bytes("abcdefghijklmnopqrstuvwxyz")
 
   // Test match within current block
-  let match_len1 = df.match_len(0, 0, src.to_array())
+  let match_len1 = df.match_len(0, 0, src)
   inspect(match_len1 >= 0, content="true")
 
   // Test no match scenario
-  let match_len2 = df.match_len(0, 10, src.to_array())
+  let match_len2 = df.match_len(0, 10, src)
   inspect(match_len2 >= 0, content="true")
 }
 
@@ -146,14 +148,14 @@ test "DeflateFast cross block matching" {
   let df = DeflateFast::new()
 
   // First block
-  let src1 : Bytes = "pattern"
+  let src1 = @slice.bytes("pattern")
   let dst1 = []
-  df.encode(dst1, src1.to_array())
+  df.encode(dst1, src1)
 
   // Second block with same pattern - should find matches in previous block
-  let src2 : Bytes = "pattern"
+  let src2 = @slice.bytes("pattern")
   let dst2 = []
-  df.encode(dst2, src2.to_array())
+  df.encode(dst2, src2)
   inspect(dst2.length() > dst1.length(), content="false")
 }
 
@@ -203,11 +205,11 @@ test "DeflateFast shift_offsets" {
 test "DeflateFast minimum input size" {
   let df = DeflateFast::new()
   let dst = []
-  let src = []
+  let mut src = @slice.new()
 
   // Create input exactly at minimum size
   for i = 0; i < MinNonLiteralBlockSize; i = i + 1 {
-    src.push((i % 256).to_byte())
+    src = src.append((i % 256).to_byte())
   }
   df.encode(dst, src)
   inspect(dst.length() >= MinNonLiteralBlockSize, content="true")

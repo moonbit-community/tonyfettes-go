@@ -17,7 +17,7 @@ pub enum ByteOrder {
 
 ///|
 pub trait Load {
-  raw(Self) -> Bytes
+  raw(Self) -> @slice.Slice[Byte]
 }
 
 ///|
@@ -46,7 +46,7 @@ pub impl Load for LoadCommand with raw(self) {
 
 ///|
 pub struct LoadBytes {
-  data : Bytes
+  data : @slice.Slice[Byte]
 } derive(Eq, Show)
 
 ///|
@@ -58,7 +58,7 @@ pub impl Load for LoadBytes with raw(self) {
 pub struct SegmentHeader {
   cmd : LoadCmd
   len : UInt
-  name : Bytes
+  name : @slice.Slice[Byte]
   addr : UInt64
   memsz : UInt64
   offset : UInt64
@@ -73,7 +73,7 @@ pub struct SegmentHeader {
 pub struct Segment {
   load_bytes : LoadBytes
   header : SegmentHeader
-  data : Bytes?
+  data : @slice.Slice[Byte]?
 } derive(Eq, Show)
 
 ///|
@@ -82,7 +82,10 @@ pub impl Load for Segment with raw(self) {
 }
 
 ///|
-pub fn Segment::data(self : Segment, file_data : Bytes) -> Bytes raise {
+pub fn Segment::data(
+  self : Segment,
+  file_data : @slice.Slice[Byte],
+) -> @slice.Slice[Byte] raise {
   match self.data {
     Some(data) => data
     None => {
@@ -101,8 +104,8 @@ pub fn Segment::data(self : Segment, file_data : Bytes) -> Bytes raise {
 
 ///|
 pub struct SectionHeader {
-  name : Bytes
-  seg : Bytes
+  name : @slice.Slice[Byte]
+  seg : @slice.Slice[Byte]
   addr : UInt64
   size : UInt64
   offset : UInt
@@ -127,11 +130,14 @@ pub struct Reloc {
 pub struct Section {
   header : SectionHeader
   relocs : Array[Reloc]
-  data : Bytes?
+  data : @slice.Slice[Byte]?
 } derive(Eq, Show)
 
 ///|
-pub fn Section::data(self : Section, file_data : Bytes) -> Bytes raise {
+pub fn Section::data(
+  self : Section,
+  file_data : @slice.Slice[Byte],
+) -> @slice.Slice[Byte] raise {
   match self.data {
     Some(data) => data
     None => {
@@ -151,7 +157,7 @@ pub fn Section::data(self : Section, file_data : Bytes) -> Bytes raise {
 ///|
 pub struct Dylib {
   load_bytes : LoadBytes
-  name : Bytes
+  name : @slice.Slice[Byte]
   time : UInt
   current_version : UInt
   compat_version : UInt
@@ -164,7 +170,7 @@ pub impl Load for Dylib with raw(self) {
 
 ///|
 pub struct Symbol {
-  name : Bytes
+  name : @slice.Slice[Byte]
   type_ : Int
   sect : Int
   desc : Int
@@ -218,7 +224,7 @@ pub impl Load for Dysymtab with raw(self) {
 ///|
 pub struct Rpath {
   load_bytes : LoadBytes
-  path : Bytes
+  path : @slice.Slice[Byte]
 } derive(Eq, Show)
 
 ///|

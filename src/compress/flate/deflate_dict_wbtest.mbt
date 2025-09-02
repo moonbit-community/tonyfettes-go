@@ -23,11 +23,11 @@ fn TestWriter::new() -> TestWriter {
 ///|
 test "new_writer_dict basic functionality" {
   let w = TestWriter::new()
-  let dict : Array[Byte] = Array::new()
+  let dict : FixedArray[Byte] = FixedArray::make(10, 0)
   for i = 0; i < 10; i = i + 1 {
-    dict.push(i.to_byte())
+    dict[i] = i.to_byte()
   }
-  let writer = new_writer_dict(w, 6, dict)
+  let writer = new_writer_dict(w, 6, @slice.array(dict))
 
   // Verify that dictionary was stored
   inspect(writer.dict.length(), content="10")
@@ -42,7 +42,7 @@ test "new_writer_dict basic functionality" {
 ///|
 test "new_writer_dict empty dictionary" {
   let w = TestWriter::new()
-  let writer = new_writer_dict(w, 6, [])
+  let writer = new_writer_dict(w, 6, @slice.new())
 
   // Verify empty dictionary handling
   inspect(writer.dict.length(), content="0")
@@ -53,11 +53,11 @@ test "new_writer_dict empty dictionary" {
 ///|
 test "new_writer_dict large dictionary" {
   let w = TestWriter::new()
-  let large_dict = []
+  let large_dict : FixedArray[Byte] = FixedArray::make(WindowSize + 100, 0)
   for i = 0; i < WindowSize + 100; i = i + 1 {
-    large_dict.push((i % 256).to_byte())
+    large_dict[i] = (i % 256).to_byte()
   }
-  let writer = new_writer_dict(w, 6, large_dict)
+  let writer = new_writer_dict(w, 6, @slice.array(large_dict))
 
   // Verify dictionary was stored (entire dictionary)
   inspect(writer.dict.length(), content="32868")
@@ -71,18 +71,18 @@ test "new_writer_dict large dictionary" {
 test "new_writer_dict different compression levels" {
   let w1 = TestWriter::new()
   let w2 = TestWriter::new()
-  let dict = []
+  let dict : FixedArray[Byte] = FixedArray::make(20, 0)
   for i = 0; i < 20; i = i + 1 {
-    dict.push(i.to_byte())
+    dict[i] = i.to_byte()
   }
 
   // Test with store-only mode (level 0)
-  let writer1 = new_writer_dict(w1, 0, dict)
+  let writer1 = new_writer_dict(w1, 0, @slice.array(dict))
   inspect(writer1.dict.length(), content="20")
   inspect(writer1.d.window_end, content="0") // Store mode doesn't fill window
 
   // Test with compression mode (level 6)
-  let writer2 = new_writer_dict(w2, 6, dict)
+  let writer2 = new_writer_dict(w2, 6, @slice.array(dict))
   inspect(writer2.dict.length(), content="20")
   inspect(writer2.d.window_end, content="20") // Compression mode fills window
 }
@@ -91,8 +91,8 @@ test "new_writer_dict different compression levels" {
 test "DictWriter functionality" {
   let w = TestWriter::new()
   let dict_writer = DictWriter::new(w)
-  let test_data : Bytes = "hello world"
-  ignore(dict_writer.write(test_data.to_array()))
+  let test_data = @slice.bytes("hello world")
+  ignore(dict_writer.write(test_data))
 
   // Verify data was written through to underlying writer
   inspect(w.buffer.val.length(), content="11")
@@ -104,9 +104,9 @@ test "DictWriter functionality" {
 test "Writer reset with dictionary" {
   let w1 = TestWriter::new()
   let w2 = TestWriter::new()
-  let dict = []
+  let mut dict = @slice.new()
   for i = 0; i < 15; i = i + 1 {
-    dict.push((i + 97).to_byte()) // 'a' to 'o'
+    dict = dict.append((i + 97).to_byte()) // 'a' to 'o'
   }
 
   // Create writer with dictionary

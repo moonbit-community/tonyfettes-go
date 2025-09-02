@@ -8,19 +8,25 @@
 /// DwarfData represents extracted DWARF debug information
 pub struct DwarfData {
   /// DWARF sections mapped by name (without prefix)
-  sections : Map[Bytes, ArrayView[Byte]]
+  sections : Map[Bytes, @slice.Slice[Byte]]
 } derive(Show)
 
 ///|
 /// Extract DWARF debug information from a Mach-O file
 /// Returns DwarfData containing all DWARF sections found in the file
-pub fn File::dwarf(self : File, file_data : Bytes) -> DwarfData? raise {
-  fn section_data(s : Section, file_data : Bytes) -> ArrayView[Byte] raise {
-    let b = s.data(file_data).to_array()
-    if b.length() >= 12 && b is [.. "ZLIB", ..] {
+pub fn File::dwarf(
+  self : File,
+  file_data : @slice.Slice[Byte],
+) -> DwarfData? raise {
+  fn section_data(
+    s : Section,
+    file_data : @slice.Slice[Byte],
+  ) -> @slice.Slice[Byte] raise {
+    let b = s.data(file_data)
+    if b.length() >= 12 && b.bytesview() is [.. "ZLIB", ..] {
       let dlen = read_uint64_be(b, 4)
       let r = @zlib.new_reader(@bytes.new_buffer(b[12:]))
-      let dbuf : Array[Byte] = Array::make(dlen.to_int(), 0)
+      let dbuf : @slice.Slice[Byte] = @slice.make(dlen.to_int())
       let _ = @io.read_full(r, dbuf)
       r.close()
       dbuf
@@ -53,12 +59,12 @@ fn dwarf_suffix(section : Section) -> Bytes {
   let sectname = section.header.name
 
   // Check for standard DWARF sections
-  if sectname is [.. "__debug_", .. suffix] {
+  if sectname.bytesview() is [.. "__debug_", .. suffix] {
     return expand_dwarf_section_name_bytes([..suffix])
   }
 
   // Check for compressed DWARF sections
-  if sectname is [.. "__zdebug_", .. suffix] {
+  if sectname.bytesview() is [.. "__zdebug_", .. suffix] {
     return expand_dwarf_section_name_bytes([..suffix])
   }
   b""
@@ -88,15 +94,15 @@ fn expand_dwarf_section_name_bytes(suffix : Bytes) -> Bytes {
 
 ///|
 /// Read a 64-bit big-endian unsigned integer from bytes at offset
-fn read_uint64_be(data : ArrayView[Byte], offset : Int) -> UInt64 {
-  let b0 = data.op_get(offset).to_uint64()
-  let b1 = data.op_get(offset + 1).to_uint64()
-  let b2 = data.op_get(offset + 2).to_uint64()
-  let b3 = data.op_get(offset + 3).to_uint64()
-  let b4 = data.op_get(offset + 4).to_uint64()
-  let b5 = data.op_get(offset + 5).to_uint64()
-  let b6 = data.op_get(offset + 6).to_uint64()
-  let b7 = data.op_get(offset + 7).to_uint64()
+fn read_uint64_be(data : @slice.Slice[Byte], offset : Int) -> UInt64 {
+  let b0 = data[offset].to_uint64()
+  let b1 = data[offset + 1].to_uint64()
+  let b2 = data[offset + 2].to_uint64()
+  let b3 = data[offset + 3].to_uint64()
+  let b4 = data[offset + 4].to_uint64()
+  let b5 = data[offset + 5].to_uint64()
+  let b6 = data[offset + 6].to_uint64()
+  let b7 = data[offset + 7].to_uint64()
   (b0 << 56) |
   (b1 << 48) |
   (b2 << 40) |
@@ -112,7 +118,7 @@ fn read_uint64_be(data : ArrayView[Byte], offset : Int) -> UInt64 {
 pub fn DwarfData::get_section(
   self : DwarfData,
   name : Bytes,
-) -> ArrayView[Byte]? {
+) -> @slice.Slice[Byte]? {
   self.sections.get(name)
 }
 

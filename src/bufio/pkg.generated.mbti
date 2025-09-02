@@ -54,7 +54,7 @@ impl @io.Reader for ReadWriter
 impl @io.Writer for ReadWriter
 
 pub struct Reader {
-  mut buf : ArrayView[Byte]
+  mut buf : @slice.Slice[Byte]
   mut rd : &@io.Reader
   mut r : Int
   mut w : Int
@@ -79,7 +79,7 @@ pub struct Scanner {
   mut split : (Bytes, Bool) -> (Int, Bytes?, Unit)
   mut max_token_size : Int
   mut token : Bytes?
-  mut buf : ArrayView[Byte]
+  mut buf : @slice.Slice[Byte]
   mut start : Int
   mut end : Int
   mut err : Bool
@@ -87,7 +87,7 @@ pub struct Scanner {
   mut scan_called : Bool
   mut done : Bool
 }
-fn Scanner::buffer(Self, ArrayView[Byte], Int) -> Unit
+fn Scanner::buffer(Self, @slice.Slice[Byte], Int) -> Unit
 fn Scanner::bytes(Self) -> Bytes
 fn Scanner::err(Self) -> Bool
 fn Scanner::scan(Self) -> Bool
@@ -96,7 +96,7 @@ fn Scanner::text(Self) -> String
 
 pub struct Writer {
   mut err : Bool
-  mut buf : ArrayView[Byte]
+  mut buf : @slice.Slice[Byte]
   mut n : Int
   mut wr : &@io.Writer
 }
