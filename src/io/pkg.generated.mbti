@@ -3,7 +3,7 @@ package "tonyfettes/go/io"
 
 import(
   "moonbitlang/core/buffer"
-  "moonbitlang/core/bytes"
+  "tonyfettes/go/slice"
 )
 
 // Values
@@ -84,7 +84,6 @@ pub(open) trait ReadWriter : Reader + Writer {
 pub(open) trait Reader {
   read(Self, @slice.Slice[Byte]) -> Int raise
 }
-impl Reader for @bytes.View
 
 pub(open) trait ReaderAt {
   read_at(Self, @slice.Slice[Byte], Int64) -> Int raise

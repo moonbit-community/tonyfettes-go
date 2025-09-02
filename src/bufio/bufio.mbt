@@ -36,12 +36,12 @@ pub(all) suberror NegativeCount
 /// A new Reader is created by calling new_reader or new_reader_size;
 /// alternatively the zero value of a Reader may be used after calling reset
 /// on it.
-pub struct Reader {
-  mut buf : FixedArray[Byte] // buffer for reads
+struct Reader {
+  mut buf : @slice.Slice[Byte] // buffer for reads
   mut rd : &@io.Reader // underlying reader
   mut r : Int // buffer read position
   mut w : Int // buffer write position
-  mut err : Bool // sticky error flag
+  mut err : Error? // sticky error flag
   mut last_byte : Int // last byte read for unread_byte; -1 means invalid
   mut last_rune_size : Int // size of last rune read for unread_rune; -1 means invalid
 }
@@ -57,11 +57,11 @@ pub fn new_reader_size(rd : &@io.Reader, size : Int) -> Reader {
     size
   }
   Reader::{
-    buf: FixedArray::make(actual_size, 0),
+    buf: @slice.make(actual_size),
     rd,
     r: 0,
     w: 0,
-    err: false,
+    err: None,
     last_byte: -1,
     last_rune_size: -1,
   }
@@ -86,7 +86,7 @@ pub fn Reader::size(self : Reader) -> Int {
 /// to the default size.
 pub fn Reader::reset(self : Reader, r : &@io.Reader) -> Unit {
   if self.buf.length() == 0 {
-    self.buf = FixedArray::make(DefaultBufSize, 0)
+    self.buf = @slice.make(DefaultBufSize)
   }
   self.reset_with_buf(self.buf, r)
 }
@@ -94,14 +94,14 @@ pub fn Reader::reset(self : Reader, r : &@io.Reader) -> Unit {
 ///|
 fn Reader::reset_with_buf(
   self : Reader,
-  buf : FixedArray[Byte],
+  buf : @slice.Slice[Byte],
   r : &@io.Reader,
 ) -> Unit {
   self.buf = buf
   self.rd = r
   self.r = 0
   self.w = 0
-  self.err = false
+  self.err = None
   self.last_byte = -1
   self.last_rune_size = -1
 }
@@ -111,10 +111,7 @@ fn Reader::reset_with_buf(
 fn Reader::fill(self : Reader) -> Unit raise {
   // Slide existing data to beginning.
   if self.r > 0 {
-    let slice_len = self.w - self.r
-    for i = 0; i < slice_len; i = i + 1 {
-      self.buf[i] = self.buf[self.r + i]
-    }
+    let _ = self.buf.copy(self.buf[self.r:self.w])
     self.w -= self.r
     self.r = 0
   }
@@ -124,13 +121,8 @@ fn Reader::fill(self : Reader) -> Unit raise {
 
   // Read new data: try a limited number of times.
   for i = max_consecutive_empty_reads; i > 0; i = i - 1 {
-    let view = @slice.array(self.buf)[self.w:]
-    let n = self.rd.read(view) catch {
-      e => {
-        self.err = true
-        raise e
-      }
-    }
+    let view = self.buf[self.w:]
+    let n = self.rd.read(view)
     if n < 0 {
       abort("bufio: reader returned negative count from Read")
     }
@@ -139,7 +131,6 @@ fn Reader::fill(self : Reader) -> Unit raise {
       return
     }
   }
-  self.err = true
   raise @io.NoProgress
 }
 
@@ -160,10 +151,8 @@ pub fn Reader::peek(self : Reader, n : Int) -> Array[Byte] raise {
   self.last_rune_size = -1
   while self.w - self.r < n &&
         self.w - self.r < self.buf.length() &&
-        not(self.err) {
-    self.fill() catch {
-      _ => break
-    }
+        self.err is None {
+    self.fill()
   }
   if n > self.buf.length() {
     let result : Array[Byte] = Array::make(self.w - self.r, 0)
@@ -230,55 +219,46 @@ pub impl @io.Reader for Reader with read(self, p) {
     if self.buffered() > 0 {
       return 0
     }
-    if self.err {
-      raise @io.EOF
+    if self.err is Some(err) {
+      raise err
+    } else {
+      return 0
     }
-    return 0
   }
   if self.r == self.w {
-    if self.err {
-      raise @io.EOF
+    if self.err is Some(err) {
+      raise err
     }
     if p.length() >= self.buf.length() {
       // Large read, empty buffer.
       // Read directly into p to avoid copy.
-      let direct_n = self.rd.read(p) catch {
-        e => {
-          self.err = true
-          raise e
-        }
-      }
-      if direct_n < 0 {
+      let n = self.rd.read(p)
+      if n < 0 {
         abort("bufio: reader returned negative count from Read")
       }
-      if direct_n > 0 {
-        self.last_byte = p[direct_n - 1].to_int()
+      if n > 0 {
+        self.last_byte = p[n - 1].to_int()
         self.last_rune_size = -1
       }
-      return direct_n
+      return n
     }
 
     // One read.
     // Do not use b.fill, which will loop.
     self.r = 0
     self.w = 0
-    let view = @slice.array(self.buf)
-    let buf_n = self.rd.read(view) catch {
-      e => {
-        self.err = true
-        raise e
-      }
-    }
-    if buf_n < 0 {
+    let view = self.buf
+    let n = self.rd.read(view)
+    if n < 0 {
       abort("bufio: reader returned negative count from Read")
     }
-    if buf_n == 0 {
-      if self.err {
-        raise @io.EOF
+    if n == 0 {
+      if self.err is Some(err) {
+        raise err
       }
       return 0
     }
-    self.w += buf_n
+    self.w += n
   }
 
   // copy as much as we can
@@ -302,12 +282,10 @@ pub impl @io.Reader for Reader with read(self, p) {
 pub impl @io.ByteReader for Reader with read_byte(self) {
   self.last_rune_size = -1
   while self.r == self.w {
-    if self.err {
-      raise @io.EOF
+    if self.err is Some(err) {
+      raise err
     }
-    self.fill() catch {
-      e => raise e
-    }
+    self.fill()
   }
   let c = self.buf[self.r]
   self.r += 1
@@ -354,69 +332,51 @@ pub fn Reader::buffered(self : Reader) -> Int {
 /// by the next I/O operation, most clients should use
 /// Reader.read_bytes or read_string instead.
 /// read_slice returns err != null if and only if line does not end in delim.
-pub fn Reader::read_slice(self : Reader, delim : Byte) -> Array[Byte] raise {
+pub fn Reader::read_slice(
+  self : Reader,
+  delim : Byte,
+) -> @slice.Slice[Byte] raise {
   let mut s = 0 // search start index
+  let mut line = @slice.new()
+  let mut err = None
   for {
     // Search buffer.
-    let search_buf = @slice.array(self.buf)[self.r + s:self.w]
-    let mut i = -1
-    for j = 0; j < search_buf.length(); j = j + 1 {
-      if search_buf[j] == delim {
-        i = j
-        break
-      }
-    }
+    let mut i = @bytes.index_byte(self.buf[self.r + s:self.w], delim)
     if i >= 0 {
-      let actual_i = i + s
-      let line : Array[Byte] = Array::make(actual_i + 1, 0)
-      for k = 0; k < actual_i + 1; k = k + 1 {
-        line[k] = self.buf[self.r + k]
-      }
-      self.r += actual_i + 1
-
-      // Handle last byte, if any.
-      if line.length() > 0 {
-        self.last_byte = line[line.length() - 1].to_int()
-        self.last_rune_size = -1
-      }
-      return line
+      i += s
+      line = self.buf[self.r:self.r + i + 1]
+      self.r += i + 1
+      break
     }
 
     // Pending error?
-    if self.err {
-      let line : Array[Byte] = Array::make(self.w - self.r, 0)
-      for k = 0; k < self.w - self.r; k = k + 1 {
-        line[k] = self.buf[self.r + k]
-      }
+    if self.err is Some(_) {
+      line = self.buf[self.r:self.w]
       self.r = self.w
-
-      // Handle last byte, if any.
-      if line.length() > 0 {
-        self.last_byte = line[line.length() - 1].to_int()
-        self.last_rune_size = -1
-      }
-      return line
+      err = self.err
+      break
     }
 
     // Buffer full?
     if self.buffered() >= self.buf.length() {
       self.r = self.w
-      let line : Array[Byte] = Array::make(self.buf.length(), 0)
-      for k = 0; k < self.buf.length(); k = k + 1 {
-        line[k] = self.buf[k]
-      }
-
-      // Handle last byte, if any.
-      if line.length() > 0 {
-        self.last_byte = line[line.length() - 1].to_int()
-        self.last_rune_size = -1
-      }
-      raise BufferFull
+      line = self.buf
+      err = Some(BufferFull)
+      break
     }
     s = self.w - self.r // do not rescan area we scanned before
-    self.fill() catch {
-      _ => return []
-    }
+    self.fill()
+  }
+
+  // Handle last byte, if any.
+  if line.length() > 0 {
+    self.last_byte = line[line.length() - 1].to_int()
+    self.last_rune_size = -1
+  }
+  if err is Some(err) {
+    raise err
+  } else {
+    return line
   }
 }
 
@@ -428,17 +388,17 @@ pub fn Reader::read_slice(self : Reader, delim : Byte) -> Array[Byte] raise {
 /// read_bytes returns err != null if and only if the returned data does not end in
 /// delim.
 /// For simple uses, a Scanner may be more convenient.
-pub fn Reader::read_bytes(self : Reader, delim : Byte) -> Array[Byte] raise {
-  let full_buffers : Array[Array[Byte]] = []
+pub fn Reader::read_bytes(
+  self : Reader,
+  delim : Byte,
+) -> @slice.Slice[Byte] raise {
+  let full_buffers : Array[@slice.Slice[Byte]] = []
   let mut total_len = 0
   for {
     let frag = self.read_slice(delim) catch {
       BufferFull => {
         // Make a copy of the buffer and continue
-        let buf : Array[Byte] = Array::make(self.buf.length(), 0)
-        for i = 0; i < self.buf.length(); i = i + 1 {
-          buf[i] = self.buf[i]
-        }
+        let buf = @bytes.clone(self.buf)
         full_buffers.push(buf)
         total_len += buf.length()
         continue
@@ -450,20 +410,13 @@ pub fn Reader::read_bytes(self : Reader, delim : Byte) -> Array[Byte] raise {
     total_len += frag.length()
 
     // Allocate new buffer to hold the full pieces and the fragment.
-    let buf : Array[Byte] = Array::make(total_len, 0)
-    let mut pos = 0
+    let buf : @slice.Slice[Byte] = @slice.make(total_len)
+    let mut n = 0
     // Copy full pieces and fragment in.
     for i = 0; i < full_buffers.length(); i = i + 1 {
-      let piece = full_buffers[i]
-      for j = 0; j < piece.length(); j = j + 1 {
-        buf[pos] = piece[j]
-        pos += 1
-      }
+      n += buf[n:].copy(full_buffers[i])
     }
-    for j = 0; j < frag.length(); j = j + 1 {
-      buf[pos] = frag[j]
-      pos += 1
-    }
+    n += buf[n:].copy(frag)
     break buf
   }
 }
@@ -488,9 +441,9 @@ pub fn Reader::read_string(self : Reader, delim : Byte) -> String raise {
 /// After all data has been written, the client should call the
 /// Writer.flush method to guarantee all data has been forwarded to
 /// the underlying io.Writer.
-pub struct Writer {
+struct Writer {
   mut err : Bool
-  mut buf : FixedArray[Byte]
+  mut buf : @slice.Slice[Byte]
   mut n : Int
   mut wr : &@io.Writer
 }
@@ -501,7 +454,7 @@ pub struct Writer {
 /// size, it returns the underlying Writer.
 pub fn new_writer_size(w : &@io.Writer, size : Int) -> Writer {
   let actual_size = if size <= 0 { DefaultBufSize } else { size }
-  Writer::{ buf: FixedArray::make(actual_size, 0), wr: w, err: false, n: 0 }
+  Writer::{ buf: @slice.make(actual_size), wr: w, err: false, n: 0 }
 }
 
 ///|
@@ -526,7 +479,7 @@ pub fn Writer::size(self : Writer) -> Int {
 /// Calling w.reset(w) (that is, resetting a Writer to itself) does nothing.
 pub fn Writer::reset(self : Writer, w : &@io.Writer) -> Unit {
   if self.buf.length() == 0 {
-    self.buf = FixedArray::make(DefaultBufSize, 0)
+    self.buf = @slice.make(DefaultBufSize)
   }
   self.err = false
   self.n = 0
@@ -542,7 +495,7 @@ pub fn Writer::flush(self : Writer) -> Unit raise {
   if self.n == 0 {
     return
   }
-  let view = @slice.array(self.buf)[0:self.n]
+  let view = self.buf[0:self.n]
   let n = self.wr.write(view) catch {
     e => {
       self.err = true
@@ -679,3 +632,6 @@ pub impl @io.Reader for ReadWriter with read(self, p) {
 pub impl @io.Writer for ReadWriter with write(self, p) {
   self.writer.write(p)
 }
+
+///|
+pub impl @io.ReadWriter for ReadWriter

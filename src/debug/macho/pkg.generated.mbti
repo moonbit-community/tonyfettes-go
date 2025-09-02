@@ -1,6 +1,10 @@
 // Generated using `moon info`, DON'T EDIT IT
 package "tonyfettes/go/debug/macho"
 
+import(
+  "tonyfettes/go/slice"
+)
+
 // Values
 const FlagAllModsBound : UInt = 0x1000
 
@@ -105,7 +109,7 @@ impl Show for DwarfData
 
 pub struct Dylib {
   load_bytes : LoadBytes
-  name : Bytes
+  name : @slice.Slice[Byte]
   time : UInt
   current_version : UInt
   compat_version : UInt
@@ -191,7 +195,7 @@ pub struct FatFile {
   arches : Array[FatArch]
   files : Array[File]
 }
-fn FatFile::new(Bytes) -> Self raise
+fn FatFile::new(@slice.Slice[Byte]) -> Self raise
 impl Show for FatFile
 
 pub struct FatHeader {
@@ -209,12 +213,12 @@ pub struct File {
   symtab : Symtab?
   dysymtab : Dysymtab?
 }
-fn File::dwarf(Self, Bytes) -> DwarfData? raise
-fn File::imported_libraries(Self) -> Array[Bytes]
-fn File::imported_symbols(Self) -> Array[Bytes]
-fn File::new(Bytes) -> Self raise
-fn File::section(Self, Bytes) -> Section?
-fn File::segment(Self, Bytes) -> Segment?
+fn File::dwarf(Self, @slice.Slice[Byte]) -> DwarfData? raise
+fn File::imported_libraries(Self) -> Array[@slice.Slice[Byte]]
+fn File::imported_symbols(Self) -> Array[@slice.Slice[Byte]]
+fn File::new(@slice.Slice[Byte]) -> Self raise
+fn File::section(Self, @slice.Slice[Byte]) -> Section?
+fn File::segment(Self, @slice.Slice[Byte]) -> Segment?
 impl Show for File
 
 pub struct FileHeader {
@@ -230,7 +234,7 @@ impl Eq for FileHeader
 impl Show for FileHeader
 
 pub struct LoadBytes {
-  data : Bytes
+  data : @slice.Slice[Byte]
 }
 impl Eq for LoadBytes
 impl Show for LoadBytes
@@ -402,7 +406,7 @@ fn RelocTypeX86_64::to_string(Self) -> String
 
 pub struct Rpath {
   load_bytes : LoadBytes
-  path : Bytes
+  path : @slice.Slice[Byte]
 }
 impl Eq for Rpath
 impl Show for Rpath
@@ -415,9 +419,9 @@ impl Show for RpathCmd
 pub struct Section {
   header : SectionHeader
   relocs : Array[Reloc]
-  data : Bytes?
+  data : @slice.Slice[Byte]?
 }
-fn Section::data(Self, Bytes) -> Bytes raise
+fn Section::data(Self, @slice.Slice[Byte]) -> @slice.Slice[Byte] raise
 impl Eq for Section
 impl Show for Section
 
@@ -455,8 +459,8 @@ impl Eq for Section64
 impl Show for Section64
 
 pub struct SectionHeader {
-  name : Bytes
-  seg : Bytes
+  name : @slice.Slice[Byte]
+  seg : @slice.Slice[Byte]
   addr : UInt64
   size : UInt64
   offset : UInt
@@ -471,9 +475,9 @@ impl Show for SectionHeader
 pub struct Segment {
   load_bytes : LoadBytes
   header : SegmentHeader
-  data : Bytes?
+  data : @slice.Slice[Byte]?
 }
-fn Segment::data(Self, Bytes) -> Bytes raise
+fn Segment::data(Self, @slice.Slice[Byte]) -> @slice.Slice[Byte] raise
 impl Eq for Segment
 impl Show for Segment
 impl Load for Segment
@@ -513,7 +517,7 @@ impl Show for Segment64
 pub struct SegmentHeader {
   cmd : LoadCmd
   len : UInt
-  name : Bytes
+  name : @slice.Slice[Byte]
   addr : UInt64
   memsz : UInt64
   offset : UInt64
@@ -527,7 +531,7 @@ impl Eq for SegmentHeader
 impl Show for SegmentHeader
 
 pub struct Symbol {
-  name : Bytes
+  name : @slice.Slice[Byte]
   type_ : Int
   sect : Int
   desc : Int
@@ -571,7 +575,7 @@ impl Load for Thread
 pub enum ThreadState {
   I386(Regs386)
   AMD64(RegsAMD64)
-  Unknown(Bytes)
+  Unknown(@slice.Slice[Byte])
 }
 impl Show for ThreadState
 
@@ -592,6 +596,6 @@ impl Show for Type
 
 // Traits
 pub trait Load {
-  raw(Self) -> Bytes
+  raw(Self) -> @slice.Slice[Byte]
 }
 

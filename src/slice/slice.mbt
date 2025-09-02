@@ -175,3 +175,12 @@ pub fn[T] Slice::iter(s : Slice[T]) -> Iter[T] {
 pub fn Slice::bytesview(self : Slice[Byte]) -> @bytes.View {
   self.0.unsafe_reinterpret_as_bytes()[self.1:self.1 + self.2]
 }
+
+///|
+pub fn[T] Slice::copy(dst : Slice[T], src : Slice[T]) -> Int {
+  let n = if dst.length() < src.length() { dst.length() } else { src.length() }
+  for i in 0..<n {
+    dst.0[dst.1 + i] = src.0[src.1 + i]
+  }
+  n
+}

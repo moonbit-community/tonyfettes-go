@@ -5,6 +5,7 @@ import(
   "moonbitlang/core/bytes"
   "tonyfettes/go/compress/flate"
   "tonyfettes/go/io"
+  "tonyfettes/go/slice"
 )
 
 // Values

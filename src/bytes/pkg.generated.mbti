@@ -1,7 +1,15 @@
 // Generated using `moon info`, DON'T EDIT IT
 package "tonyfettes/go/bytes"
 
+import(
+  "tonyfettes/go/slice"
+)
+
 // Values
+fn clone(@slice.Slice[Byte]) -> @slice.Slice[Byte]
+
+fn index_byte(@slice.Slice[Byte], Byte) -> Int
+
 fn new_buffer(@slice.Slice[Byte]) -> Buffer
 
 // Errors

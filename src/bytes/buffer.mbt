@@ -70,3 +70,13 @@ pub impl @io.ByteReader for Buffer with read_byte(self : Buffer) -> Byte raise {
   self.off += 1
   b
 }
+
+///|
+pub fn index_byte(s : @slice.Slice[Byte], c : Byte) -> Int {
+  for i = 0; i < s.length(); i = i + 1 {
+    if s[i] == c {
+      return i
+    }
+  }
+  return -1
+}

@@ -3,6 +3,7 @@ package "tonyfettes/go/compress/flate"
 
 import(
   "tonyfettes/go/io"
+  "tonyfettes/go/slice"
 )
 
 // Values

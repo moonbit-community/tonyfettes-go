@@ -2,12 +2,6 @@
 package "tonyfettes/go/debug/dwarf"
 
 // Values
-fn data_format_ref_addrsize(DataFormatRef) -> Int
-
-fn data_format_ref_dwarf64(DataFormatRef) -> (Bool, Bool)
-
-fn data_format_ref_version(DataFormatRef) -> Int
-
 fn dwarf_type_ref_common(DwarfTypeRef) -> CommonType
 
 fn dwarf_type_ref_size(DwarfTypeRef) -> Int64
@@ -111,8 +105,6 @@ let lns_set_file : UInt
 let lns_set_isa : UInt
 
 let lns_set_prologue_end : UInt
-
-fn make_buf(Data?, DataFormatRef, String, Int64, Bytes) -> Buffer
 
 let op_abs : UInt
 
@@ -255,10 +247,6 @@ let op_xderef_size : UInt
 let op_xderef_type : UInt
 
 let op_xor : UInt
-
-fn parse_abbrev(Data, UInt64, Int) -> Result[Map[UInt, Abbrev], String]
-
-fn parse_entry(Buffer, Entry?, SimpleUnit, Map[UInt, Abbrev]) -> Entry?
 
 fn parse_units(Data) -> Result[Array[DwarfUnit], String]
 
@@ -470,37 +458,6 @@ fn BasicType::data_bit_offset(Self) -> Int64
 fn BasicType::new(CommonType, Int64, Int64, Int64) -> Self
 impl Show for BasicType
 
-pub struct Buffer {
-  dwarf : Data?
-  order : ByteOrder
-  format : DataFormatRef
-  name : String
-  mut off : Int64
-  mut data : Bytes
-  mut err : DecodeError?
-}
-fn Buffer::addr(Self) -> UInt64
-fn Buffer::bytes(Self, Int) -> Bytes
-fn Buffer::error(Self, String) -> Unit
-fn Buffer::get_error(Self) -> DecodeError?
-fn Buffer::has_data(Self) -> Bool
-fn Buffer::has_error(Self) -> Bool
-fn Buffer::int(Self) -> Int64
-fn Buffer::length(Self) -> Int
-fn Buffer::offset(Self) -> Int64
-fn Buffer::peek_entry_id(Self) -> UInt?
-fn Buffer::skip(Self, Int) -> Unit
-fn Buffer::string(Self) -> String
-fn Buffer::uint(Self) -> UInt64
-fn Buffer::uint16(Self) -> UInt
-fn Buffer::uint24(Self) -> UInt
-fn Buffer::uint32(Self) -> UInt
-fn Buffer::uint64(Self) -> UInt64
-fn Buffer::uint8(Self) -> UInt
-fn Buffer::unit_length(Self) -> (Int64, Bool)
-fn Buffer::varint(Self) -> (UInt64, UInt)
-impl Show for Buffer
-
 pub enum ByteOrder {
   LittleEndian
   BigEndian
@@ -565,12 +522,6 @@ fn Data::reader_with_units(Self) -> Result[Reader, String]
 fn Data::set_abbrev_cache(Self, UInt64, Map[UInt, Abbrev]) -> Unit
 fn Data::set_units(Self, Array[DwarfUnit]) -> Unit
 impl Show for Data
-
-pub enum DataFormatRef {
-  UnknownFormatRef(UnknownFormat)
-  DataFormatRefFromUnit(DataFormatRefFromUnit)
-}
-impl Show for DataFormatRef
 
 pub enum DataFormatRefFromUnit {
   UnitFormat(DwarfUnit)
@@ -765,17 +716,7 @@ fn QualType::qual(Self) -> String
 fn QualType::qual_type(Self) -> DwarfTypeRef?
 impl Show for QualType
 
-pub struct Reader {
-  mut buf : Buffer
-  data : Data
-  mut err : String?
-  mut unit : Int
-  mut last_unit : Bool
-  mut last_children : Bool
-  mut last_sibling : Int64
-  mut cu : Entry?
-  units : Array[SimpleUnit]
-}
+type Reader
 fn Reader::address_size(Self) -> Int
 fn Reader::at_end(Self) -> Bool
 fn Reader::byte_order(Self) -> ByteOrder
@@ -788,7 +729,6 @@ fn Reader::offset(Self) -> Int64
 fn Reader::reset(Self) -> Unit
 fn Reader::seek(Self, Int64) -> Unit
 fn Reader::skip_children(Self) -> Unit
-impl Show for Reader
 
 pub struct SimpleUnit {
   base : Int64
@@ -939,11 +879,6 @@ pub struct Unit5 {
 fn Unit5::new() -> Self
 impl Show for Unit5
 
-pub struct UnknownFormat {
-}
-fn UnknownFormat::new() -> Self
-impl Show for UnknownFormat
-
 pub struct UnsupportedType {
   common : CommonType
   tag : Tag
@@ -964,12 +899,6 @@ pub typealias Map[UInt, Abbrev] as AbbrevTable
 pub typealias Int64 as Offset
 
 // Traits
-pub trait DataFormat {
-  version(Self) -> Int
-  dwarf64(Self) -> (Bool, Bool)
-  addrsize(Self) -> Int
-}
-
 pub trait DwarfType {
   common(Self) -> CommonType
   size(Self) -> Int64

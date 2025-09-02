@@ -67,7 +67,7 @@ let start_buf_size : Int = 4096
 /// advanced arbitrarily far past the last token. Programs that need more
 /// control over error handling or large tokens, or must run sequential scans
 /// on a reader, should use bufio.Reader instead.
-pub struct Scanner {
+struct Scanner {
   r : &@io.Reader // The reader provided by the client.
   mut split : SplitFunc // The function to split the tokens.
   mut max_token_size : Int // Maximum size of a token; modified by tests.
