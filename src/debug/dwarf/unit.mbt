@@ -48,10 +48,10 @@ fn Unit::new(
 ///|
 fn Unit5::new() -> Unit5 {
   Unit5::{
-    addr_base: 0UL,
-    str_offsets_base: 0UL,
-    rng_lists_base: 0UL,
-    loc_lists_base: 0UL,
+    addr_base: 0,
+    str_offsets_base: 0,
+    rng_lists_base: 0,
+    loc_lists_base: 0,
   }
 }
 
@@ -60,7 +60,7 @@ fn Unit5::new() -> Unit5 {
 fn Unit::str_offsets_base(self : Unit) -> UInt64 {
   match self.unit5 {
     Some(u5) => u5.str_offsets_base
-    None => 0UL
+    None => 0
   }
 }
 
@@ -69,7 +69,7 @@ fn Unit::str_offsets_base(self : Unit) -> UInt64 {
 fn Unit::rng_lists_base(self : Unit) -> UInt64 {
   match self.unit5 {
     Some(u5) => u5.rng_lists_base
-    None => 0UL
+    None => 0
   }
 }
 
@@ -78,7 +78,7 @@ fn Unit::rng_lists_base(self : Unit) -> UInt64 {
 fn Unit::loc_lists_base(self : Unit) -> UInt64 {
   match self.unit5 {
     Some(u5) => u5.loc_lists_base
-    None => 0UL
+    None => 0
   }
 }
 
