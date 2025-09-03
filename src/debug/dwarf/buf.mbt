@@ -1,10 +1,38 @@
-/// Buffered reading and decoding of DWARF data streams
-/// Ported from Go's debug/dwarf package
+/// Copyright 2009 The Go Authors. All rights reserved.
+/// Use of this source code is governed by a BSD-style
+/// license that can be found in the LICENSE file.
+
+/// Buffered reading and decoding of DWARF data streams.
+
+///|
+/// Data buffer being decoded.
+struct Buf {
+  dwarf : Data
+  order : ByteOrder
+  format : &DataFormat
+  name : String
+  mut off : Offset
+  mut data : @slice.Slice[Byte]
+  mut err : Error?
+}
+
+///|
+impl Default for Buf with default() -> Buf {
+  Buf::{
+    dwarf: Data::default(),
+    order: LittleEndian,
+    format: UnknownFormat::new(),
+    name: "",
+    off: 0,
+    data: @slice.new(),
+    err: None,
+  }
+}
 
 ///|
 /// Data format, other than byte order. This affects the handling of
 /// certain field formats.
-pub trait DataFormat {
+priv trait DataFormat {
   /// DWARF version number. Zero means unknown.
   version(self : Self) -> Int
   /// 64-bit DWARF format?
@@ -38,34 +66,6 @@ impl DataFormat for UnknownFormat with addrsize(_) {
 }
 
 ///|
-/// Data struct is now defined in data.mbt
-
-///|
-/// Data buffer being decoded.
-pub struct Buf {
-  dwarf : Data
-  order : ByteOrder
-  format : &DataFormat
-  name : String
-  mut off : Offset
-  mut data : @slice.Slice[Byte]
-  mut err : Error?
-}
-
-///|
-impl Default for Buf with default() -> Buf {
-  Buf::{
-    dwarf: Data::default(),
-    order: LittleEndian,
-    format: UnknownFormat::new(),
-    name: "",
-    off: 0,
-    data: @slice.new(),
-    err: None,
-  }
-}
-
-///|
 /// Byte order enumeration
 pub enum ByteOrder {
   LittleEndian
@@ -84,32 +84,6 @@ fn[DataFormat : DataFormat] make_buf(
 }
 
 ///|
-/// Decode error
-pub suberror DecodeError {
-  DecodeError(name~ : String, offset~ : Offset, String)
-}
-
-///|
-/// Create a new DecodeError
-pub fn DecodeError::new(
-  name : String,
-  offset : Offset,
-  err : String,
-) -> DecodeError {
-  DecodeError(name~, offset~, err)
-}
-
-///|
-/// Convert to string
-pub impl Show for DecodeError with output(self : DecodeError, logger : &Logger) -> @unit.T {
-  let DecodeError(name~, offset~, err) = self
-  logger.write_string(
-    "decoding dwarf section \{name} at offset 0x\{offset}: \{err}",
-  )
-}
-
-///|
-/// Read a uint8
 fn Buf::uint8(self : Buf) -> UInt raise {
   if self.data.length() < 1 {
     raise self.error("underflow")
@@ -121,7 +95,6 @@ fn Buf::uint8(self : Buf) -> UInt raise {
 }
 
 ///|
-/// Read n bytes
 fn Buf::bytes(self : Buf, n : Int) -> @slice.Slice[Byte] raise {
   if n < 0 || self.data.length() < n {
     raise self.error("underflow")
@@ -133,13 +106,11 @@ fn Buf::bytes(self : Buf, n : Int) -> @slice.Slice[Byte] raise {
 }
 
 ///|
-/// Skip n bytes
 fn Buf::skip(self : Buf, n : Int) -> @unit.T raise {
   ignore(self.bytes(n))
 }
 
 ///|
-/// Read a null-terminated string
 fn Buf::string(self : Buf) -> String raise {
   let i = @bytes.index_byte(self.data, 0)
   if i < 0 {
@@ -152,11 +123,10 @@ fn Buf::string(self : Buf) -> String raise {
 }
 
 ///|
-/// Read a uint16
 fn Buf::uint16(self : Buf) -> UInt raise {
   let a = self.bytes(2)
   if a.length() == 0 {
-    return 0U
+    return 0
   }
   match self.order {
     LittleEndian => a[0].to_uint() | (a[1].to_uint() << 8)
@@ -165,11 +135,10 @@ fn Buf::uint16(self : Buf) -> UInt raise {
 }
 
 ///|
-/// Read a uint24
 fn Buf::uint24(self : Buf) -> UInt raise {
   let a = self.bytes(3)
   if a.length() == 0 {
-    return 0U
+    return 0
   }
   match self.order {
     LittleEndian =>
@@ -179,11 +148,10 @@ fn Buf::uint24(self : Buf) -> UInt raise {
 }
 
 ///|
-/// Read a uint32
 fn Buf::uint32(self : Buf) -> UInt raise {
   let a = self.bytes(4)
   if a.length() == 0 {
-    return 0U
+    return 0
   }
   match self.order {
     LittleEndian =>
@@ -200,11 +168,10 @@ fn Buf::uint32(self : Buf) -> UInt raise {
 }
 
 ///|
-/// Read a uint64
 fn Buf::uint64(self : Buf) -> UInt64 raise {
   let a = self.bytes(8)
   if a.length() == 0 {
-    return 0UL
+    return 0
   }
   match self.order {
     LittleEndian => {
@@ -233,21 +200,22 @@ fn Buf::uint64(self : Buf) -> UInt64 raise {
 }
 
 ///|
-/// Read a varint (7 bits per byte, little endian, 0x80 bit means read another byte)
+/// Read a varint, which is 7 bits per byte, little endian.
+/// the 0x80 bit means read another byte.
 fn Buf::varint(self : Buf) -> (UInt64, UInt) {
-  let mut c : UInt64 = 0UL
-  let mut bits : UInt = 0U
+  let mut c : UInt64 = 0
+  let mut bits : UInt = 0
   for i = 0; i < self.data.length(); i = i + 1 {
     let byte = self.data[i]
-    c = c | ((byte.to_uint64() & 0x7FUL) << bits.reinterpret_as_int())
-    bits = bits + 7U
-    if (byte.to_uint() & 0x80U) == 0U {
+    c = c | ((byte.to_uint64() & 0x7F) << bits.reinterpret_as_int())
+    bits = bits + 7
+    if (byte.to_uint() & 0x80) == 0 {
       self.off += (i + 1).reinterpret_as_uint()
       self.data = self.data[i + 1:]
       return (c, bits)
     }
   }
-  (0UL, 0U)
+  (0, 0)
 }
 
 ///|
@@ -258,18 +226,18 @@ fn Buf::uint(self : Buf) -> UInt64 {
 }
 
 ///|
-/// Read signed int (sign-extended varint)
+/// Signed int is a sign-extended varint
 fn Buf::int(self : Buf) -> Int64 {
   let (ux, bits) = self.varint()
   let mut x = ux.reinterpret_as_int64()
-  if (x & (1L << (bits.reinterpret_as_int() - 1))) != 0L {
-    x = x | (-1L << bits.reinterpret_as_int())
+  if (x & (1 << (bits.reinterpret_as_int() - 1))) != 0L {
+    x = x | (-1 << bits.reinterpret_as_int())
   }
   x
 }
 
 ///|
-/// Read address-sized uint
+/// Address-sized uint
 fn Buf::addr(self : Buf) -> UInt64 raise {
   match self.format.addrsize() {
     1 => self.uint8().to_uint64()
@@ -278,46 +246,54 @@ fn Buf::addr(self : Buf) -> UInt64 raise {
     8 => self.uint64()
     _ => {
       ignore(self.error("unknown address size"))
-      0UL
+      0
     }
   }
 }
 
 ///|
-/// Read unit length
-fn Buf::unit_length(self : Buf) -> (Offset, Bool) raise {
-  let mut length = self.uint32().reinterpret_as_int().to_int64()
+fn Buf::unit_length(b : Buf) -> (Offset, Bool) raise {
+  let mut length = b.uint32().reinterpret_as_int().to_int64()
   let mut dwarf64 = false
-  if length == 0xffffffffL {
+  if length == 0xffffffff {
     dwarf64 = true
-    length = self.uint64().reinterpret_as_int64()
-  } else if length >= 0xfffffff0L {
-    ignore(self.error("unit length has reserved value"))
+    length = b.uint64().reinterpret_as_int64()
+  } else if length >= 0xfffffff0 {
+    ignore(b.error("unit length has reserved value"))
   }
   (length.to_int().reinterpret_as_uint(), dwarf64)
 }
 
 ///|
-/// Set error
-fn Buf::error(self : Buf, s : String) -> Error {
-  if self.err is Some(err) {
+fn Buf::error(b : Buf, s : String) -> Error {
+  if b.err is Some(err) {
     return err
   } else {
-    self.data = @slice.new()
-    let err = DecodeError::new(self.name, self.off, s)
-    self.err = Some(err)
+    b.data = @slice.new()
+    let err = DecodeError::new(b.name, b.off, s)
+    b.err = Some(err)
     return err
   }
 }
 
 ///|
-/// Get remaining data length
-fn Buf::length(self : Buf) -> Int {
-  self.data.length()
+pub suberror DecodeError {
+  DecodeError(name~ : String, offset~ : Offset, String)
 }
 
 ///|
-/// Get current offset
-fn Buf::offset(self : Buf) -> Offset {
-  self.off
+pub fn DecodeError::new(
+  name : String,
+  offset : Offset,
+  err : String,
+) -> DecodeError {
+  DecodeError(name~, offset~, err)
+}
+
+///|
+pub impl Show for DecodeError with output(self : DecodeError, logger : &Logger) -> @unit.T {
+  let DecodeError(name~, offset~, err) = self
+  logger.write_string(
+    "decoding dwarf section \{name} at offset 0x\{offset}: \{err}",
+  )
 }

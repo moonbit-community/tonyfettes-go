@@ -698,7 +698,7 @@ fn LineReader::advance_pc(r : LineReader, op_advance : Int) -> @unit.T {
 
 ///|
 /// A LineReaderPos represents a position in a line table.
-pub struct LineReaderPos {
+struct LineReaderPos {
   /// off is the current offset in the DWARF line section.
   off : Offset
   /// num_file_entries is the length of file_entries.

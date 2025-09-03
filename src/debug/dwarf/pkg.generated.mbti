@@ -2,31 +2,25 @@
 package "tonyfettes/go/debug/dwarf"
 
 import(
+  "moonbitlang/core/string"
   "tonyfettes/go/slice"
 )
 
 // Values
+fn new(abbrev~ : @slice.Slice[Byte], aranges~ : @slice.Slice[Byte], frame~ : @slice.Slice[Byte], info~ : @slice.Slice[Byte], line~ : @slice.Slice[Byte], pubnames~ : @slice.Slice[Byte], ranges~ : @slice.Slice[Byte], str~ : @slice.Slice[Byte]) -> Data raise
 
 // Errors
 pub suberror DecodeError {
   DecodeError(name~ : String, offset~ : UInt, String)
 }
-fn DecodeError::new(name~ : String, offset~ : UInt, String) -> Self
+fn DecodeError::new(String, UInt, String) -> Self
 impl Show for DecodeError
 
+pub suberror UnknownPCError
+
 // Types and methods
-pub struct AddrType(BasicType)
-fn AddrType::inner(Self) -> BasicType
-
-pub(all) struct ArrayType {
-  common : CommonType
-  type_ : &Type
-  stride_size : Int64
-  count : Int64
-}
-impl Type for ArrayType
-
 pub enum Attr {
+  Attr(UInt)
   AttrSibling
   AttrLocation
   AttrName
@@ -149,23 +143,24 @@ pub enum Attr {
   AttrDefaulted
   AttrLoclistsBase
 }
-fn Attr::from_uint(UInt) -> Self?
+fn Attr::from_uint(UInt) -> Self
 fn Attr::to_uint(Self) -> UInt
 impl Eq for Attr
 impl Show for Attr
 
-pub struct BasicType {
-  common : CommonType
-  bit_size : Int64
-  bit_offset : Int64
-  data_bit_offset : Int64
+pub(all) enum BasicType {
+  CharType
+  UcharType
+  IntType
+  UintType
+  FloatType
+  ComplexType
+  BoolType
+  AddrType
+  UnspecifiedType
 }
-fn BasicType::new(CommonType, Int64, Int64, Int64) -> Self
-impl Show for BasicType
-impl Type for BasicType
 
-pub struct BoolType(BasicType)
-fn BoolType::inner(Self) -> BasicType
+type Buf
 
 pub enum ByteOrder {
   LittleEndian
@@ -173,9 +168,6 @@ pub enum ByteOrder {
 }
 impl Eq for ByteOrder
 impl Show for ByteOrder
-
-pub struct CharType(BasicType)
-fn CharType::inner(Self) -> BasicType
 
 pub enum Class {
   ClassUnknown
@@ -202,28 +194,34 @@ pub enum Class {
 impl Eq for Class
 impl Show for Class
 
-pub(all) struct CommonType {
-  byte_size : Int64
-  name : String
+pub(all) enum CommonType {
+  BasicType(mut bit_size~ : Int64, mut bit_offset~ : Int64, mut data_bit_offset~ : Int64, BasicType)
+  QualType(qual~ : String, mut type_~ : Type)
+  ArrayType(mut type_~ : Type, mut stride_bit_size~ : Int64, mut count~ : Int64)
+  VoidType
+  PtrType(mut type_~ : Type)
+  StructType(struct_name~ : String, kind~ : String, fields~ : Array[StructField], incomplete~ : Bool)
+  EnumType(enum_name~ : String, val~ : Array[EnumValue])
+  FuncType(mut return_type~ : Type?, param_type~ : Array[Type])
+  DotDotDotType
+  TypedefType(mut type_~ : Type)
+  UnsupportedType(tag~ : Tag)
 }
-impl Show for CommonType
-impl Type for CommonType
-
-pub struct ComplexType(BasicType)
-fn ComplexType::inner(Self) -> BasicType
 
 type Data
-fn Data::add_section_simple(Self, Bytes, @slice.Slice[Byte]) -> Bool
-fn Data::get_section(Self, Bytes) -> @slice.Slice[Byte]
-fn Data::is_big_endian(Self) -> Bool
+fn Data::add_section(Self, String, @slice.Slice[Byte]) -> Unit
+fn Data::add_types(Self, String, @slice.Slice[Byte]) -> Unit raise
+fn Data::line_reader(Self, Entry) -> LineReader? raise
+fn Data::ranges(Self, Entry) -> Array[(UInt64, UInt64)] raise
 fn Data::reader(Self) -> Reader raise
-fn Data::type_(Self, UInt) -> &Type raise
+fn Data::type_(Self, UInt) -> Type raise
+impl Default for Data
 
 pub struct Entry {
   offset : UInt
   tag : Tag
   children : Bool
-  fields : Array[Field]
+  field : Array[Field]
 }
 fn Entry::attr_field(Self, Attr) -> Field?
 fn Entry::new(UInt, Tag, Bool) -> Self
@@ -235,14 +233,11 @@ pub(all) struct EnumType {
   enum_name : String
   val : Array[EnumValue]
 }
-impl Show for EnumType
-impl Type for EnumType
 
 pub(all) struct EnumValue {
   name : String
   val : Int64
 }
-impl Show for EnumValue
 
 pub struct Field {
   attr : Attr
@@ -257,64 +252,134 @@ pub enum FieldValue {
   Bytes(@slice.Slice[Byte])
   Bool(Bool)
   Int64(Int64)
-  String(@slice.Slice[Byte])
+  String(String)
   Offset(UInt)
 }
 impl Show for FieldValue
 
-pub struct FloatType(BasicType)
-fn FloatType::inner(Self) -> BasicType
-
-pub struct FuncType {
-  common : CommonType
-  return_type : &Type?
-  param_type : Array[&Type]
+pub enum Format {
+  FormAddr
+  FormDwarfBlock2
+  FormDwarfBlock4
+  FormData2
+  FormData4
+  FormData8
+  FormString
+  FormDwarfBlock
+  FormDwarfBlock1
+  FormData1
+  FormFlag
+  FormSdata
+  FormStrp
+  FormUdata
+  FormRefAddr
+  FormRef1
+  FormRef2
+  FormRef4
+  FormRef8
+  FormRefUdata
+  FormIndirect
+  FormSecOffset
+  FormExprloc
+  FormFlagPresent
+  FormRefSig8
+  FormStrx
+  FormAddrx
+  FormRefSup4
+  FormStrpSup
+  FormData16
+  FormLineStrp
+  FormImplicitConst
+  FormLoclistx
+  FormRnglistx
+  FormRefSup8
+  FormStrx1
+  FormStrx2
+  FormStrx3
+  FormStrx4
+  FormAddrx1
+  FormAddrx2
+  FormAddrx3
+  FormAddrx4
+  FormGnuRefAlt
+  FormGnuStrpAlt
+  Format(UInt)
 }
-impl Type for FuncType
+impl Eq for Format
+impl Show for Format
 
-pub struct IntType(BasicType)
-fn IntType::inner(Self) -> BasicType
-
-pub(all) struct PtrType {
-  common : CommonType
-  type_ : &Type
+pub struct LineEntry {
+  mut address : UInt64
+  mut op_index : Int
+  mut file : LineFile?
+  mut line : Int
+  mut column : Int
+  mut is_stmt : Bool
+  mut basic_block : Bool
+  mut prologue_end : Bool
+  mut epilogue_begin : Bool
+  mut isa : Int
+  mut discriminator : Int
+  mut end_sequence : Bool
 }
-impl Type for PtrType
+impl Show for LineEntry
 
-pub struct QualType {
-  common : CommonType
-  qual : String
-  type_ : &Type
+pub struct LineFile {
+  name : @string.StringView
+  mtime : UInt64
+  length : Int
 }
-impl Type for QualType
+impl Show for LineFile
+
+pub struct LineReader {
+  buf : Buf
+  section : @slice.Slice[Byte]
+  str : @slice.Slice[Byte]
+  line_str : @slice.Slice[Byte]
+  mut version : UInt
+  mut addrsize : Int
+  mut segment_selector_size : Int
+  mut min_instruction_length : Int
+  mut max_ops_per_instruction : Int
+  mut default_is_stmt : Bool
+  mut line_base : Int
+  mut line_range : Int
+  mut opcode_base : Int
+  mut opcode_lengths : Array[Int]
+  mut directories : Array[@string.StringView]
+  mut file_entries : Array[LineFile?]
+  mut program_offset : UInt
+  mut end_offset : UInt
+  mut initial_file_entries : Int
+  mut state : LineEntry
+  mut file_index : Int
+}
+fn LineReader::files(Self) -> Array[LineFile?]
+fn LineReader::next(Self, LineEntry) -> Unit raise
+fn LineReader::reset(Self) -> Unit
+fn LineReader::seek(Self, LineReaderPos) -> Unit
+fn LineReader::seek_pc(Self, UInt64, LineEntry) -> Unit raise
+fn LineReader::tell(Self) -> LineReaderPos
+
+type LineReaderPos
 
 type Reader
 fn Reader::address_size(Self) -> Int
 fn Reader::byte_order(Self) -> ByteOrder
 fn Reader::next(Self) -> Entry? raise
-fn Reader::offset(Self) -> UInt
 fn Reader::seek(Self, UInt) -> Unit raise
+fn Reader::seek_pc(Self, UInt64) -> Entry? raise
 fn Reader::skip_children(Self) -> Unit raise
 
 pub(all) struct StructField {
-  name : String
-  type_ : &Type
-  byte_offset : Int64
-  byte_size : Int64
-  bit_offset : Int64
-  data_bit_offset : Int64
-  bit_size : Int64
+  mut name : String
+  mut type_ : Type
+  mut byte_offset : Int64
+  mut byte_size : Int64
+  mut bit_offset : Int64
+  mut data_bit_offset : Int64
+  mut bit_size : Int64
 }
-
-pub struct StructType {
-  common : CommonType
-  struct_name : String
-  kind : String
-  fields : Array[StructField]
-  incomplete : Bool
-}
-fn StructType::defn(Self) -> String
-impl Type for StructType
 
 pub enum Tag {
   TagArrayType
@@ -393,57 +458,15 @@ fn Tag::to_uint(Self) -> UInt
 impl Eq for Tag
 impl Show for Tag
 
-pub(all) struct TypedefType {
-  common : CommonType
-  type_ : &Type
+pub(all) enum Type {
+  CommonType(mut byte_size~ : Int64, mut name~ : String, CommonType)
 }
-impl Type for TypedefType
-
-pub struct UcharType(BasicType)
-fn UcharType::inner(Self) -> BasicType
-
-pub struct UintType(BasicType)
-fn UintType::inner(Self) -> BasicType
-
-pub struct UnionType {
-  common : CommonType
-  union_name : String
-  fields : Array[StructField]
-}
-fn UnionType::add_field(Self, StructField) -> Unit
-fn UnionType::fields(Self) -> Array[StructField]
-fn UnionType::new(CommonType, String) -> Self
-fn UnionType::union_name(Self) -> String
-
-pub struct Unit5 {
-  mut addr_base : UInt64
-  mut str_offsets_base : UInt64
-  mut rng_lists_base : UInt64
-  mut loc_lists_base : UInt64
-}
-fn Unit5::new() -> Self
-impl Show for Unit5
-
-pub struct UnspecifiedType(BasicType)
-fn UnspecifiedType::inner(Self) -> BasicType
-
-pub(all) struct UnsupportedType {
-  common : CommonType
-  tag : Tag
-}
-impl Type for UnsupportedType
-
-pub(all) struct VoidType(CommonType)
-fn VoidType::inner(Self) -> CommonType
-impl Type for VoidType
+fn Type::common_type(CommonType) -> Self
+fn Type::size(Self) -> Int64
+impl Show for Type
 
 // Type aliases
 pub typealias UInt as Offset
 
 // Traits
-pub(open) trait Type {
-  common(Self) -> CommonType
-  string(Self) -> String
-  size(Self) -> Int64 = _
-}
 

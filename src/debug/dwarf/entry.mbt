@@ -714,14 +714,14 @@ pub fn Data::reader(self : Data) -> Reader raise {
 ///|
 /// AddressSize returns the size in bytes of addresses in the current compilation
 /// unit.
-pub fn Reader::address_size(self : Reader) -> Int {
-  self.d.unit[self.unit].asize
+pub fn Reader::address_size(r : Reader) -> Int {
+  r.d.unit[r.unit].asize
 }
 
 ///|
 /// ByteOrder returns the byte order in the current compilation unit.
-pub fn Reader::byte_order(self : Reader) -> ByteOrder {
-  self.d.order
+pub fn Reader::byte_order(r : Reader) -> ByteOrder {
+  r.b.order
 }
 
 ///|
@@ -767,7 +767,7 @@ pub fn Reader::seek(r : Reader, off : Offset) -> @unit.T raise {
 ///|
 /// Move to next unit if current one is finished
 fn Reader::maybe_next_unit(self : Reader) -> @unit.T {
-  while self.b.length() == 0 && self.unit + 1 < self.d.unit.length() {
+  while self.b.data.length() == 0 && self.unit + 1 < self.d.unit.length() {
     self.next_unit()
   }
 }
@@ -809,7 +809,7 @@ pub fn Reader::next(r : Reader) -> Entry? raise {
     raise err
   }
   r.maybe_next_unit()
-  if r.b.length() == 0 {
+  if r.b.data.length() == 0 {
     return None
   }
   let u = r.d.unit[r.unit]
@@ -849,7 +849,7 @@ pub fn Reader::skip_children(self : Reader) -> @unit.T raise {
   // that attribute gives the offset of the next
   // sibling, so we can avoid decoding the
   // child subtrees.
-  if self.last_sibling >= self.b.offset() {
+  if self.last_sibling >= self.b.off {
     self.seek(self.last_sibling)
     return
   }
@@ -900,7 +900,7 @@ impl TypeReader for Reader with clone(r : Reader) -> Reader raise {
 /// offset returns the current buffer offset. This is used by the
 /// typeReader interface.
 impl TypeReader for Reader with offset(r : Reader) -> Offset {
-  r.b.offset()
+  r.b.off
 }
 
 ///|
@@ -1123,7 +1123,7 @@ fn Data::dwarf2_ranges(
   )
   let ret : Array[(UInt64, UInt64)] = []
   let mut current_base = base
-  while buf.length() > 0 {
+  while buf.data.length() > 0 {
     let low = buf.addr()
     let high = buf.addr()
     if low == 0UL && high == 0UL {

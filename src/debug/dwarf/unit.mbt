@@ -111,7 +111,7 @@ fn Data::parse_units(d : Data) -> FixedArray[Unit] raise {
   // Count units first
   let mut nunit = 0
   let mut b = make_buf(d, UnknownFormat::new(), "info", 0, d.info)
-  while b.length() > 0 {
+  while b.data.length() > 0 {
     let (len, _) = b.unit_length()
     if len < 0 {
       raise b.error("unit length overflow")
