@@ -56,6 +56,14 @@ fn Unit::new(
 }
 
 ///|
+fn Unit::addr_base(u : Unit) -> UInt64 {
+  match u.unit5 {
+    Some(u5) => u5.addr_base
+    None => 0
+  }
+}
+
+///|
 /// Get string offsets base (DWARF 5)
 fn Unit::str_offsets_base(self : Unit) -> UInt64 {
   match self.unit5 {

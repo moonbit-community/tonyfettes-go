@@ -13,30 +13,12 @@
 priv struct Abbrev {
   mut tag : Tag
   mut children : Bool
-  mut fields : FixedArray[AField]
+  mut field : FixedArray[AField]
 }
 
 ///|
 impl Default for Abbrev with default() -> Abbrev {
-  Abbrev::{ tag: TagVariable, children: false, fields: [] }
-}
-
-///|
-/// Get the tag
-fn Abbrev::tag(self : Abbrev) -> Tag {
-  self.tag
-}
-
-///|
-/// Check if has children
-fn Abbrev::children(self : Abbrev) -> Bool {
-  self.children
-}
-
-///|
-/// Get fields
-fn Abbrev::fields(self : Abbrev) -> FixedArray[AField] {
-  self.fields
+  Abbrev::{ tag: TagVariable, children: false, field: [] }
 }
 
 ///|
@@ -93,7 +75,7 @@ fn Data::parse_abbrev(d : Data, off : UInt64, vers : Int) -> AbbrevTable raise {
   while true {
     // Table ends with id == 0
     let id = b.uint().to_uint()
-    if id == 0U {
+    if id == 0 {
       break
     }
 
@@ -125,18 +107,18 @@ fn Data::parse_abbrev(d : Data, off : UInt64, vers : Int) -> AbbrevTable raise {
       None => TagVariable // default fallback
     }
     a.children = b.uint8() != 0U
-    a.fields = FixedArray::make(n, AField::default())
+    a.field = FixedArray::make(n, AField::default())
     for i = 0; i < n; i = i + 1 {
-      a.fields[i].attr = Attr::from_uint(b.uint().to_uint())
-      a.fields[i].fmt = Format::from_uint(b.uint().to_uint())
-      a.fields[i].class = format_to_class(
-        a.fields[i].fmt,
-        a.fields[i].attr,
+      a.field[i].attr = Attr::from_uint(b.uint().to_uint())
+      a.field[i].fmt = Format::from_uint(b.uint().to_uint())
+      a.field[i].class = format_to_class(
+        a.field[i].fmt,
+        a.field[i].attr,
         vers,
         b,
       )
-      if a.fields[i].fmt == FormImplicitConst {
-        a.fields[i].val = b.int()
+      if a.field[i].fmt == FormImplicitConst {
+        a.field[i].val = b.int()
       }
     }
     ignore(b.uint())
@@ -156,13 +138,18 @@ pub struct Entry {
   offset : Offset // offset of Entry in DWARF info
   tag : Tag // tag (kind of Entry)
   children : Bool // whether Entry is followed by children
-  fields : Array[Field]
+  field : Array[Field]
 } derive(Show)
+
+///|
+impl Default for Entry with default() {
+  { offset: 0, tag: Tag(0), children: false, field: [] }
+}
 
 ///|
 /// Create a new Entry
 pub fn Entry::new(offset : Offset, tag : Tag, children : Bool) -> Entry {
-  { offset, tag, children, fields: [] }
+  { offset, tag, children, field: [] }
 }
 
 ///|
@@ -274,7 +261,7 @@ pub fn Entry::val(e : Entry, a : Attr) -> FieldValue? {
 /// Get the Field associated with attribute attr in Entry,
 /// or None if there is no such attribute.
 pub fn Entry::attr_field(e : Entry, a : Attr) -> Field? {
-  for field in e.fields {
+  for field in e.field {
     if field.attr == a {
       return Some(field)
     }
@@ -294,159 +281,143 @@ fn Buf::entry(b : Buf, cu : Entry?, u : Unit) -> Entry? raise {
   let vers = u.vers
   let off = b.off
   let id = b.uint().to_uint()
-  if id == 0U {
-    // Null entry (end of children)
-    return Some(Entry::{ offset: 0, tag: Tag(0), children: false, fields: [] })
-  } // Use a dummy tag
+  if id == 0 {
+    return Some(Entry::default())
+  }
   guard atab.get(id) is Some(a) else {
-    raise b.error("unknown abbreviation code \{id}")
+    raise b.error("unknown abbreviation table index \{id}")
   }
-  let e = Entry::{
-    offset: off,
-    tag: a.tag(),
-    children: a.children(),
-    fields: [],
-  }
-  for a_field in a.fields {
-    match parse_field(b, a_field, vers, u) {
-      Some(field) => e.fields.push(field)
-      None =>
-        raise b.error(
-          "failed to parse field for attribute \{a_field.attr()} with format \{a_field.format()}",
-        )
+  let e = Entry::{ offset: off, tag: a.tag, children: a.children, field: [] }
+  for a_field in a.field {
+    let attr = a_field.attr
+    let mut fmt = a_field.fmt
+    let mut class = a_field.class
+    if fmt == FormIndirect {
+      fmt = Format::from_uint(b.uint().to_uint())
+      class = format_to_class(fmt, attr, vers, b)
     }
+
+    // Parse the value based on the format
+    let val = match fmt {
+      // Address formats
+      FormAddr => UInt64(b.addr())
+      FormAddrx => UInt64(parse_addrx(b, b.uint(), u))
+      FormAddrx1 => UInt64(parse_addrx(b, b.uint8().to_uint64(), u))
+      FormAddrx2 => UInt64(parse_addrx(b, b.uint16().to_uint64(), u))
+      FormAddrx3 => UInt64(parse_addrx(b, b.uint24().to_uint64(), u))
+      FormAddrx4 => UInt64(parse_addrx(b, b.uint32().to_uint64(), u))
+
+      // block
+      FormDwarfBlock1 => Bytes(b.bytes(b.uint8().reinterpret_as_int()))
+      FormDwarfBlock2 => Bytes(b.bytes(b.uint16().reinterpret_as_int()))
+      FormDwarfBlock4 => Bytes(b.bytes(b.uint32().reinterpret_as_int()))
+      FormDwarfBlock => Bytes(b.bytes(b.uint().to_int()))
+
+      // constant
+      FormData1 => Int64(b.uint8().to_int64())
+      FormData2 => Int64(b.uint16().to_int64())
+      FormData4 => Int64(b.uint32().to_int64())
+      FormData8 => Int64(b.uint64().reinterpret_as_int64())
+      FormData16 => Bytes(b.bytes(16))
+      FormSdata => Int64(b.int())
+      FormUdata => Int64(b.uint().reinterpret_as_int64())
+      FormImplicitConst => Int64(a_field.val)
+
+      // flag
+      FormFlag => Bool(b.uint8() == 1)
+      // New in DWARF 4
+      FormFlagPresent =>
+        // The attribute is implicitly indicated as present, and no value is
+        // encoded in the debugging information entry itself.
+        Bool(true)
+
+      // reference to other entry
+      FormRefAddr => {
+        let vers = b.format.version()
+        if vers == 0 {
+          raise b.error("unknown version for DW_FROM_ref_addr")
+        } else if vers == 2 {
+          Offset(b.addr().to_uint())
+        } else {
+          let (is64, known) = b.format.dwarf64()
+          if !known {
+            raise b.error("unknown size for DW_FORM_ref_addr")
+          } else if is64 {
+            Offset(b.uint64().to_uint())
+          } else {
+            Offset(b.uint32())
+          }
+        }
+      }
+      FormRef1 => Offset(b.uint8() + ubase)
+      FormRef2 => Offset(b.uint16() + ubase)
+      FormRef4 => Offset(b.uint32() + ubase)
+      FormRef8 => Offset(b.uint64().to_uint() + ubase)
+      FormRefUdata => Offset(b.uint().to_uint() + ubase)
+
+      // string
+      FormString => String(b.string())
+      FormStrp => String(parse_strp(b))
+      FormLineStrp => String(parse_line_strp(b))
+      FormStrx => String(parse_strx(b, b.uint(), u))
+      FormStrx1 => String(parse_strx(b, b.uint8().to_uint64(), u))
+      FormStrx2 => String(parse_strx(b, b.uint16().to_uint64(), u))
+      FormStrx3 => String(parse_strx(b, b.uint24().to_uint64(), u))
+      FormStrx4 => String(parse_strx(b, b.uint32().to_uint64(), u))
+      FormStrpSup => {
+        let (is64, known) = b.format.dwarf64()
+        if !known {
+          raise b.error("unknown size for DW_FORM_strp_sup")
+        } else if is64 {
+          UInt64(b.uint64())
+        } else {
+          Offset(b.uint32())
+        }
+      }
+
+      // lineptr, loclistptr, macptr, rangelistptr
+      // New in DWARF 4, but clang can generate them with -gdwarf-2.
+      // Section reference, replacing use of formData4 and formData8.
+      FormSecOffset | FormGnuRefAlt | FormGnuStrpAlt => {
+        let (is64, known) = b.format.dwarf64()
+        if !known {
+          raise b.error("unknown size for form \{fmt}")
+        } else if is64 {
+          Int64(b.uint64().reinterpret_as_int64())
+        } else {
+          Int64(b.uint32().to_int64())
+        }
+      }
+
+      // Expression location
+      FormExprloc => Bytes(b.bytes(b.uint().to_int()))
+
+      // reference
+      // New in DWARF 4
+      FormRefSig8 => Offset(b.uint64().to_uint())
+      FormRefSup4 => Offset(b.uint32())
+      FormRefSup8 => Offset(b.uint64().to_uint())
+
+      // loclist
+      FormLoclistx => UInt64(b.uint())
+
+      // rnglist
+      FormRnglistx => UInt64(b.uint())
+      _ => raise b.error("unknown entry attr format 0x\{fmt}")
+    }
+    e.field.push(Field::new(attr, val, class))
   }
   Some(e)
 }
 
 ///|
-/// Parse a single field from a buffer according to its definition
-fn parse_field(b : Buf, a_field : AField, vers : Int, u : Unit) -> Field? raise {
-  let attr = a_field.attr
-  let fmt = a_field.fmt
-  let mut class = a_field.class
-  let fmt = if fmt == FormIndirect {
-    let fmt = Format::from_uint(b.uint().to_uint())
-    class = format_to_class(fmt, attr, vers, b)
-    fmt
-  } else {
-    fmt
-  }
-
-  // Parse the value based on the format
-  match parse_field_value(b, fmt, u) {
-    Some(value) => Some(Field::new(attr, value, class))
-    None => None
-  }
-}
-
-///|
-/// Parse a field value based on its format
-fn parse_field_value(b : Buf, fmt : Format, u : Unit) -> FieldValue? raise {
-  match fmt {
-    // Address formats
-    FormAddr => Some(UInt64(b.addr()))
-    FormAddrx => Some(UInt64(parse_addrx(b, b.uint())))
-    FormAddrx1 => Some(UInt64(parse_addrx(b, b.uint8().to_uint64())))
-    FormAddrx2 => Some(UInt64(parse_addrx(b, b.uint16().to_uint64())))
-    FormAddrx3 => Some(UInt64(parse_addrx(b, b.uint24().to_uint64())))
-    FormAddrx4 => Some(UInt64(parse_addrx(b, b.uint32().to_uint64())))
-
-    // Block formats
-    FormDwarfBlock1 => Some(Bytes(b.bytes(b.uint8().reinterpret_as_int())))
-    FormDwarfBlock2 => Some(Bytes(b.bytes(b.uint16().reinterpret_as_int())))
-    FormDwarfBlock4 => Some(Bytes(b.bytes(b.uint32().reinterpret_as_int())))
-    FormDwarfBlock => Some(Bytes(b.bytes(b.uint().to_int())))
-
-    // Data formats
-    FormData1 => Some(Int64(b.uint8().to_int64()))
-    FormData2 => Some(Int64(b.uint16().to_int64()))
-    FormData4 => Some(Int64(b.uint32().to_int64()))
-    FormData8 => Some(Int64(b.uint64().reinterpret_as_int64()))
-    FormData16 => Some(Bytes(b.bytes(16)))
-    FormSdata => Some(Int64(b.int()))
-    FormUdata => Some(Int64(b.uint().reinterpret_as_int64()))
-    FormImplicitConst =>
-      // Value was stored in abbreviation table, need to get it from field_def
-      // For now, return 0 - this would need the field_def passed through
-      Some(Int64(0L))
-
-    // Flag formats
-    FormFlag => Some(Bool(b.uint8() == 1U))
-    FormFlagPresent => Some(Bool(true)) // Presence implies true
-
-    // Reference formats
-    FormRefAddr => {
-      let vers = u.version()
-      if vers == 2 {
-        Some(Offset(b.addr().to_uint()))
-        // DWARF 3+
-      } else if u.is64 {
-        Some(Offset(b.uint64().to_uint()))
-      } else {
-        Some(Offset(b.uint32()))
-      }
-    }
-    FormRef1 => Some(Offset(b.uint8()))
-    FormRef2 => Some(Offset(b.uint16()))
-    FormRef4 => Some(Offset(b.uint32()))
-    FormRef8 => Some(Offset(b.uint64().to_uint()))
-    FormRefUdata => Some(Offset(b.uint().to_uint()))
-    FormRefSig8 => Some(UInt64(b.uint64()))
-    FormRefSup4 => Some(UInt64(b.uint32().to_uint64()))
-    FormRefSup8 => Some(UInt64(b.uint64()))
-
-    // String formats
-    FormString => Some(String(b.string()))
-    FormStrp => Some(String(parse_strp(b)))
-    FormLineStrp => Some(String(parse_line_strp(b)))
-    FormStrx => Some(String(parse_strx(b, b.uint(), u)))
-    FormStrx1 => Some(String(parse_strx(b, b.uint8().to_uint64(), u)))
-    FormStrx2 => Some(String(parse_strx(b, b.uint16().to_uint64(), u)))
-    FormStrx3 => Some(String(parse_strx(b, b.uint24().to_uint64(), u)))
-    FormStrx4 => Some(String(parse_strx(b, b.uint32().to_uint64(), u)))
-    FormStrpSup => Some(UInt64(b.uint64())) // Offset into alternate string section
-
-    // Section offset formats
-    FormSecOffset =>
-      if u.is64 {
-        Some(Int64(b.uint64().reinterpret_as_int64()))
-      } else {
-        Some(Int64(b.uint32().to_int64()))
-      }
-
-    // Expression location
-    FormExprloc => Some(Bytes(b.bytes(b.uint().to_int())))
-
-    // List references
-    FormLoclistx => Some(UInt64(b.uint()))
-    FormRnglistx => Some(UInt64(b.uint()))
-
-    // GNU extensions
-    FormGnuRefAlt =>
-      if u.is64 {
-        Some(Int64(b.uint64().reinterpret_as_int64()))
-      } else {
-        Some(Int64(b.uint32().to_int64()))
-      }
-    FormGnuStrpAlt =>
-      if u.is64 {
-        Some(UInt64(b.uint64()))
-      } else {
-        Some(UInt64(b.uint32().to_uint64()))
-      }
-
-    // Unsupported or unknown formats
-    _ => None
-  }
-}
-
-///|
 /// Parse address index (DWARF 5)
-fn parse_addrx(buf : Buf, index : UInt64) -> UInt64 {
-  // For now, just return the index as an address
-  // Full implementation would look up in .debug_addr section
-  index
+fn parse_addrx(b : Buf, off : UInt64, u : Unit) -> UInt64 raise {
+  if b.dwarf.addr.length() == 0 {
+    raise b.error("DW_FORM_addrx with no .debug_addr section")
+  }
+  let addr_base = u.addr_base()
+  b.dwarf.debug_addr(b.format, addr_base, off)
 }
 
 ///|
@@ -1264,13 +1235,13 @@ fn Data::dwarf5_ranges(
 
 ///|
 /// debugAddr returns the address at idx in debug_addr
-fn Data::debug_addr(
+fn[DataFormat : DataFormat] Data::debug_addr(
   d : Data,
-  format : Unit,
+  format : DataFormat,
   addr_base : UInt64,
   idx : UInt64,
 ) -> UInt64 raise {
-  let off = idx * format.asize.to_uint64() + addr_base
+  let off = idx * format.addrsize().to_uint64() + addr_base
   if off.to_int() < 0 {
     raise DecodeError::new("addr", 0, "offset out of range")
   }
