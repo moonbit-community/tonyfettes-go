@@ -47,7 +47,57 @@ fn Data::parse_types(
   name : String,
   types : @slice.Slice[Byte],
 ) -> @unit.T raise {
-  ...
+  let b = make_buf(d, UnknownFormat::new(), name, 0, types)
+  while b.data.length() > 0 {
+    let base = b.off
+    let (n, dwarf64) = b.unit_length()
+    if n > 0xffffffffU {
+      raise b.error("type unit length overflow")
+    }
+    let hdroff = b.off
+    let vers = b.uint16().reinterpret_as_int()
+    if vers != 4 {
+      raise b.error("unsupported DWARF version \{vers}")
+    }
+    let mut ao : UInt64 = 0UL
+    if !dwarf64 {
+      ao = b.uint32().to_uint64()
+    } else {
+      ao = b.uint64()
+    }
+    let atable = d.parse_abbrev(ao, vers)
+    let asize = b.uint8()
+    let sig = b.uint64()
+    let mut toff : UInt = 0U
+    if !dwarf64 {
+      toff = b.uint32()
+    } else {
+      let to64 = b.uint64()
+      if to64 > 0xffffffffUL {
+        raise b.error("type unit type offset overflow")
+      }
+      toff = to64.to_uint()
+    }
+    let boff = b.off
+    d.type_sigs[sig] = TypeUnit::{
+      unit: Unit::new(
+        base,
+        boff,
+        b.bytes((n - (b.off - hdroff)).reinterpret_as_int()),
+        atable,
+        asize.reinterpret_as_int(),
+        vers,
+        dwarf64,
+        0U,
+      ),
+      toff,
+      name,
+      cache: None,
+    }
+    if b.err is Some(err) {
+      raise err
+    }
+  }
 }
 
 ///|

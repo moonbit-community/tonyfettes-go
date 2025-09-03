@@ -656,7 +656,11 @@ fn format_to_class(format : Format, attr : Attr, vers : Int, b : Buf) -> Class {
     FormGnuStrpAlt => ClassString
     FormLoclistx => ClassLocListPtr
     FormRnglistx => ClassRangeListPtr
-    _ => ClassUnknown
+    FormIndirect => ClassUnknown
+    Format(_) => {
+      ignore(b.error("cannot determine class of unknown attribute form"))
+      ClassUnknown
+    }
   }
 }
 
