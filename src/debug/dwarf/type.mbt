@@ -437,7 +437,7 @@ pub fn UnionType::fields(self : UnionType) -> Array[StructField] {
 
 ///|
 /// Add a field
-pub fn UnionType::add_field(self : UnionType, field : StructField) -> Unit {
+pub fn UnionType::add_field(self : UnionType, field : StructField) -> @unit.T {
   self.fields.push(field)
 }
 
@@ -518,4 +518,10 @@ priv trait TypeReader {
 ///|
 pub fn Data::type_(d : Data, off : Offset) -> &Type raise {
   ...
+}
+
+///|
+priv struct TypeFixer {
+  typedefs : Array[TypedefType]
+  arraytypes : Array[&Type]
 }

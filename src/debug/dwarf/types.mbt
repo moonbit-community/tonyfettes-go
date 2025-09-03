@@ -36,14 +36,13 @@ pub struct Field {
 } derive(Show)
 
 ///|
-/// FieldValue represents the possible values that can be stored in a DWARF field
 pub enum FieldValue {
-  VUInt64(UInt64) // address, constant values
-  VBytes(@slice.Slice[Byte]) // block data, expression location
-  VBool(Bool) // flag values
-  VInt64(Int64) // signed constants, pointers
-  VString(@slice.Slice[Byte]) // string values
-  VOffset(Offset) // references
+  UInt64(UInt64)
+  Bytes(@slice.Slice[Byte])
+  Bool(Bool)
+  Int64(Int64)
+  String(@slice.Slice[Byte])
+  Offset(Offset)
 } derive(Show)
 
 ///|
@@ -99,7 +98,7 @@ pub fn Entry::fields(self : Entry) -> Array[Field] {
 
 ///|
 /// Add a field to the entry
-pub fn Entry::add_field(self : Entry, field : Field) -> Unit {
+pub fn Entry::add_field(self : Entry, field : Field) -> @unit.T {
   self.fields.push(field)
 }
 

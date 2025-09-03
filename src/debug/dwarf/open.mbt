@@ -27,7 +27,7 @@ struct Data {
   order : ByteOrder
   type_cache : Map[Offset, &Type]
   // type_sigs : Map[UInt64, &Type]
-  unit : Array[Unit_]
+  unit : Array[Unit]
 }
 
 ///|

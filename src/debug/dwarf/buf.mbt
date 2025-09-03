@@ -93,7 +93,7 @@ pub fn DecodeError::new(
 
 ///|
 /// Convert to string
-pub impl Show for DecodeError with output(self : DecodeError, logger : &Logger) -> Unit {
+pub impl Show for DecodeError with output(self : DecodeError, logger : &Logger) -> @unit.T {
   let DecodeError(name~, offset~, err) = self
   logger.write_string(
     "decoding dwarf section \{name} at offset 0x\{offset}: \{err}",
@@ -126,7 +126,7 @@ fn Buf::bytes(self : Buf, n : Int) -> @slice.Slice[Byte] raise {
 
 ///|
 /// Skip n bytes
-fn Buf::skip(self : Buf, n : Int) -> Unit raise {
+fn Buf::skip(self : Buf, n : Int) -> @unit.T raise {
   ignore(self.bytes(n))
 }
 

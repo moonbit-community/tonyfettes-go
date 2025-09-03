@@ -3,12 +3,12 @@
 
 ///|
 /// Full compilation unit structure with all DWARF features
-priv struct Unit_ {
+priv struct Unit {
   mut base : Offset // byte offset of header within the aggregate info
   mut off : Offset // byte offset of data within the aggregate info
   mut data : @slice.Slice[Byte]
   mut atable : AbbrevTable
-  unit5 : Unit5? // info specific to DWARF 5 units
+  mut unit5 : Unit5? // info specific to DWARF 5 units
   mut asize : Int // address size
   mut vers : Int // DWARF version
   mut is64 : Bool // True for 64-bit DWARF format
@@ -16,8 +16,8 @@ priv struct Unit_ {
 }
 
 ///|
-impl Default for Unit_ with default() -> Unit_ {
-  Unit_::new(0L, 0L, @slice.new(), AbbrevTable::new(), 0, 0, false, 0U)
+impl Default for Unit with default() -> Unit {
+  Unit::new(0L, 0L, @slice.new(), AbbrevTable::new(), 0, 0, false, 0U)
 }
 
 ///|
@@ -31,7 +31,7 @@ pub struct Unit5 {
 
 ///|
 /// Create a new Unit
-fn Unit_::new(
+fn Unit::new(
   base : Offset,
   off : Offset,
   data : @slice.Slice[Byte],
@@ -40,7 +40,7 @@ fn Unit_::new(
   vers : Int,
   is64 : Bool,
   utype : UInt,
-) -> Unit_ {
+) -> Unit {
   { base, off, data, atable, unit5: None, asize, vers, is64, utype }
 }
 
@@ -57,25 +57,25 @@ pub fn Unit5::new() -> Unit5 {
 
 ///|
 /// Get the DWARF version
-fn Unit_::version(self : Unit_) -> Int {
+fn Unit::version(self : Unit) -> Int {
   self.vers
 }
 
 ///|
 /// Get DWARF64 format info
-fn Unit_::dwarf64(self : Unit_) -> (Bool, Bool) {
+fn Unit::dwarf64(self : Unit) -> (Bool, Bool) {
   (self.is64, true)
 }
 
 ///|
 /// Get address size
-fn Unit_::addrsize(self : Unit_) -> Int {
+fn Unit::addrsize(self : Unit) -> Int {
   self.asize
 }
 
 ///|
 /// Get address base (DWARF 5)
-fn Unit_::addr_base(self : Unit_) -> UInt64 {
+fn Unit::addr_base(self : Unit) -> UInt64 {
   match self.unit5 {
     Some(u5) => u5.addr_base
     None => 0UL
@@ -84,7 +84,7 @@ fn Unit_::addr_base(self : Unit_) -> UInt64 {
 
 ///|
 /// Get string offsets base (DWARF 5)
-fn Unit_::str_offsets_base(self : Unit_) -> UInt64 {
+fn Unit::str_offsets_base(self : Unit) -> UInt64 {
   match self.unit5 {
     Some(u5) => u5.str_offsets_base
     None => 0UL
@@ -93,7 +93,7 @@ fn Unit_::str_offsets_base(self : Unit_) -> UInt64 {
 
 ///|
 /// Get range lists base (DWARF 5)
-fn Unit_::rng_lists_base(self : Unit_) -> UInt64 {
+fn Unit::rng_lists_base(self : Unit) -> UInt64 {
   match self.unit5 {
     Some(u5) => u5.rng_lists_base
     None => 0UL
@@ -102,7 +102,7 @@ fn Unit_::rng_lists_base(self : Unit_) -> UInt64 {
 
 ///|
 /// Get location lists base (DWARF 5)
-fn Unit_::loc_lists_base(self : Unit_) -> UInt64 {
+fn Unit::loc_lists_base(self : Unit) -> UInt64 {
   match self.unit5 {
     Some(u5) => u5.loc_lists_base
     None => 0UL
@@ -111,41 +111,41 @@ fn Unit_::loc_lists_base(self : Unit_) -> UInt64 {
 
 ///|
 /// Get abbreviation table
-fn Unit_::atable(self : Unit_) -> AbbrevTable {
+fn Unit::atable(self : Unit) -> AbbrevTable {
   self.atable
 }
 
 ///|
 /// Get unit type
-fn Unit_::utype(self : Unit_) -> UInt {
+fn Unit::utype(self : Unit) -> UInt {
   self.utype
 }
 
 ///|
 /// Check if 64-bit DWARF
-fn Unit_::is_dwarf64(self : Unit_) -> Bool {
+fn Unit::is_dwarf64(self : Unit) -> Bool {
   self.is64
 }
 
 ///|
 /// Implement DataFormat for Unit
-impl DataFormat for Unit_ with version(self) {
+impl DataFormat for Unit with version(self) {
   self.vers
 }
 
 ///|
-impl DataFormat for Unit_ with dwarf64(self) {
+impl DataFormat for Unit with dwarf64(self) {
   (self.is64, true)
 }
 
 ///|
-impl DataFormat for Unit_ with addrsize(self) {
+impl DataFormat for Unit with addrsize(self) {
   self.asize
 }
 
 ///|
 /// Parse compilation units from the .debug_info section
-fn Data::parse_units(d : Data) -> FixedArray[Unit_] raise {
+fn Data::parse_units(d : Data) -> FixedArray[Unit] raise {
   // Count units first
   let mut nunit = 0
   let mut b = make_buf(Some(d), UnknownFormat::new(), "info", 0L, d.info)
@@ -165,7 +165,7 @@ fn Data::parse_units(d : Data) -> FixedArray[Unit_] raise {
 
   // Again, this time writing them down.
   b = make_buf(Some(d), UnknownFormat::new(), "info", 0L, d.info)
-  let units = FixedArray::makei(nunit, _ => Unit_::default())
+  let units = FixedArray::makei(nunit, _ => Unit::default())
   for i in 0..<nunit {
     let u = units[i]
     u.base = b.off
@@ -218,7 +218,7 @@ fn Data::parse_units(d : Data) -> FixedArray[Unit_] raise {
 
 ///|
 /// Collect DWARF 5 base offsets from compilation unit
-fn collect_dwarf5_base_offsets(d : Data, u : Unit_) -> Unit raise {
+fn Data::collect_dwarf5_base_offsets(d : Data, u : Unit) -> @unit.T raise {
   guard u.unit5 is Some(u5) else {
     abort("expected unit5 to be set up already")
   }
@@ -231,16 +231,16 @@ fn collect_dwarf5_base_offsets(d : Data, u : Unit_) -> Unit raise {
     raise b.error("failed to parse compilation unit entry")
   }
   // Extract base offsets from compilation unit attributes
-  if cu.val(AttrAddrBase) is Some(VInt64(addr_base)) {
+  if cu.val(AttrAddrBase) is Some(Int64(addr_base)) {
     u5.addr_base = addr_base.reinterpret_as_uint64()
   }
-  if cu.val(AttrStrOffsetsBase) is Some(VInt64(str_base)) {
+  if cu.val(AttrStrOffsetsBase) is Some(Int64(str_base)) {
     u5.str_offsets_base = str_base.reinterpret_as_uint64()
   }
-  if cu.val(AttrRnglistsBase) is Some(VInt64(rng_base)) {
+  if cu.val(AttrRnglistsBase) is Some(Int64(rng_base)) {
     u5.rng_lists_base = rng_base.reinterpret_as_uint64()
   }
-  if cu.val(AttrLoclistsBase) is Some(VInt64(loc_base)) {
+  if cu.val(AttrLoclistsBase) is Some(Int64(loc_base)) {
     u5.loc_lists_base = loc_base.reinterpret_as_uint64()
   }
 }
