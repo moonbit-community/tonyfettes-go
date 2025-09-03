@@ -1,5 +1,291 @@
-/// DWARF entry reading and parsing
-/// Ported from Go's debug/dwarf package
+/// Copyright 2009 The Go Authors. All rights reserved.
+/// Use of this source code is governed by a BSD-style
+/// license that can be found in the LICENSE file.
+
+/// DWARF debug information entry parser.
+/// An entry is a sequence of data items of a given format.
+/// The first word in the entry is an index into what DWARF
+/// calls the ``abbreviation table.''  An abbreviation is really
+/// just a type descriptor: it's an array of attribute tag/value format pairs.
+
+///|
+/// a single entry's description: a sequence of attributes
+priv struct Abbrev {
+  mut tag : Tag
+  mut children : Bool
+  mut fields : FixedArray[AField]
+}
+
+///|
+impl Default for Abbrev with default() -> Abbrev {
+  Abbrev::{ tag: TagVariable, children: false, fields: [] }
+}
+
+///|
+/// Get the tag
+fn Abbrev::tag(self : Abbrev) -> Tag {
+  self.tag
+}
+
+///|
+/// Check if has children
+fn Abbrev::children(self : Abbrev) -> Bool {
+  self.children
+}
+
+///|
+/// Get fields
+fn Abbrev::fields(self : Abbrev) -> FixedArray[AField] {
+  self.fields
+}
+
+///|
+priv struct AField {
+  mut attr : Attr
+  mut format : Format
+  mut class : Class
+  mut val : Int64 // for FormImplicitConst
+}
+
+///|
+impl Default for AField with default() -> AField {
+  AField::{ attr: AttrName, format: FormString, class: ClassUnknown, val: 0L }
+}
+
+///|
+/// Get the attribute
+fn AField::attr(self : AField) -> Attr {
+  self.attr
+}
+
+///|
+/// Get the format
+fn AField::format(self : AField) -> Format {
+  self.format
+}
+
+///|
+/// Get the class
+fn AField::class(self : AField) -> Class {
+  self.class
+}
+
+///|
+/// Abbreviation table - maps abbreviation codes to abbreviation entries
+typealias Map[UInt, Abbrev] as AbbrevTable
+
+///|
+/// parse_abbrev returns the abbreviation table that starts at byte off
+/// in the .debug_abbrev section.
+fn Data::parse_abbrev(d : Data, off : UInt64, vers : Int) -> AbbrevTable raise {
+  // Check cache first
+  if d.abbrev_cache.get(off) is Some(m) {
+    return m
+  }
+  let data = d.abbrev
+  let data = if off > data.length().to_uint64() {
+    @slice.new()
+  } else {
+    data[off.to_int():]
+  }
+  let b = make_buf(Some(d), UnknownFormat::new(), "abbrev", 0, data)
+  let m : AbbrevTable = {}
+  while true {
+    // Table ends with id == 0
+    let id = b.uint().to_uint()
+    if id == 0U {
+      break
+    }
+
+    // Walk over attributes, counting
+    let mut n = 0
+    let b1 = b // Read from copy of b
+    let _ = b1.uint()
+    let _ = b1.uint8()
+    while true {
+      let tag = b1.uint()
+      let fmt = b1.uint()
+      if tag == 0UL && fmt == 0UL {
+        break
+      }
+      if fmt == format_to_uint(FormImplicitConst) {
+        let _ = b1.int()
+
+      }
+      n += 1
+    }
+    if b1.err is Some(err) {
+      raise err
+    }
+
+    // Walk over attributes again, this time writing them down.
+    let a = Abbrev::default()
+    a.tag = match uint_to_tag(b.uint().to_uint()) {
+      Some(t) => t
+      None => TagVariable // default fallback
+    }
+    a.children = b.uint8() != 0U
+    a.fields = FixedArray::make(n, AField::default())
+    for i = 0; i < n; i = i + 1 {
+      a.fields[i].attr = uint_to_attr(b.uint().to_uint()).unwrap_or(AttrName)
+      a.fields[i].format = uint_to_format(b.uint().to_uint()).unwrap_or(
+        FormString,
+      )
+      a.fields[i].class = format_to_class(
+        a.fields[i].format,
+        a.fields[i].attr,
+        vers,
+      )
+      if a.fields[i].format == FormImplicitConst {
+        a.fields[i].val = b.int()
+      }
+    }
+    ignore(b.uint())
+    ignore(b.uint())
+    m[id] = a
+  }
+  if b.err is Some(err) {
+    raise err
+  }
+  d.abbrev_cache[off] = m
+  m
+}
+
+///|
+/// An entry is a sequence of attribute/value pairs.
+pub struct Entry {
+  offset : Offset // offset of Entry in DWARF info
+  tag : Tag // tag (kind of Entry)
+  children : Bool // whether Entry is followed by children
+  fields : Array[Field]
+} derive(Show)
+
+///|
+/// Create a new Entry
+pub fn Entry::new(offset : Offset, tag : Tag, children : Bool) -> Entry {
+  { offset, tag, children, fields: [] }
+}
+
+///|
+/// A Field is a single attribute/value pair in an [Entry].
+///
+/// A value can be one of several "attribute classes" defined by DWARF.
+/// The Go types corresponding to each class are:
+///
+///	DWARF class       Go type        Class
+///	-----------       -------        -----
+///	address           uint64         ClassAddress
+///	block             []byte         ClassBlock
+///	constant          int64          ClassConstant
+///	flag              bool           ClassFlag
+///	reference
+///	  to info         dwarf.Offset   ClassReference
+///	  to type unit    uint64         ClassReferenceSig
+///	string            string         ClassString
+///	exprloc           []byte         ClassExprLoc
+///	lineptr           int64          ClassLinePtr
+///	loclistptr        int64          ClassLocListPtr
+///	macptr            int64          ClassMacPtr
+///	rangelistptr      int64          ClassRangeListPtr
+///
+/// For unrecognized or vendor-defined attributes, [Class] may be
+/// [ClassUnknown].
+pub struct Field {
+  attr : Attr
+  val : FieldValue
+  class : Class
+} derive(Show)
+
+///|
+pub enum FieldValue {
+  UInt64(UInt64)
+  Bytes(@slice.Slice[Byte])
+  Bool(Bool)
+  Int64(Int64)
+  String(@slice.Slice[Byte])
+  Offset(Offset)
+} derive(Show)
+
+///|
+/// Create a new Field
+pub fn Field::new(attr : Attr, val : FieldValue, class : Class) -> Field {
+  { attr, val, class }
+}
+
+///|
+/// A Class is the DWARF 4 class of an attribute value.
+///
+/// In general, a given attribute's value may take on one of several
+/// possible classes defined by DWARF, each of which leads to a
+/// slightly different interpretation of the attribute.
+pub enum Class {
+  // ClassUnknown represents values of unknown DWARF class.
+  ClassUnknown
+  // ClassAddress represents values of type uint64 that are addresses on the target machine.
+  ClassAddress
+  // ClassBlock represents values of type []byte whose interpretation depends on the attribute.
+  ClassBlock
+  // ClassConstant represents values of type int64 that are constants.
+  ClassConstant
+  // ClassExprLoc represents values of type []byte that contain an encoded DWARF expression or location description.
+  ClassExprLoc
+  // ClassFlag represents values of type bool.
+  ClassFlag
+  // ClassLinePtr represents values that are an int64 offset into the "line" section.
+  ClassLinePtr
+  // ClassLocListPtr represents values that are an int64 offset into the "loclist" section.
+  ClassLocListPtr
+  // ClassMacPtr represents values that are an int64 offset into the "mac" section.
+  ClassMacPtr
+  // ClassRangeListPtr represents values that are an int64 offset into the "rangelist" section.
+  ClassRangeListPtr
+  // ClassReference represents values that are an Offset offset of an Entry in the info section.
+  ClassReference
+  // ClassReferenceSig represents values that are a uint64 type signature referencing a type Entry.
+  ClassReferenceSig
+  // ClassString represents values that are strings.
+  ClassString
+  // ClassReferenceAlt represents values of type int64 that are an offset into the DWARF "info" section of an alternate object file.
+  ClassReferenceAlt
+  // ClassStringAlt represents values of type int64 that are an offset into the DWARF string section of an alternate object file.
+  ClassStringAlt
+  // ClassAddrPtr represents values that are an int64 offset into the "addr" section.
+  ClassAddrPtr
+  // ClassLocList represents values that are an int64 offset into the "loclists" section.
+  ClassLocList
+  // ClassRngList represents values that are a uint64 offset from the base of the "rnglists" section.
+  ClassRngList
+  // ClassRngListsPtr represents values that are an int64 offset into the "rnglists" section.
+  ClassRngListsPtr
+  // ClassStrOffsetsPtr represents values that are an int64 offset into the "str_offsets" section.
+  ClassStrOffsetsPtr
+} derive(Show, Eq)
+
+///|
+/// Get the value associated with attribute attr in Entry,
+/// or None if there is no such attribute.
+pub fn Entry::val(e : Entry, a : Attr) -> FieldValue? {
+  match e.attr_field(a) {
+    Some(field) => Some(field.val)
+    None => None
+  }
+}
+
+///|
+/// Get the Field associated with attribute attr in Entry,
+/// or None if there is no such attribute.
+pub fn Entry::attr_field(e : Entry, a : Attr) -> Field? {
+  for field in e.fields {
+    if field.attr == a {
+      return Some(field)
+    }
+  }
+  None
+}
+
+///|
+/// Offset represents an offset within the DWARF info.
+pub typealias UInt as Offset
 
 ///|
 /// Parse a single DWARF entry from a buffer
@@ -11,17 +297,22 @@ fn Buf::entry(b : Buf, cu : Entry?, u : Unit) -> Entry? raise {
   let id = b.uint().to_uint()
   if id == 0U {
     // Null entry (end of children)
-    return Some(Entry::new(off, TagVariable, false))
+    return Some(Entry::{ offset: 0, tag: Tag(0), children: false, fields: [] })
   } // Use a dummy tag
   guard atab.get(id) is Some(a) else {
     raise b.error("unknown abbreviation code \{id}")
   }
-  let e = Entry::new(off, a.tag(), a.children())
+  let e = Entry::{
+    offset: off,
+    tag: a.tag(),
+    children: a.children(),
+    fields: [],
+  }
 
   // Parse all fields according to the abbreviation
   for field_def in a.fields() {
     match parse_field(b, field_def, cu, u) {
-      Some(field) => e.add_field(field)
+      Some(field) => e.fields.push(field)
       None =>
         raise b.error(
           "failed to parse field for attribute \{field_def.attr()} with format \{field_def.format()}",
@@ -104,19 +395,19 @@ fn parse_field_value(
     FormRefAddr => {
       let vers = u.version()
       if vers == 2 {
-        Some(Offset(b.addr().reinterpret_as_int64()))
+        Some(Offset(b.addr().to_uint()))
         // DWARF 3+
       } else if u.is_dwarf64() {
-        Some(Offset(b.uint64().reinterpret_as_int64()))
+        Some(Offset(b.uint64().to_uint()))
       } else {
-        Some(Offset(b.uint32().to_int64()))
+        Some(Offset(b.uint32()))
       }
     }
-    FormRef1 => Some(Offset(b.uint8().to_int64()))
-    FormRef2 => Some(Offset(b.uint16().to_int64()))
-    FormRef4 => Some(Offset(b.uint32().to_int64()))
-    FormRef8 => Some(Offset(b.uint64().reinterpret_as_int64()))
-    FormRefUdata => Some(Offset(b.uint().reinterpret_as_int64()))
+    FormRef1 => Some(Offset(b.uint8()))
+    FormRef2 => Some(Offset(b.uint16()))
+    FormRef4 => Some(Offset(b.uint32()))
+    FormRef8 => Some(Offset(b.uint64().to_uint()))
+    FormRefUdata => Some(Offset(b.uint().to_uint()))
     FormRefSig8 => Some(UInt64(b.uint64()))
     FormRefSup4 => Some(UInt64(b.uint32().to_uint64()))
     FormRefSup8 => Some(UInt64(b.uint64()))
@@ -192,253 +483,10 @@ fn parse_strx(buf : Buf, index : UInt64) -> @slice.Slice[Byte] {
   ...
 }
 
-/// uint_to_format is defined in abbrev.mbt
-
 ///|
-/// Check if buffer has data remaining
-fn Buf::has_data(self : Buf) -> Bool {
-  self.length() > 0
-}
-
-///|
-/// Peek at next entry ID without consuming it
-fn Buf::peek_entry_id(self : Buf) -> UInt? {
-  if self.length() < 1 {
-    return None
-  }
-
-  // This is a simplified peek - real implementation would need
-  // to handle variable-length integers properly
-  Some(self.data[0].to_uint())
-}
-/// DWARF abbreviation table parsing
-/// Ported from Go's debug/dwarf package
-
-///|
-/// Abbreviation table entry - describes how to parse a DWARF entry
-priv struct Abbrev {
-  mut tag : Tag
-  mut children : Bool
-  mut fields : FixedArray[AField]
-}
-
-///|
-impl Default for Abbrev with default() -> Abbrev {
-  Abbrev::{ tag: TagVariable, children: false, fields: [] }
-}
-
-///|
-/// Get the tag
-fn Abbrev::tag(self : Abbrev) -> Tag {
-  self.tag
-}
-
-///|
-/// Check if has children
-fn Abbrev::children(self : Abbrev) -> Bool {
-  self.children
-}
-
-///|
-/// Get fields
-fn Abbrev::fields(self : Abbrev) -> FixedArray[AField] {
-  self.fields
-}
-
-///|
-/// Abbreviation field - describes a single attribute in an entry
-pub struct AField {
-  mut attr : Attr
-  mut format : Format
-  mut class : Class
-  mut val : Int64 // for FormImplicitConst
-} derive(Show)
-
-///|
-impl Default for AField with default() -> AField {
-  AField::{ attr: AttrName, format: FormString, class: ClassUnknown, val: 0L }
-}
-
-///|
-/// Create a new AField
-pub fn AField::new(
-  attr : Attr,
-  format : Format,
-  class : Class,
-  val : Int64,
-) -> AField {
-  { attr, format, class, val }
-}
-
-///|
-/// Get the attribute
-pub fn AField::attr(self : AField) -> Attr {
-  self.attr
-}
-
-///|
-/// Get the format
-pub fn AField::format(self : AField) -> Format {
-  self.format
-}
-
-///|
-/// Get the class
-pub fn AField::class(self : AField) -> Class {
-  self.class
-}
-
-///|
-/// Get the implicit const value
-pub fn AField::val(self : AField) -> Int64 {
-  self.val
-}
-
-///|
-/// Abbreviation table - maps abbreviation codes to abbreviation entries
-typealias Map[UInt, Abbrev] as AbbrevTable
-
-///|
-/// Parse abbreviation table from the .debug_abbrev section
-fn Data::parse_abbrev(d : Data, off : UInt64, vers : Int) -> AbbrevTable raise {
-  // Check cache first
-  if d.abbrev_cache.get(off) is Some(m) {
-    return m
-  }
-  let data = d.abbrev
-  let data = if off > data.length().to_uint64() {
-    @slice.new()
-  } else {
-    data[off.to_int():]
-  }
-  let b = make_buf(Some(d), UnknownFormat::new(), "abbrev", 0, data)
-  let m : AbbrevTable = {}
-  while true {
-    // Table ends with id == 0
-    let id = b.uint().to_uint()
-    if id == 0U {
-      break
-    }
-
-    // Walk over attributes, counting
-    let mut n = 0
-    let b1 = b // Read from copy of b
-    let _ = b1.uint()
-    let _ = b1.uint8()
-    while true {
-      let tag = b1.uint()
-      let fmt = b1.uint()
-      if tag == 0UL && fmt == 0UL {
-        break
-      }
-      if fmt == format_to_uint(FormImplicitConst) {
-        let _ = b1.int()
-
-      }
-      n += 1
-    }
-    if b1.err is Some(err) {
-      raise err
-    }
-
-    // Walk over attributes again, this time writing them down.
-    let a = Abbrev::default()
-    a.tag = match uint_to_tag(b.uint().to_uint()) {
-      Some(t) => t
-      None => TagVariable // default fallback
-    }
-    a.children = b.uint8() != 0U
-    a.fields = FixedArray::make(n, AField::default())
-    for i = 0; i < n; i = i + 1 {
-      a.fields[i].attr = uint_to_attr(b.uint().to_uint()).unwrap_or(AttrName)
-      a.fields[i].format = uint_to_format(b.uint().to_uint()).unwrap_or(
-        FormString,
-      )
-      a.fields[i].class = format_to_class(
-        a.fields[i].format,
-        a.fields[i].attr,
-        vers,
-      )
-      if a.fields[i].format == FormImplicitConst {
-        a.fields[i].val = b.int()
-      }
-    }
-    ignore(b.uint())
-    ignore(b.uint())
-    m[id] = a
-  }
-  if b.err is Some(err) {
-    raise err
-  }
-  d.abbrev_cache[off] = m
-  m
-}
-
-///|
-/// Convert Format to Class based on attribute and DWARF version
-fn format_to_class(format : Format, attr : Attr, vers : Int) -> Class {
-  match format {
-    FormAddr | FormAddrx | FormAddrx1 | FormAddrx2 | FormAddrx3 | FormAddrx4 =>
-      ClassAddress
-    FormDwarfBlock1 | FormDwarfBlock2 | FormDwarfBlock4 | FormDwarfBlock =>
-      // Check if this should be ClassExprLoc based on attribute
-      if is_exprloc_attr(attr) {
-        ClassExprLoc
-      } else {
-        ClassBlock
-      }
-    FormData1
-    | FormData2
-    | FormData4
-    | FormData8
-    | FormSdata
-    | FormUdata
-    | FormData16
-    | FormImplicitConst =>
-      // Check if this should be a pointer class for older DWARF versions
-      if vers < 4 {
-        match get_ptr_class(attr) {
-          Some(class) => class
-          None => ClassConstant
-        }
-      } else {
-        ClassConstant
-      }
-    FormFlag | FormFlagPresent => ClassFlag
-    FormRefAddr
-    | FormRef1
-    | FormRef2
-    | FormRef4
-    | FormRef8
-    | FormRefUdata
-    | FormRefSup4
-    | FormRefSup8 => ClassReference
-    FormRefSig8 => ClassReferenceSig
-    FormString
-    | FormStrp
-    | FormStrx
-    | FormStrpSup
-    | FormLineStrp
-    | FormStrx1
-    | FormStrx2
-    | FormStrx3
-    | FormStrx4 => ClassString
-    FormSecOffset =>
-      match get_ptr_class(attr) {
-        Some(class) => class
-        None => ClassUnknown
-      }
-    FormExprloc => ClassExprLoc
-    FormGnuRefAlt => ClassReference
-    FormGnuStrpAlt => ClassString
-    FormLoclistx => ClassLocListPtr
-    FormRnglistx => ClassRangeListPtr
-    _ => ClassUnknown
-  }
-}
-
-///|
-/// Check if an attribute allows expression location values
+/// attrIsExprloc indicates attributes that allow exprloc values that
+/// are encoded as block values in DWARF 2 and 3. See DWARF 4, Figure
+/// 20.
 fn is_exprloc_attr(attr : Attr) -> Bool {
   match attr {
     AttrLocation
@@ -467,7 +515,7 @@ fn is_exprloc_attr(attr : Attr) -> Bool {
 
 ///|
 /// Get pointer class for specific attributes
-fn get_ptr_class(attr : Attr) -> Class? {
+fn attr_ptr_class(attr : Attr) -> Class? {
   match attr {
     AttrLocation => Some(ClassLocListPtr)
     AttrStmtList => Some(ClassLinePtr)
@@ -487,6 +535,69 @@ fn get_ptr_class(attr : Attr) -> Class? {
     AttrRnglistsBase => Some(ClassConstant)
     AttrLoclistsBase => Some(ClassLocListPtr)
     _ => None
+  }
+}
+
+///|
+/// Convert Format to Class based on attribute and DWARF version
+fn format_to_class(format : Format, attr : Attr, vers : Int) -> Class {
+  match format {
+    FormAddr | FormAddrx | FormAddrx1 | FormAddrx2 | FormAddrx3 | FormAddrx4 =>
+      ClassAddress
+    FormDwarfBlock1 | FormDwarfBlock2 | FormDwarfBlock4 | FormDwarfBlock =>
+      // Check if this should be ClassExprLoc based on attribute
+      if is_exprloc_attr(attr) {
+        ClassExprLoc
+      } else {
+        ClassBlock
+      }
+    FormData1
+    | FormData2
+    | FormData4
+    | FormData8
+    | FormSdata
+    | FormUdata
+    | FormData16
+    | FormImplicitConst =>
+      // Check if this should be a pointer class for older DWARF versions
+      if vers < 4 {
+        match attr_ptr_class(attr) {
+          Some(class) => class
+          None => ClassConstant
+        }
+      } else {
+        ClassConstant
+      }
+    FormFlag | FormFlagPresent => ClassFlag
+    FormRefAddr
+    | FormRef1
+    | FormRef2
+    | FormRef4
+    | FormRef8
+    | FormRefUdata
+    | FormRefSup4
+    | FormRefSup8 => ClassReference
+    FormRefSig8 => ClassReferenceSig
+    FormString
+    | FormStrp
+    | FormStrx
+    | FormStrpSup
+    | FormLineStrp
+    | FormStrx1
+    | FormStrx2
+    | FormStrx3
+    | FormStrx4 => ClassString
+    FormSecOffset =>
+      match attr_ptr_class(attr) {
+        Some(class) => class
+        None => ClassUnknown
+      }
+    FormExprloc => ClassExprLoc
+    FormGnuRefAlt => ClassReference
+    FormGnuStrpAlt => ClassString
+    FormLoclistx => ClassLocListPtr
+    FormRnglistx => ClassRangeListPtr
+    _ => ClassUnknown
   }
 }
 
@@ -580,8 +691,27 @@ struct Reader {
 ///|
 /// Create a new Reader for this Data.
 /// The reader is positioned at byte offset 0 in the DWARF "info" section.
-pub fn Data::reader(self : Data) -> Reader {
-  ...
+pub fn Data::reader(self : Data) -> Reader raise {
+  let r = Reader::{
+    b: Buf::{
+      dwarf: None,
+      order: LittleEndian,
+      format: UnknownFormat::new(),
+      name: "",
+      off: 0,
+      data: @slice.new(),
+      err: None,
+    },
+    d: self,
+    err: None,
+    unit: 0,
+    last_unit: false,
+    last_children: false,
+    last_sibling: 0,
+    cu: None,
+  }
+  r.seek(0)
+  return r
 }
 
 ///|
@@ -602,37 +732,38 @@ priv suberror OffsetOutOfRange
 ///|
 /// Seek positions the Reader at offset off in the encoded entry stream.
 /// Offset 0 can be used to denote the first entry.
-pub fn Reader::seek(self : Reader, off : Offset) -> @unit.T {
-  let d = self.d
-  self.err = None
-  self.last_children = false
-  if off == 0L {
-    if self.d.unit.length() == 0 {
+pub fn Reader::seek(r : Reader, off : Offset) -> @unit.T raise {
+  let d = r.d
+  r.err = None
+  r.last_children = false
+  if off == 0 {
+    if r.d.unit.length() == 0 {
       return
     }
-    let u = self.d.unit[0]
-    self.unit = 0
-    self.b = make_buf(Some(self.d), u, "info", off, u.data)
-    self.cu = None
+    let u = r.d.unit[0]
+    r.unit = 0
+    r.b = make_buf(Some(r.d), u, "info", off, u.data)
+    r.cu = None
     return
   }
-  let i = self.offset_to_unit(off)
+  let i = r.offset_to_unit(off)
   if i == -1 {
-    self.err = Some(OffsetOutOfRange)
+    r.err = Some(OffsetOutOfRange)
     return
   }
-  if i != self.unit {
-    self.cu = None
+  if i != r.unit {
+    r.cu = None
   }
   let u = d.unit[i]
-  self.unit = i
-  self.b = make_buf(
-    Some(self.d),
+  r.unit = i
+  r.b = make_buf(
+    Some(r.d),
     u,
     "info",
     off,
-    u.data[off.to_int() - u.off.to_int():],
+    u.data[off.reinterpret_as_int() - u.off.reinterpret_as_int():],
   )
+  r.collect_dwarf5_base_offsets(u)
 }
 
 ///|
@@ -655,7 +786,7 @@ fn Reader::next_unit(self : Reader) -> @unit.T {
     Some(self.d),
     UnknownFormat::new(),
     "info",
-    0L, // Unit's data starts at its offset
+    0, // Unit's data starts at its offset
     u.data,
   )
   self.cu = None
@@ -691,7 +822,7 @@ pub fn Reader::next(r : Reader) -> Entry? raise {
     if r.last_children {
       r.last_sibling = match e.val(AttrSibling) {
         Some(Offset(off)) => off
-        _ => 0L
+        _ => 0
       }
     }
     if e.tag == TagCompileUnit || e.tag == TagPartialUnit {
@@ -734,7 +865,7 @@ pub fn Reader::skip_children(self : Reader) -> @unit.T raise {
     match self.next() {
       None => break
       Some(e) => {
-        if e.tag == TagVariable && e.offset() == 0L {
+        if e.tag == TagVariable && e.offset == 0 {
           // This is our null entry marker
           break
         }
@@ -753,7 +884,7 @@ fn Reader::offset_to_unit(self : Reader, off : Offset) -> Int {
   // Real implementation would need proper unit offset tracking
   for i = 0; i < self.d.unit.length(); i = i + 1 {
     let u = self.d.unit[i]
-    if u.base <= off && off < u.base + u.data.length().to_int64() {
+    if u.base <= off && off < u.base + u.data.length().reinterpret_as_uint() {
       return i
     }
   }
@@ -762,7 +893,7 @@ fn Reader::offset_to_unit(self : Reader, off : Offset) -> Int {
 
 ///|
 /// Create a clone of this reader
-fn Reader::clone(r : Reader) -> Reader {
+fn Reader::clone(r : Reader) -> Reader raise {
   r.d.reader()
 }
 

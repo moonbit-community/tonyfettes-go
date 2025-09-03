@@ -261,7 +261,7 @@ pub fn Attr::to_uint(self : Attr) -> UInt {
 
 ///|
 /// Convert UInt to Format  
-pub fn Format::from_uint(val : UInt) -> Format? {
+fn Format::from_uint(val : UInt) -> Format? {
   match val {
     0x01U => Some(FormAddr)
     0x03U => Some(FormDwarfBlock2)
@@ -519,8 +519,8 @@ pub fn Attr::from_uint(val : UInt) -> Attr? {
 }
 
 ///|
-/// DWARF data encoding format
-pub enum Format {
+/// A format is a DWARF data encoding format.
+priv enum Format {
   // Value formats
   FormAddr
   FormDwarfBlock2
@@ -647,462 +647,464 @@ pub enum Tag {
   TagCallSiteParameter
   TagSkeletonUnit
   TagImmutableType
+  Tag(UInt)
 } derive(Show, Eq)
 
 ///|
 /// Convert Tag to its corresponding UInt value
 pub fn Tag::to_uint(self : Tag) -> UInt {
   match self {
-    TagArrayType => 0x01U
-    TagClassType => 0x02U
-    TagEntryPoint => 0x03U
-    TagEnumerationType => 0x04U
-    TagFormalParameter => 0x05U
-    TagImportedDeclaration => 0x08U
-    TagLabel => 0x0AU
-    TagLexDwarfBlock => 0x0BU
-    TagMember => 0x0DU
-    TagPointerType => 0x0FU
-    TagReferenceType => 0x10U
-    TagCompileUnit => 0x11U
-    TagStringType => 0x12U
-    TagStructType => 0x13U
-    TagSubroutineType => 0x15U
-    TagTypedef => 0x16U
-    TagUnionType => 0x17U
-    TagUnspecifiedParameters => 0x18U
-    TagVariant => 0x19U
-    TagCommonDwarfBlock => 0x1AU
-    TagCommonInclusion => 0x1BU
-    TagInheritance => 0x1CU
-    TagInlinedSubroutine => 0x1DU
-    TagModule => 0x1EU
-    TagPtrToMemberType => 0x1FU
-    TagSetType => 0x20U
-    TagSubrangeType => 0x21U
-    TagWithStmt => 0x22U
-    TagAccessDeclaration => 0x23U
-    TagBaseType => 0x24U
-    TagCatchDwarfBlock => 0x25U
-    TagConstType => 0x26U
-    TagConstant => 0x27U
-    TagEnumerator => 0x28U
-    TagFileType => 0x29U
-    TagFriend => 0x2AU
-    TagNamelist => 0x2BU
-    TagNamelistItem => 0x2CU
-    TagPackedType => 0x2DU
-    TagSubprogram => 0x2EU
-    TagTemplateTypeParameter => 0x2FU
-    TagTemplateValueParameter => 0x30U
-    TagThrownType => 0x31U
-    TagTryDwarfBlock => 0x32U
-    TagVariantPart => 0x33U
-    TagVariable => 0x34U
-    TagVolatileType => 0x35U
-    TagDwarfProcedure => 0x36U
-    TagRestrictType => 0x37U
-    TagInterfaceType => 0x38U
-    TagNamespace => 0x39U
-    TagImportedModule => 0x3AU
-    TagUnspecifiedType => 0x3BU
-    TagPartialUnit => 0x3CU
-    TagImportedUnit => 0x3DU
-    TagMutableType => 0x3EU
-    TagCondition => 0x3FU
-    TagSharedType => 0x40U
-    TagTypeUnit => 0x41U
-    TagRvalueReferenceType => 0x42U
-    TagTemplateAlias => 0x43U
-    TagCoarrayType => 0x44U
-    TagGenericSubrange => 0x45U
-    TagDynamicType => 0x46U
-    TagAtomicType => 0x47U
-    TagCallSite => 0x48U
-    TagCallSiteParameter => 0x49U
-    TagSkeletonUnit => 0x4AU
-    TagImmutableType => 0x4BU
+    TagArrayType => 0x01
+    TagClassType => 0x02
+    TagEntryPoint => 0x03
+    TagEnumerationType => 0x04
+    TagFormalParameter => 0x05
+    TagImportedDeclaration => 0x08
+    TagLabel => 0x0A
+    TagLexDwarfBlock => 0x0B
+    TagMember => 0x0D
+    TagPointerType => 0x0F
+    TagReferenceType => 0x10
+    TagCompileUnit => 0x11
+    TagStringType => 0x12
+    TagStructType => 0x13
+    TagSubroutineType => 0x15
+    TagTypedef => 0x16
+    TagUnionType => 0x17
+    TagUnspecifiedParameters => 0x18
+    TagVariant => 0x19
+    TagCommonDwarfBlock => 0x1A
+    TagCommonInclusion => 0x1B
+    TagInheritance => 0x1C
+    TagInlinedSubroutine => 0x1D
+    TagModule => 0x1E
+    TagPtrToMemberType => 0x1F
+    TagSetType => 0x20
+    TagSubrangeType => 0x21
+    TagWithStmt => 0x22
+    TagAccessDeclaration => 0x23
+    TagBaseType => 0x24
+    TagCatchDwarfBlock => 0x25
+    TagConstType => 0x26
+    TagConstant => 0x27
+    TagEnumerator => 0x28
+    TagFileType => 0x29
+    TagFriend => 0x2A
+    TagNamelist => 0x2B
+    TagNamelistItem => 0x2C
+    TagPackedType => 0x2D
+    TagSubprogram => 0x2E
+    TagTemplateTypeParameter => 0x2F
+    TagTemplateValueParameter => 0x30
+    TagThrownType => 0x31
+    TagTryDwarfBlock => 0x32
+    TagVariantPart => 0x33
+    TagVariable => 0x34
+    TagVolatileType => 0x35
+    TagDwarfProcedure => 0x36
+    TagRestrictType => 0x37
+    TagInterfaceType => 0x38
+    TagNamespace => 0x39
+    TagImportedModule => 0x3A
+    TagUnspecifiedType => 0x3B
+    TagPartialUnit => 0x3C
+    TagImportedUnit => 0x3D
+    TagMutableType => 0x3E
+    TagCondition => 0x3F
+    TagSharedType => 0x40
+    TagTypeUnit => 0x41
+    TagRvalueReferenceType => 0x42
+    TagTemplateAlias => 0x43
+    TagCoarrayType => 0x44
+    TagGenericSubrange => 0x45
+    TagDynamicType => 0x46
+    TagAtomicType => 0x47
+    TagCallSite => 0x48
+    TagCallSiteParameter => 0x49
+    TagSkeletonUnit => 0x4A
+    TagImmutableType => 0x4B
+    Tag(tag) => tag
   }
 }
 
 ///|
 /// Location expression operators
 /// The debug info encodes value locations like 8(R3) as a sequence of these op codes.
-pub let op_addr : UInt = 0x03U
+const OpAddr : UInt = 0x03U
 
 ///|
-pub let op_deref : UInt = 0x06U
+const OpDeref : UInt = 0x06U
 
 ///|
-pub let op_const1u : UInt = 0x08U
+const OpConst1u : UInt = 0x08U
 
 ///|
-pub let op_const1s : UInt = 0x09U
+const OpConst1s : UInt = 0x09U
 
 ///|
-pub let op_const2u : UInt = 0x0AU
+const OpConst2u : UInt = 0x0AU
 
 ///|
-pub let op_const2s : UInt = 0x0BU
+const OpConst2s : UInt = 0x0BU
 
 ///|
-pub let op_const4u : UInt = 0x0CU
+const OpConst4u : UInt = 0x0CU
 
 ///|
-pub let op_const4s : UInt = 0x0DU
+const OpConst4s : UInt = 0x0DU
 
 ///|
-pub let op_const8u : UInt = 0x0EU
+const OpConst8u : UInt = 0x0EU
 
 ///|
-pub let op_const8s : UInt = 0x0FU
+const OpConst8s : UInt = 0x0FU
 
 ///|
-pub let op_constu : UInt = 0x10U
+const OpConstu : UInt = 0x10U
 
 ///|
-pub let op_consts : UInt = 0x11U
+const OpConsts : UInt = 0x11U
 
 ///|
-pub let op_dup : UInt = 0x12U
+const OpDup : UInt = 0x12U
 
 ///|
-pub let op_drop : UInt = 0x13U
+const OpDrop : UInt = 0x13U
 
 ///|
-pub let op_over : UInt = 0x14U
+const OpOver : UInt = 0x14U
 
 ///|
-pub let op_pick : UInt = 0x15U
+const OpPick : UInt = 0x15U
 
 ///|
-pub let op_swap : UInt = 0x16U
+const OpSwap : UInt = 0x16U
 
 ///|
-pub let op_rot : UInt = 0x17U
+const OpRot : UInt = 0x17U
 
 ///|
-pub let op_xderef : UInt = 0x18U
+const OpXderef : UInt = 0x18U
 
 ///|
-pub let op_abs : UInt = 0x19U
+const OpAbs : UInt = 0x19U
 
 ///|
-pub let op_and : UInt = 0x1AU
+const OpAnd : UInt = 0x1AU
 
 ///|
-pub let op_div : UInt = 0x1BU
+const OpDiv : UInt = 0x1BU
 
 ///|
-pub let op_minus : UInt = 0x1CU
+const OpMinus : UInt = 0x1CU
 
 ///|
-pub let op_mod : UInt = 0x1DU
+const OpMod : UInt = 0x1DU
 
 ///|
-pub let op_mul : UInt = 0x1EU
+const OpMul : UInt = 0x1EU
 
 ///|
-pub let op_neg : UInt = 0x1FU
+const OpNeg : UInt = 0x1FU
 
 ///|
-pub let op_not : UInt = 0x20U
+const OpNot : UInt = 0x20U
 
 ///|
-pub let op_or : UInt = 0x21U
+const OpOr : UInt = 0x21U
 
 ///|
-pub let op_plus : UInt = 0x22U
+const OpPlus : UInt = 0x22U
 
 ///|
-pub let op_plus_uconst : UInt = 0x23U
+const OpPlusUconst : UInt = 0x23U
 
 ///|
-pub let op_shl : UInt = 0x24U
+const OpShl : UInt = 0x24U
 
 ///|
-pub let op_shr : UInt = 0x25U
+const OpShr : UInt = 0x25U
 
 ///|
-pub let op_shra : UInt = 0x26U
+const OpShra : UInt = 0x26U
 
 ///|
-pub let op_xor : UInt = 0x27U
+const OpXor : UInt = 0x27U
 
 ///|
-pub let op_skip : UInt = 0x2FU
+const OpSkip : UInt = 0x2FU
 
 ///|
-pub let op_bra : UInt = 0x28U
+const OpBra : UInt = 0x28U
 
 ///|
-pub let op_eq : UInt = 0x29U
+const OpEq : UInt = 0x29U
 
 ///|
-pub let op_ge : UInt = 0x2AU
+const OpGe : UInt = 0x2AU
 
 ///|
-pub let op_gt : UInt = 0x2BU
+const OpGt : UInt = 0x2BU
 
 ///|
-pub let op_le : UInt = 0x2CU
+const OpLe : UInt = 0x2CU
 
 ///|
-pub let op_lt : UInt = 0x2DU
+const OpLt : UInt = 0x2DU
 
 ///|
-pub let op_ne : UInt = 0x2EU
+const OpNe : UInt = 0x2EU
 
 ///|
-pub let op_lit0 : UInt = 0x30U
+const OpLit0 : UInt = 0x30U
 
 ///|
-pub let op_reg0 : UInt = 0x50U
+const OpReg0 : UInt = 0x50U
 
 ///|
-pub let op_breg0 : UInt = 0x70U
+const OpBreg0 : UInt = 0x70U
 
 ///|
-pub let op_regx : UInt = 0x90U
+const OpRegx : UInt = 0x90U
 
 ///|
-pub let op_fbreg : UInt = 0x91U
+const OpFbreg : UInt = 0x91U
 
 ///|
-pub let op_bregx : UInt = 0x92U
+const OpBregx : UInt = 0x92U
 
 ///|
-pub let op_piece : UInt = 0x93U
+const OpPiece : UInt = 0x93U
 
 ///|
-pub let op_deref_size : UInt = 0x94U
+const OpDerefSize : UInt = 0x94U
 
 ///|
-pub let op_xderef_size : UInt = 0x95U
+const OpXderefSize : UInt = 0x95U
 
 ///|
-pub let op_nop : UInt = 0x96U
+const OpNop : UInt = 0x96U
 /// DWARF 3
 
 ///|
-pub let op_push_obj_addr : UInt = 0x97U
+const OpPushObjAddr : UInt = 0x97U
 
 ///|
-pub let op_call2 : UInt = 0x98U
+const OpCall2 : UInt = 0x98U
 
 ///|
-pub let op_call4 : UInt = 0x99U
+const OpCall4 : UInt = 0x99U
 
 ///|
-pub let op_call_ref : UInt = 0x9AU
+const OpCallRef : UInt = 0x9AU
 
 ///|
-pub let op_form_tls_address : UInt = 0x9BU
+const OpFormTlsAddress : UInt = 0x9BU
 
 ///|
-pub let op_call_frame_cfa : UInt = 0x9CU
+const OpCallFrameCfa : UInt = 0x9CU
 
 ///|
-pub let op_bit_piece : UInt = 0x9DU
+const OpBitPiece : UInt = 0x9DU
 /// DWARF 4
 
 ///|
-pub let op_implicit_value : UInt = 0x9EU
+const OpImplicitValue : UInt = 0x9EU
 
 ///|
-pub let op_stack_value : UInt = 0x9FU
+const OpStackValue : UInt = 0x9FU
 /// DWARF 5
 
 ///|
-pub let op_implicit_pointer : UInt = 0xA0U
+const OpImplicitPointer : UInt = 0xA0U
 
 ///|
-pub let op_addrx : UInt = 0xA1U
+const OpAddrx : UInt = 0xA1U
 
 ///|
-pub let op_constx : UInt = 0xA2U
+const OpConstx : UInt = 0xA2U
 
 ///|
-pub let op_entry_value : UInt = 0xA3U
+const OpEntryValue : UInt = 0xA3U
 
 ///|
-pub let op_const_type : UInt = 0xA4U
+const OpConstType : UInt = 0xA4U
 
 ///|
-pub let op_regval_type : UInt = 0xA5U
+const OpRegvalType : UInt = 0xA5U
 
 ///|
-pub let op_deref_type : UInt = 0xA6U
+const OpDerefType : UInt = 0xA6U
 
 ///|
-pub let op_xderef_type : UInt = 0xA7U
+const OpXderefType : UInt = 0xA7U
 
 ///|
-pub let op_convert : UInt = 0xA8U
+const OpConvert : UInt = 0xA8U
 
 ///|
-pub let op_reinterpret : UInt = 0xA9U
+const OpReinterpret : UInt = 0xA9U
 
 ///|
 /// Basic type encodings -- the value for AttrEncoding in a TagBaseType Entry.
-pub let enc_address : UInt = 0x01U
+const EncAddress : UInt = 0x01U
 
 ///|
-pub let enc_boolean : UInt = 0x02U
+const EncBoolean : UInt = 0x02U
 
 ///|
-pub let enc_complex_float : UInt = 0x03U
+const EncComplexFloat : UInt = 0x03U
 
 ///|
-pub let enc_float : UInt = 0x04U
+const EncFloat : UInt = 0x04U
 
 ///|
-pub let enc_signed : UInt = 0x05U
+const EncSigned : UInt = 0x05U
 
 ///|
-pub let enc_signed_char : UInt = 0x06U
+const EncSignedChar : UInt = 0x06U
 
 ///|
-pub let enc_unsigned : UInt = 0x07U
+const EncUnsigned : UInt = 0x07U
 
 ///|
-pub let enc_unsigned_char : UInt = 0x08U
+const EncUnsignedChar : UInt = 0x08U
 /// DWARF 3
 
 ///|
-pub let enc_imaginary_float : UInt = 0x09U
+const EncImaginaryFloat : UInt = 0x09U
 
 ///|
-pub let enc_packed_decimal : UInt = 0x0AU
+const EncPackedDecimal : UInt = 0x0AU
 
 ///|
-pub let enc_numeric_string : UInt = 0x0BU
+const EncNumericString : UInt = 0x0BU
 
 ///|
-pub let enc_edited : UInt = 0x0CU
+const EncEdited : UInt = 0x0CU
 
 ///|
-pub let enc_signed_fixed : UInt = 0x0DU
+const EncSignedFixed : UInt = 0x0DU
 
 ///|
-pub let enc_unsigned_fixed : UInt = 0x0EU
+const EncUnsignedFixed : UInt = 0x0EU
 
 ///|
-pub let enc_decimal_float : UInt = 0x0FU
+const EncDecimalFloat : UInt = 0x0FU
 /// DWARF 4
 
 ///|
-pub let enc_utf : UInt = 0x10U
+const EncUtf : UInt = 0x10U
 /// DWARF 5
 
 ///|
-pub let enc_ucs : UInt = 0x11U
+const EncUcs : UInt = 0x11U
 
 ///|
-pub let enc_ascii : UInt = 0x12U
+const EncAscii : UInt = 0x12U
 
 ///|
 /// Statement program standard opcode encodings.
-pub let lns_copy : UInt = 1U
+const LnsCopy : UInt = 1U
 
 ///|
-pub let lns_advance_pc : UInt = 2U
+const LnsAdvancePc : UInt = 2U
 
 ///|
-pub let lns_advance_line : UInt = 3U
+const LnsAdvanceLine : UInt = 3U
 
 ///|
-pub let lns_set_file : UInt = 4U
+const LnsSetFile : UInt = 4U
 
 ///|
-pub let lns_set_column : UInt = 5U
+const LnsSetColumn : UInt = 5U
 
 ///|
-pub let lns_negate_stmt : UInt = 6U
+const LnsNegateStmt : UInt = 6U
 
 ///|
-pub let lns_set_basic_block : UInt = 7U
+const LnsSetBasicBlock : UInt = 7U
 
 ///|
-pub let lns_const_add_pc : UInt = 8U
+const LnsConstAddPc : UInt = 8U
 
 ///|
-pub let lns_fixed_advance_pc : UInt = 9U
+const LnsFixedAdvancePc : UInt = 9U
 /// DWARF 3
 
 ///|
-pub let lns_set_prologue_end : UInt = 10U
+const LnsSetPrologueEnd : UInt = 10U
 
 ///|
-pub let lns_set_epilogue_begin : UInt = 11U
+const LnsSetEpilogueBegin : UInt = 11U
 
 ///|
-pub let lns_set_isa : UInt = 12U
+const LnsSetISA : UInt = 12U
 
 ///|
 /// Statement program extended opcode encodings.
-pub let lne_end_sequence : UInt = 1U
+const LneEndSequence : UInt = 1U
 
 ///|
-pub let lne_set_address : UInt = 2U
+const LneSetAddress : UInt = 2U
 
 ///|
-pub let lne_define_file : UInt = 3U
+const LneDefineFile : UInt = 3U
 /// DWARF 4
 
 ///|
-pub let lne_set_discriminator : UInt = 4U
+const LneSetDiscriminator : UInt = 4U
 
 ///|
 /// Line table directory and file name entry formats.
 /// These are new in DWARF 5.
-pub let lnct_path : UInt = 0x01U
+const LnctPath : UInt = 0x01U
 
 ///|
-pub let lnct_directory_index : UInt = 0x02U
+const LnctDirectoryIndex : UInt = 0x02U
 
 ///|
-pub let lnct_timestamp : UInt = 0x03U
+const LnctTimestamp : UInt = 0x03U
 
 ///|
-pub let lnct_size : UInt = 0x04U
+const LnctSize : UInt = 0x04U
 
 ///|
-pub let lnct_md5 : UInt = 0x05U
+const LnctMD5 : UInt = 0x05U
 
 ///|
 /// Location list entry codes.
 /// These are new in DWARF 5.
-pub let lle_end_of_list : UInt = 0x00U
+const LleEndOfList : UInt = 0x00U
 
 ///|
-pub let lle_base_addressx : UInt = 0x01U
+const LleBaseAddressx : UInt = 0x01U
 
 ///|
-pub let lle_startx_endx : UInt = 0x02U
+const LleStartxEndx : UInt = 0x02U
 
 ///|
-pub let lle_startx_length : UInt = 0x03U
+const LleStartxLength : UInt = 0x03U
 
 ///|
-pub let lle_offset_pair : UInt = 0x04U
+const LleOffsetPair : UInt = 0x04U
 
 ///|
-pub let lle_default_location : UInt = 0x05U
+const LleDefaultLocation : UInt = 0x05U
 
 ///|
-pub let lle_base_address : UInt = 0x06U
+const LleBaseAddress : UInt = 0x06U
 
 ///|
-pub let lle_start_end : UInt = 0x07U
+const LleStartEnd : UInt = 0x07U
 
 ///|
-pub let lle_start_length : UInt = 0x08U
+const LleStartLength : UInt = 0x08U
 
 ///|
 /// Unit header unit type encodings.
 /// These are new in DWARF 5.
-const Utcompile : UInt = 0x01U
+const UtCompile : UInt = 0x01U
 
 ///|
 const UtType : UInt = 0x02U
@@ -1121,25 +1123,25 @@ const UtSplitType : UInt = 0x06U
 
 ///|
 /// Opcodes for DWARFv5 debug_rnglists section.
-pub let rle_end_of_list : UInt = 0x0U
+const RleEndOfList : UInt = 0x0U
 
 ///|
-pub let rle_base_addressx : UInt = 0x1U
+const RleBaseAddressx : UInt = 0x1U
 
 ///|
-pub let rle_startx_endx : UInt = 0x2U
+const RleStartxEndx : UInt = 0x2U
 
 ///|
-pub let rle_startx_length : UInt = 0x3U
+const RleStartxLength : UInt = 0x3U
 
 ///|
-pub let rle_offset_pair : UInt = 0x4U
+const RleOffsetPair : UInt = 0x4U
 
 ///|
-pub let rle_base_address : UInt = 0x5U
+const RleBaseAddress : UInt = 0x5U
 
 ///|
-pub let rle_start_end : UInt = 0x6U
+const RleStartEnd : UInt = 0x6U
 
 ///|
-pub let rle_start_length : UInt = 0x7U
+const RleStartLength : UInt = 0x7U

@@ -6,281 +6,15 @@ import(
 )
 
 // Values
-let enc_address : UInt
-
-let enc_ascii : UInt
-
-let enc_boolean : UInt
-
-let enc_complex_float : UInt
-
-let enc_decimal_float : UInt
-
-let enc_edited : UInt
-
-let enc_float : UInt
-
-let enc_imaginary_float : UInt
-
-let enc_numeric_string : UInt
-
-let enc_packed_decimal : UInt
-
-let enc_signed : UInt
-
-let enc_signed_char : UInt
-
-let enc_signed_fixed : UInt
-
-let enc_ucs : UInt
-
-let enc_unsigned : UInt
-
-let enc_unsigned_char : UInt
-
-let enc_unsigned_fixed : UInt
-
-let enc_utf : UInt
-
-let lle_base_address : UInt
-
-let lle_base_addressx : UInt
-
-let lle_default_location : UInt
-
-let lle_end_of_list : UInt
-
-let lle_offset_pair : UInt
-
-let lle_start_end : UInt
-
-let lle_start_length : UInt
-
-let lle_startx_endx : UInt
-
-let lle_startx_length : UInt
-
-let lnct_directory_index : UInt
-
-let lnct_md5 : UInt
-
-let lnct_path : UInt
-
-let lnct_size : UInt
-
-let lnct_timestamp : UInt
-
-let lne_define_file : UInt
-
-let lne_end_sequence : UInt
-
-let lne_set_address : UInt
-
-let lne_set_discriminator : UInt
-
-let lns_advance_line : UInt
-
-let lns_advance_pc : UInt
-
-let lns_const_add_pc : UInt
-
-let lns_copy : UInt
-
-let lns_fixed_advance_pc : UInt
-
-let lns_negate_stmt : UInt
-
-let lns_set_basic_block : UInt
-
-let lns_set_column : UInt
-
-let lns_set_epilogue_begin : UInt
-
-let lns_set_file : UInt
-
-let lns_set_isa : UInt
-
-let lns_set_prologue_end : UInt
-
-let op_abs : UInt
-
-let op_addr : UInt
-
-let op_addrx : UInt
-
-let op_and : UInt
-
-let op_bit_piece : UInt
-
-let op_bra : UInt
-
-let op_breg0 : UInt
-
-let op_bregx : UInt
-
-let op_call2 : UInt
-
-let op_call4 : UInt
-
-let op_call_frame_cfa : UInt
-
-let op_call_ref : UInt
-
-let op_const1s : UInt
-
-let op_const1u : UInt
-
-let op_const2s : UInt
-
-let op_const2u : UInt
-
-let op_const4s : UInt
-
-let op_const4u : UInt
-
-let op_const8s : UInt
-
-let op_const8u : UInt
-
-let op_const_type : UInt
-
-let op_consts : UInt
-
-let op_constu : UInt
-
-let op_constx : UInt
-
-let op_convert : UInt
-
-let op_deref : UInt
-
-let op_deref_size : UInt
-
-let op_deref_type : UInt
-
-let op_div : UInt
-
-let op_drop : UInt
-
-let op_dup : UInt
-
-let op_entry_value : UInt
-
-let op_eq : UInt
-
-let op_fbreg : UInt
-
-let op_form_tls_address : UInt
-
-let op_ge : UInt
-
-let op_gt : UInt
-
-let op_implicit_pointer : UInt
-
-let op_implicit_value : UInt
-
-let op_le : UInt
-
-let op_lit0 : UInt
-
-let op_lt : UInt
-
-let op_minus : UInt
-
-let op_mod : UInt
-
-let op_mul : UInt
-
-let op_ne : UInt
-
-let op_neg : UInt
-
-let op_nop : UInt
-
-let op_not : UInt
-
-let op_or : UInt
-
-let op_over : UInt
-
-let op_pick : UInt
-
-let op_piece : UInt
-
-let op_plus : UInt
-
-let op_plus_uconst : UInt
-
-let op_push_obj_addr : UInt
-
-let op_reg0 : UInt
-
-let op_regval_type : UInt
-
-let op_regx : UInt
-
-let op_reinterpret : UInt
-
-let op_rot : UInt
-
-let op_shl : UInt
-
-let op_shr : UInt
-
-let op_shra : UInt
-
-let op_skip : UInt
-
-let op_stack_value : UInt
-
-let op_swap : UInt
-
-let op_xderef : UInt
-
-let op_xderef_size : UInt
-
-let op_xderef_type : UInt
-
-let op_xor : UInt
-
-let rle_base_address : UInt
-
-let rle_base_addressx : UInt
-
-let rle_end_of_list : UInt
-
-let rle_offset_pair : UInt
-
-let rle_start_end : UInt
-
-let rle_start_length : UInt
-
-let rle_startx_endx : UInt
-
-let rle_startx_length : UInt
 
 // Errors
 pub suberror DecodeError {
-  DecodeError(name~ : String, offset~ : Int64, String)
+  DecodeError(name~ : String, offset~ : UInt, String)
 }
-fn DecodeError::new(name~ : String, offset~ : Int64, String) -> Self
+fn DecodeError::new(name~ : String, offset~ : UInt, String) -> Self
 impl Show for DecodeError
 
 // Types and methods
-pub struct AField {
-  mut attr : Attr
-  mut format : Format
-  mut class : Class
-  mut val : Int64
-}
-fn AField::attr(Self) -> Attr
-fn AField::class(Self) -> Class
-fn AField::format(Self) -> Format
-fn AField::new(Attr, Format, Class, Int64) -> Self
-fn AField::val(Self) -> Int64
-impl Show for AField
-
 pub struct AddrType(BasicType)
 fn AddrType::inner(Self) -> BasicType
 
@@ -444,19 +178,26 @@ pub struct CharType(BasicType)
 fn CharType::inner(Self) -> BasicType
 
 pub enum Class {
+  ClassUnknown
   ClassAddress
   ClassBlock
   ClassConstant
-  ClassFlag
-  ClassReference
-  ClassReferenceSig
-  ClassString
   ClassExprLoc
+  ClassFlag
   ClassLinePtr
   ClassLocListPtr
   ClassMacPtr
   ClassRangeListPtr
-  ClassUnknown
+  ClassReference
+  ClassReferenceSig
+  ClassString
+  ClassReferenceAlt
+  ClassStringAlt
+  ClassAddrPtr
+  ClassLocList
+  ClassRngList
+  ClassRngListsPtr
+  ClassStrOffsetsPtr
 }
 impl Eq for Class
 impl Show for Class
@@ -475,20 +216,17 @@ type Data
 fn Data::add_section_simple(Self, Bytes, @slice.Slice[Byte]) -> Bool
 fn Data::get_section(Self, Bytes) -> @slice.Slice[Byte]
 fn Data::is_big_endian(Self) -> Bool
-fn Data::reader(Self) -> Reader
-fn Data::type_(Self, Int64) -> &Type raise
+fn Data::reader(Self) -> Reader raise
+fn Data::type_(Self, UInt) -> &Type raise
 
 pub struct Entry {
-  offset : Int64
+  offset : UInt
   tag : Tag
   children : Bool
   fields : Array[Field]
 }
-fn Entry::add_field(Self, Field) -> Unit
 fn Entry::attr_field(Self, Attr) -> Field?
-fn Entry::fields(Self) -> Array[Field]
-fn Entry::new(Int64, Tag, Bool) -> Self
-fn Entry::offset(Self) -> Int64
+fn Entry::new(UInt, Tag, Bool) -> Self
 fn Entry::val(Self, Attr) -> FieldValue?
 impl Show for Entry
 
@@ -511,75 +249,21 @@ pub struct Field {
   val : FieldValue
   class : Class
 }
-fn Field::attr(Self) -> Attr
-fn Field::class(Self) -> Class
 fn Field::new(Attr, FieldValue, Class) -> Self
-fn Field::val(Self) -> FieldValue
 impl Show for Field
 
 pub enum FieldValue {
-  VUInt64(UInt64)
-  VBytes(@slice.Slice[Byte])
-  VBool(Bool)
-  VInt64(Int64)
-  VString(@slice.Slice[Byte])
-  VOffset(Int64)
+  UInt64(UInt64)
+  Bytes(@slice.Slice[Byte])
+  Bool(Bool)
+  Int64(Int64)
+  String(@slice.Slice[Byte])
+  Offset(UInt)
 }
 impl Show for FieldValue
 
 pub struct FloatType(BasicType)
 fn FloatType::inner(Self) -> BasicType
-
-pub enum Format {
-  FormAddr
-  FormDwarfBlock2
-  FormDwarfBlock4
-  FormData2
-  FormData4
-  FormData8
-  FormString
-  FormDwarfBlock
-  FormDwarfBlock1
-  FormData1
-  FormFlag
-  FormSdata
-  FormStrp
-  FormUdata
-  FormRefAddr
-  FormRef1
-  FormRef2
-  FormRef4
-  FormRef8
-  FormRefUdata
-  FormIndirect
-  FormSecOffset
-  FormExprloc
-  FormFlagPresent
-  FormRefSig8
-  FormStrx
-  FormAddrx
-  FormRefSup4
-  FormStrpSup
-  FormData16
-  FormLineStrp
-  FormImplicitConst
-  FormLoclistx
-  FormRnglistx
-  FormRefSup8
-  FormStrx1
-  FormStrx2
-  FormStrx3
-  FormStrx4
-  FormAddrx1
-  FormAddrx2
-  FormAddrx3
-  FormAddrx4
-  FormGnuRefAlt
-  FormGnuStrpAlt
-}
-fn Format::from_uint(UInt) -> Self?
-impl Eq for Format
-impl Show for Format
 
 pub struct FuncType {
   common : CommonType
@@ -608,23 +292,9 @@ type Reader
 fn Reader::address_size(Self) -> Int
 fn Reader::byte_order(Self) -> ByteOrder
 fn Reader::next(Self) -> Entry? raise
-fn Reader::offset(Self) -> Int64
-fn Reader::seek(Self, Int64) -> Unit
+fn Reader::offset(Self) -> UInt
+fn Reader::seek(Self, UInt) -> Unit raise
 fn Reader::skip_children(Self) -> Unit raise
-
-pub struct SimpleUnit {
-  base : Int64
-  off : Int64
-  data : Bytes
-  asize : Int
-  vers : Int
-  is64 : Bool
-}
-fn SimpleUnit::addrsize(Self) -> Int
-fn SimpleUnit::is_dwarf64(Self) -> Bool
-fn SimpleUnit::new(Int64, Int64, Bytes, Int, Int, Bool) -> Self
-fn SimpleUnit::version(Self) -> Int
-impl Show for SimpleUnit
 
 pub(all) struct StructField {
   name : String
@@ -716,6 +386,7 @@ pub enum Tag {
   TagCallSiteParameter
   TagSkeletonUnit
   TagImmutableType
+  Tag(UInt)
 }
 fn Tag::from_uint(UInt) -> Self?
 fn Tag::to_uint(Self) -> UInt
@@ -767,7 +438,7 @@ fn VoidType::inner(Self) -> CommonType
 impl Type for VoidType
 
 // Type aliases
-pub typealias Int64 as Offset
+pub typealias UInt as Offset
 
 // Traits
 pub(open) trait Type {

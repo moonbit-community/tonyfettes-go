@@ -17,7 +17,7 @@ priv struct Unit {
 
 ///|
 impl Default for Unit with default() -> Unit {
-  Unit::new(0L, 0L, @slice.new(), AbbrevTable::new(), 0, 0, false, 0U)
+  Unit::new(0, 0, @slice.new(), AbbrevTable::new(), 0, 0, false, 0U)
 }
 
 ///|
@@ -148,14 +148,14 @@ impl DataFormat for Unit with addrsize(self) {
 fn Data::parse_units(d : Data) -> FixedArray[Unit] raise {
   // Count units first
   let mut nunit = 0
-  let mut b = make_buf(Some(d), UnknownFormat::new(), "info", 0L, d.info)
+  let mut b = make_buf(Some(d), UnknownFormat::new(), "info", 0, d.info)
   while b.length() > 0 {
     let (len, _) = b.unit_length()
-    if len < 0L {
+    if len < 0 {
       raise b.error("unit length overflow")
     }
     b.skip(len.to_int())
-    if len > 0L {
+    if len > 0 {
       nunit += 1
     }
   }
@@ -164,7 +164,7 @@ fn Data::parse_units(d : Data) -> FixedArray[Unit] raise {
   }
 
   // Again, this time writing them down.
-  b = make_buf(Some(d), UnknownFormat::new(), "info", 0L, d.info)
+  b = make_buf(Some(d), UnknownFormat::new(), "info", 0, d.info)
   let units = FixedArray::makei(nunit, _ => Unit::default())
   for i in 0..<nunit {
     let u = units[i]

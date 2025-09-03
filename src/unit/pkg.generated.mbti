@@ -1,0 +1,14 @@
+// Generated using `moon info`, DON'T EDIT IT
+package "tonyfettes/go/unit"
+
+// Values
+
+// Errors
+
+// Types and methods
+
+// Type aliases
+pub typealias Unit as T
+
+// Traits
+

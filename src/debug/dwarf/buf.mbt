@@ -120,7 +120,7 @@ fn Buf::bytes(self : Buf, n : Int) -> @slice.Slice[Byte] raise {
   }
   let data = self.data[:n]
   self.data = self.data[n:]
-  self.off += n.to_int64()
+  self.off += n.reinterpret_as_uint()
   data
 }
 
@@ -139,7 +139,7 @@ fn Buf::string(self : Buf) -> @slice.Slice[Byte] raise {
   }
   let s = self.data[:i]
   self.data = self.data[i + 1:]
-  self.off += (i + 1).to_int64()
+  self.off += (i + 1).reinterpret_as_uint()
   s
 }
 
@@ -234,7 +234,7 @@ fn Buf::varint(self : Buf) -> (UInt64, UInt) {
     c = c | ((byte.to_uint64() & 0x7FUL) << bits.reinterpret_as_int())
     bits = bits + 7U
     if (byte.to_uint() & 0x80U) == 0U {
-      self.off = self.off + Int64::from_int(i + 1)
+      self.off += (i + 1).reinterpret_as_uint()
       self.data = self.data[i + 1:]
       return (c, bits)
     }
@@ -286,7 +286,7 @@ fn Buf::unit_length(self : Buf) -> (Offset, Bool) raise {
   } else if length >= 0xfffffff0L {
     ignore(self.error("unit length has reserved value"))
   }
-  (length, dwarf64)
+  (length.to_int().reinterpret_as_uint(), dwarf64)
 }
 
 ///|
