@@ -1,16 +1,19 @@
-/// DWARF compilation unit parsing and management
-/// Ported from Go's debug/dwarf package
+/// Copyright 2009 The Go Authors. All rights reserved.
+/// Use of this source code is governed by a BSD-style
+/// license that can be found in the LICENSE file.
+
+/// DWARF debug info is split into a sequence of compilation units.
+/// Each unit has its own abbreviation table and address size.
 
 ///|
-/// Full compilation unit structure with all DWARF features
 priv struct Unit {
   mut base : Offset // byte offset of header within the aggregate info
   mut off : Offset // byte offset of data within the aggregate info
   mut data : @slice.Slice[Byte]
   mut atable : AbbrevTable
   mut unit5 : Unit5? // info specific to DWARF 5 units
-  mut asize : Int // address size
-  mut vers : Int // DWARF version
+  mut asize : Int
+  mut vers : Int
   mut is64 : Bool // True for 64-bit DWARF format
   mut utype : UInt // DWARF 5 unit type
 }
@@ -21,7 +24,6 @@ impl Default for Unit with default() -> Unit {
 }
 
 ///|
-/// DWARF 5 specific unit information
 priv struct Unit5 {
   mut addr_base : UInt64
   mut str_offsets_base : UInt64
@@ -30,7 +32,6 @@ priv struct Unit5 {
 }
 
 ///|
-/// Create a new Unit
 fn Unit::new(
   base : Offset,
   off : Offset,
@@ -82,7 +83,6 @@ fn Unit::loc_lists_base(self : Unit) -> UInt64 {
 }
 
 ///|
-/// Implement DataFormat for Unit
 impl DataFormat for Unit with version(self) {
   self.vers
 }
@@ -98,7 +98,7 @@ impl DataFormat for Unit with addrsize(self) {
 }
 
 ///|
-suberror UnsupportedDwarfVersion UInt
+priv suberror UnsupportedDwarfVersion UInt
 
 ///|
 /// Parse compilation units from the .debug_info section
