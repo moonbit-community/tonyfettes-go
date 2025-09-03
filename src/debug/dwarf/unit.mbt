@@ -82,24 +82,6 @@ fn Unit::loc_lists_base(self : Unit) -> UInt64 {
 }
 
 ///|
-/// Get abbreviation table
-fn Unit::atable(self : Unit) -> AbbrevTable {
-  self.atable
-}
-
-///|
-/// Get unit type
-fn Unit::utype(self : Unit) -> UInt {
-  self.utype
-}
-
-///|
-/// Check if 64-bit DWARF
-fn Unit::is_dwarf64(self : Unit) -> Bool {
-  self.is64
-}
-
-///|
 /// Implement DataFormat for Unit
 impl DataFormat for Unit with version(self) {
   self.vers
@@ -116,6 +98,9 @@ impl DataFormat for Unit with addrsize(self) {
 }
 
 ///|
+suberror UnsupportedDwarfVersion UInt
+
+///|
 /// Parse compilation units from the .debug_info section
 fn Data::parse_units(d : Data) -> FixedArray[Unit] raise {
   // Count units first
@@ -126,7 +111,7 @@ fn Data::parse_units(d : Data) -> FixedArray[Unit] raise {
     if len < 0 {
       raise b.error("unit length overflow")
     }
-    b.skip(len.to_int())
+    b.skip(len.reinterpret_as_int())
     if len > 0 {
       nunit += 1
     }
@@ -153,7 +138,7 @@ fn Data::parse_units(d : Data) -> FixedArray[Unit] raise {
     let data_off = b.off
     let vers = b.uint16()
     if vers < 2 || vers > 5 {
-      raise b.error("unsupported DWARF version \{vers}")
+      raise UnsupportedDwarfVersion(vers)
     }
     u.vers = vers.reinterpret_as_int()
     if vers >= 5 {
@@ -183,7 +168,7 @@ fn Data::parse_units(d : Data) -> FixedArray[Unit] raise {
       _ => ()
     }
     u.off = b.off
-    u.data = b.bytes((n - (b.off - data_off)).to_int())
+    u.data = b.bytes((n - (b.off - data_off)).reinterpret_as_int())
   }
   units
 }

@@ -56,14 +56,14 @@ struct Data {
 /// in the object file; for example, for an ELF object, abbrev is the contents of
 /// the ".debug_abbrev" section.
 pub fn new(
-  abbrev : @slice.Slice[Byte],
-  aranges : @slice.Slice[Byte],
-  frame : @slice.Slice[Byte],
-  info : @slice.Slice[Byte],
-  line : @slice.Slice[Byte],
-  pubnames : @slice.Slice[Byte],
-  ranges : @slice.Slice[Byte],
-  str : @slice.Slice[Byte],
+  abbrev~ : @slice.Slice[Byte],
+  aranges~ : @slice.Slice[Byte],
+  frame~ : @slice.Slice[Byte],
+  info~ : @slice.Slice[Byte],
+  line~ : @slice.Slice[Byte],
+  pubnames~ : @slice.Slice[Byte],
+  ranges~ : @slice.Slice[Byte],
+  str~ : @slice.Slice[Byte],
 ) -> Data raise {
   let d = Data::{
     abbrev,

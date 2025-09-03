@@ -45,8 +45,19 @@ pub fn bytes(bytes : Bytes, start? : Int = 0, end? : Int) -> Slice[Byte] {
 
 ///|
 pub fn[T : Default] make(size : Int) -> Slice[T] {
-  guard size >= 0 else { abort("slice: negative size") }
-  Slice(FixedArray::make(size, T::default()), 0, size)
+  if size < 0 {
+    abort("slice: negative size")
+  }
+  if size == 0 {
+    Slice([], 0, size)
+  } else {
+    let value = T::default()
+    let array = FixedArray::make(size, value)
+    for i in 1..<size {
+      array[i] = value
+    }
+    Slice(array, 0, size)
+  }
 }
 
 ///|

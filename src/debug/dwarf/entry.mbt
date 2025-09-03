@@ -397,7 +397,7 @@ fn parse_field_value(
       if vers == 2 {
         Some(Offset(b.addr().to_uint()))
         // DWARF 3+
-      } else if u.is_dwarf64() {
+      } else if u.is64 {
         Some(Offset(b.uint64().to_uint()))
       } else {
         Some(Offset(b.uint32()))
@@ -425,7 +425,7 @@ fn parse_field_value(
 
     // Section offset formats
     FormSecOffset =>
-      if u.is_dwarf64() {
+      if u.is64 {
         Some(Int64(b.uint64().reinterpret_as_int64()))
       } else {
         Some(Int64(b.uint32().to_int64()))
@@ -440,13 +440,13 @@ fn parse_field_value(
 
     // GNU extensions
     FormGnuRefAlt =>
-      if u.is_dwarf64() {
+      if u.is64 {
         Some(Int64(b.uint64().reinterpret_as_int64()))
       } else {
         Some(Int64(b.uint32().to_int64()))
       }
     FormGnuStrpAlt =>
-      if u.is_dwarf64() {
+      if u.is64 {
         Some(UInt64(b.uint64()))
       } else {
         Some(UInt64(b.uint32().to_uint64()))
