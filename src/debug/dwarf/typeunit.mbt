@@ -51,7 +51,7 @@ fn Data::parse_types(
   while b.data.length() > 0 {
     let base = b.off
     let (n, dwarf64) = b.unit_length()
-    if n > 0xffffffffU {
+    if n > 0xffffffff {
       raise b.error("type unit length overflow")
     }
     let hdroff = b.off
@@ -59,7 +59,7 @@ fn Data::parse_types(
     if vers != 4 {
       raise b.error("unsupported DWARF version \{vers}")
     }
-    let mut ao : UInt64 = 0UL
+    let mut ao : UInt64 = 0
     if !dwarf64 {
       ao = b.uint32().to_uint64()
     } else {
@@ -73,7 +73,7 @@ fn Data::parse_types(
       toff = b.uint32()
     } else {
       let to64 = b.uint64()
-      if to64 > 0xffffffffUL {
+      if to64 > 0xffffffff {
         raise b.error("type unit type offset overflow")
       }
       toff = to64.to_uint()
@@ -88,7 +88,7 @@ fn Data::parse_types(
         asize.reinterpret_as_int(),
         vers,
         dwarf64,
-        0U,
+        0,
       ),
       toff,
       name,

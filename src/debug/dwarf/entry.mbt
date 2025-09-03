@@ -823,7 +823,7 @@ fn Reader::collect_dwarf5_base_offsets(r : Reader, u : Unit) -> @unit.T raise {
   if u.vers < 5 || u.unit5 is Some(_) {
     return
   }
-  u.unit5 = Some(Unit5::new())
+  u.unit5 = Some(Unit5::default())
   r.d.collect_dwarf5_base_offsets(u)
 }
 

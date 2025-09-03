@@ -32,6 +32,16 @@ priv struct Unit5 {
 }
 
 ///|
+impl Default for Unit5 with default() -> Unit5 {
+  Unit5::{
+    addr_base: 0,
+    str_offsets_base: 0,
+    rng_lists_base: 0,
+    loc_lists_base: 0,
+  }
+}
+
+///|
 fn Unit::new(
   base : Offset,
   off : Offset,
@@ -43,16 +53,6 @@ fn Unit::new(
   utype : UInt,
 ) -> Unit {
   { base, off, data, atable, unit5: None, asize, vers, is64, utype }
-}
-
-///|
-fn Unit5::new() -> Unit5 {
-  Unit5::{
-    addr_base: 0,
-    str_offsets_base: 0,
-    rng_lists_base: 0,
-    loc_lists_base: 0,
-  }
 }
 
 ///|
