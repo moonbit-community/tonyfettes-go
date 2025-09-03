@@ -18,11 +18,6 @@
 priv suberror SegmentSelectorError String
 
 ///|
-/// ErrUnknownPC is the error returned by LineReader.ScanPC when the
-/// seek PC is not covered by any unit in the DWARF debugging information.
-pub suberror ErrUnknownPC
-
-///|
 /// Data represents the DWARF debugging information
 /// loaded from an executable file (for example, an ELF or Mach-O executable).
 struct Data {

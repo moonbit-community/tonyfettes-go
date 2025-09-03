@@ -30,12 +30,6 @@ priv struct Unit5 {
 }
 
 ///|
-/// TypeUnit represents a DWARF type unit
-pub struct TypeUnit {
-  // placeholder for type unit implementation
-} derive(Show)
-
-///|
 /// Create a new Unit
 fn Unit::new(
   base : Offset,
@@ -57,33 +51,6 @@ fn Unit5::new() -> Unit5 {
     str_offsets_base: 0UL,
     rng_lists_base: 0UL,
     loc_lists_base: 0UL,
-  }
-}
-
-///|
-/// Get the DWARF version
-fn Unit::version(self : Unit) -> Int {
-  self.vers
-}
-
-///|
-/// Get DWARF64 format info
-fn Unit::dwarf64(self : Unit) -> (Bool, Bool) {
-  (self.is64, true)
-}
-
-///|
-/// Get address size
-fn Unit::addrsize(self : Unit) -> Int {
-  self.asize
-}
-
-///|
-/// Get address base (DWARF 5)
-fn Unit::addr_base(self : Unit) -> UInt64 {
-  match self.unit5 {
-    Some(u5) => u5.addr_base
-    None => 0UL
   }
 }
 

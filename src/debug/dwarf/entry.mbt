@@ -1017,9 +1017,9 @@ pub fn Reader::seek_pc(r : Reader, pc : UInt64) -> Entry? raise {
     let u = r.d.unit[unit]
     r.b = make_buf(Some(r.d), u, "info", u.off, u.data)
     r.collect_dwarf5_base_offsets(u)
-    guard r.next() is Some(e) else { raise ErrUnknownPC }
+    guard r.next() is Some(e) else { raise UnknownPCError }
     if e.tag == Tag(0) {
-      raise ErrUnknownPC
+      raise UnknownPCError
     }
     let ranges = r.d.ranges(e)
     for pcs in ranges {
@@ -1029,5 +1029,5 @@ pub fn Reader::seek_pc(r : Reader, pc : UInt64) -> Entry? raise {
     }
     unit += 1
   }
-  raise ErrUnknownPC
+  raise UnknownPCError
 }
