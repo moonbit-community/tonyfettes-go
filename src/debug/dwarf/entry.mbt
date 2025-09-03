@@ -35,24 +35,6 @@ impl Default for AField with default() -> AField {
 }
 
 ///|
-/// Get the attribute
-fn AField::attr(self : AField) -> Attr {
-  self.attr
-}
-
-///|
-/// Get the format
-fn AField::format(self : AField) -> Format {
-  self.fmt
-}
-
-///|
-/// Get the class
-fn AField::class(self : AField) -> Class {
-  self.class
-}
-
-///|
 /// Abbreviation table - maps abbreviation codes to abbreviation entries
 typealias Map[UInt, Abbrev] as AbbrevTable
 
@@ -712,13 +694,32 @@ struct Reader {
 }
 
 ///|
-/// Get address size of current compilation unit
+/// Reader returns a new Reader for [Data].
+/// The reader is positioned at byte offset 0 in the DWARF “info” section.
+pub fn Data::reader(self : Data) -> Reader raise {
+  let r = Reader::{
+    b: Buf::default(),
+    d: self,
+    err: None,
+    unit: 0,
+    last_unit: false,
+    last_children: false,
+    last_sibling: 0,
+    cu: None,
+  }
+  r.seek(0)
+  r
+}
+
+///|
+/// AddressSize returns the size in bytes of addresses in the current compilation
+/// unit.
 pub fn Reader::address_size(self : Reader) -> Int {
   self.d.unit[self.unit].asize
 }
 
 ///|
-/// Get byte order of current compilation unit
+/// ByteOrder returns the byte order in the current compilation unit.
 pub fn Reader::byte_order(self : Reader) -> ByteOrder {
   self.d.order
 }
@@ -889,19 +890,20 @@ fn Reader::offset_to_unit(self : Reader, off : Offset) -> Int {
 }
 
 ///|
-/// Create a clone of this reader
-fn Reader::clone(r : Reader) -> Reader raise {
+/// clone returns a copy of the reader. This is used by the typeReader
+/// interface.
+impl TypeReader for Reader with clone(r : Reader) -> Reader raise {
   r.d.reader()
 }
 
 ///|
-/// Get current buffer offset
-pub fn Reader::offset(r : Reader) -> Offset {
+/// offset returns the current buffer offset. This is used by the
+/// typeReader interface.
+impl TypeReader for Reader with offset(r : Reader) -> Offset {
   r.b.offset()
 }
 
 ///|
-/// Implement TypeReader for Reader
 impl TypeReader for Reader with seek(r : Reader, off : Offset) -> @unit.T {
   r.seek(off) catch {
     err => r.err = Some(err)
@@ -911,16 +913,6 @@ impl TypeReader for Reader with seek(r : Reader, off : Offset) -> @unit.T {
 ///|
 impl TypeReader for Reader with next(r : Reader) -> Entry? raise {
   r.next()
-}
-
-///|
-impl TypeReader for Reader with clone(r : Reader) -> Reader raise {
-  r.d.reader()
-}
-
-///|
-impl TypeReader for Reader with offset(r : Reader) -> Offset {
-  r.offset()
 }
 
 ///|

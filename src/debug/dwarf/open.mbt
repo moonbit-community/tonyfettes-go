@@ -15,9 +15,6 @@
 /// resources, or cause panics.
 
 ///|
-priv suberror SegmentSelectorError String
-
-///|
 /// Data represents the DWARF debugging information
 /// loaded from an executable file (for example, an ELF or Mach-O executable).
 struct Data {
@@ -45,6 +42,9 @@ struct Data {
   type_sigs : Map[UInt64, TypeUnit]
   mut unit : FixedArray[Unit]
 }
+
+///|
+priv suberror SegmentSelectorError String
 
 ///|
 pub impl Default for Data with default() -> Data {
@@ -139,12 +139,12 @@ pub fn new(
   let x = d.info[offset]
   let y = d.info[offset + 1]
   match (x.to_uint(), y.to_uint()) {
-    (0U, 0U) => raise DecodeError::new("info", 4, "unsupported version 0")
-    (0U, _) => {
+    (0, 0) => raise DecodeError::new("info", 4, "unsupported version 0")
+    (0, _) => {
       d.big_endian = true
       d.order = BigEndian
     }
-    (_, 0U) => {
+    (_, 0) => {
       d.big_endian = false
       d.order = LittleEndian
     }
@@ -185,47 +185,4 @@ pub fn Data::add_section(
     ".debug_rnglists" => d.rng_lists = contents
     _ => () // Just ignore names that we don't yet support.
   }
-}
-
-///|
-/// Check if data is big endian
-pub fn Data::is_big_endian(self : Data) -> Bool {
-  self.big_endian
-}
-
-///|
-/// Get a section by name
-pub fn Data::get_section(self : Data, name : String) -> @slice.Slice[Byte] {
-  match name {
-    ".debug_abbrev" => self.abbrev
-    ".debug_aranges" => self.aranges
-    ".debug_frame" => self.frame
-    ".debug_info" => self.info
-    ".debug_line" => self.line
-    ".debug_pubnames" => self.pubnames
-    ".debug_ranges" => self.ranges
-    ".debug_str" => self.str
-    ".debug_addr" => self.addr
-    ".debug_line_str" => self.line_str
-    ".debug_str_offsets" => self.str_offsets
-    ".debug_rnglists" => self.rng_lists
-    _ => @slice.new() // Unknown section
-  }
-}
-
-///|
-/// Get a new reader for this Data
-pub fn Data::reader(self : Data) -> Reader raise {
-  let r = Reader::{
-    b: Buf::default(),
-    d: self,
-    err: None,
-    unit: 0,
-    last_unit: false,
-    last_children: false,
-    last_sibling: 0,
-    cu: None,
-  }
-  r.seek(0)
-  r
 }

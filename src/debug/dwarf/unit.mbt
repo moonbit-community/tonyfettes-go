@@ -56,41 +56,6 @@ fn Unit::new(
 }
 
 ///|
-fn Unit::addr_base(u : Unit) -> UInt64 {
-  match u.unit5 {
-    Some(u5) => u5.addr_base
-    None => 0
-  }
-}
-
-///|
-/// Get string offsets base (DWARF 5)
-fn Unit::str_offsets_base(self : Unit) -> UInt64 {
-  match self.unit5 {
-    Some(u5) => u5.str_offsets_base
-    None => 0
-  }
-}
-
-///|
-/// Get range lists base (DWARF 5)
-fn Unit::rng_lists_base(self : Unit) -> UInt64 {
-  match self.unit5 {
-    Some(u5) => u5.rng_lists_base
-    None => 0
-  }
-}
-
-///|
-/// Get location lists base (DWARF 5)
-fn Unit::loc_lists_base(self : Unit) -> UInt64 {
-  match self.unit5 {
-    Some(u5) => u5.loc_lists_base
-    None => 0
-  }
-}
-
-///|
 impl DataFormat for Unit with version(self) {
   self.vers
 }
@@ -103,6 +68,38 @@ impl DataFormat for Unit with dwarf64(self) {
 ///|
 impl DataFormat for Unit with addrsize(self) {
   self.asize
+}
+
+///|
+fn Unit::addr_base(u : Unit) -> UInt64 {
+  match u.unit5 {
+    Some(u5) => u5.addr_base
+    None => 0
+  }
+}
+
+///|
+fn Unit::str_offsets_base(self : Unit) -> UInt64 {
+  match self.unit5 {
+    Some(u5) => u5.str_offsets_base
+    None => 0
+  }
+}
+
+///|
+fn Unit::rng_lists_base(self : Unit) -> UInt64 {
+  match self.unit5 {
+    Some(u5) => u5.rng_lists_base
+    None => 0
+  }
+}
+
+///|
+fn Unit::loc_lists_base(self : Unit) -> UInt64 {
+  match self.unit5 {
+    Some(u5) => u5.loc_lists_base
+    None => 0
+  }
 }
 
 ///|
