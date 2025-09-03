@@ -4,7 +4,7 @@
 ///|
 /// Data format, other than byte order. This affects the handling of
 /// certain field formats.
-priv trait DataFormat {
+pub trait DataFormat {
   /// DWARF version number. Zero means unknown.
   version(self : Self) -> Int
   /// 64-bit DWARF format?
@@ -42,14 +42,14 @@ impl DataFormat for UnknownFormat with addrsize(_) {
 
 ///|
 /// Data buffer being decoded.
-priv struct Buf {
+pub struct Buf {
   dwarf : Data
   order : ByteOrder
   format : &DataFormat
   name : String
   mut off : Offset
   mut data : @slice.Slice[Byte]
-  mut err : DecodeError?
+  mut err : Error?
 }
 
 ///|
@@ -299,7 +299,7 @@ fn Buf::unit_length(self : Buf) -> (Offset, Bool) raise {
 
 ///|
 /// Set error
-fn Buf::error(self : Buf, s : String) -> DecodeError {
+fn Buf::error(self : Buf, s : String) -> Error {
   if self.err is Some(err) {
     return err
   } else {
