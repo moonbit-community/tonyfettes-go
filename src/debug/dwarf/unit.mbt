@@ -22,11 +22,17 @@ impl Default for Unit with default() -> Unit {
 
 ///|
 /// DWARF 5 specific unit information
-pub struct Unit5 {
+priv struct Unit5 {
   mut addr_base : UInt64
   mut str_offsets_base : UInt64
   mut rng_lists_base : UInt64
   mut loc_lists_base : UInt64
+}
+
+///|
+/// TypeUnit represents a DWARF type unit
+pub struct TypeUnit {
+  // placeholder for type unit implementation
 } derive(Show)
 
 ///|
@@ -45,9 +51,8 @@ fn Unit::new(
 }
 
 ///|
-/// Create a new Unit5
-pub fn Unit5::new() -> Unit5 {
-  {
+fn Unit5::new() -> Unit5 {
+  Unit5::{
     addr_base: 0UL,
     str_offsets_base: 0UL,
     rng_lists_base: 0UL,

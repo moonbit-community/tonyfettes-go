@@ -416,11 +416,11 @@ fn parse_field_value(
     FormString => Some(String(b.string()))
     FormStrp => Some(String(parse_strp(b)))
     FormLineStrp => Some(String(parse_line_strp(b)))
-    FormStrx => Some(String(parse_strx(b, b.uint())))
-    FormStrx1 => Some(String(parse_strx(b, b.uint8().to_uint64())))
-    FormStrx2 => Some(String(parse_strx(b, b.uint16().to_uint64())))
-    FormStrx3 => Some(String(parse_strx(b, b.uint24().to_uint64())))
-    FormStrx4 => Some(String(parse_strx(b, b.uint32().to_uint64())))
+    FormStrx => Some(String(parse_strx(b, b.uint(), u)))
+    FormStrx1 => Some(String(parse_strx(b, b.uint8().to_uint64(), u)))
+    FormStrx2 => Some(String(parse_strx(b, b.uint16().to_uint64(), u)))
+    FormStrx3 => Some(String(parse_strx(b, b.uint24().to_uint64(), u)))
+    FormStrx4 => Some(String(parse_strx(b, b.uint32().to_uint64(), u)))
     FormStrpSup => Some(UInt64(b.uint64())) // Offset into alternate string section
 
     // Section offset formats
@@ -467,20 +467,106 @@ fn parse_addrx(buf : Buf, index : UInt64) -> UInt64 {
 
 ///|
 /// Parse string pointer from .debug_str section
-fn parse_strp(buf : Buf) -> @slice.Slice[Byte] {
-  ...
+fn parse_strp(buf : Buf) -> @slice.Slice[Byte] raise {
+  let mut off : UInt64 = 0UL // offset into .debug_str
+  let (is64, known) = buf.format.dwarf64()
+  if not(known) {
+    raise buf.error("unknown size for DW_FORM_strp")
+  } else if is64 {
+    off = buf.uint64()
+  } else {
+    off = buf.uint32().to_uint64()
+  }
+  if off.to_int() < 0 {
+    raise buf.error("DW_FORM_strp offset out of range")
+  }
+  match buf.dwarf {
+    Some(d) => {
+      let b1 = make_buf(Some(d), buf.format, "str", 0, d.str)
+      b1.skip(off.to_int())
+      let val = b1.string()
+      if b1.err is Some(err) {
+        raise err
+      }
+      val
+    }
+    None => raise buf.error("no dwarf data available")
+  }
 }
 
 ///|
 /// Parse string pointer from .debug_line_str section
-fn parse_line_strp(buf : Buf) -> @slice.Slice[Byte] {
-  ...
+fn parse_line_strp(buf : Buf) -> @slice.Slice[Byte] raise {
+  let mut off : UInt64 = 0UL // offset into .debug_line_str
+  let (is64, known) = buf.format.dwarf64()
+  if not(known) {
+    raise buf.error("unknown size for DW_FORM_line_strp")
+  } else if is64 {
+    off = buf.uint64()
+  } else {
+    off = buf.uint32().to_uint64()
+  }
+  if off.to_int() < 0 {
+    raise buf.error("DW_FORM_line_strp offset out of range")
+  }
+  match buf.dwarf {
+    Some(d) => {
+      if d.line_str.length() == 0 {
+        raise buf.error("DW_FORM_line_strp with no .debug_line_str section")
+      }
+      let b1 = make_buf(Some(d), buf.format, "line_str", 0, d.line_str)
+      b1.skip(off.to_int())
+      let val = b1.string()
+      if b1.err is Some(err) {
+        raise err
+      }
+      val
+    }
+    None => raise buf.error("no dwarf data available")
+  }
 }
 
 ///|
 /// Parse string index (DWARF 5)
-fn parse_strx(buf : Buf, index : UInt64) -> @slice.Slice[Byte] {
-  ...
+fn parse_strx(buf : Buf, index : UInt64, u : Unit) -> @slice.Slice[Byte] raise {
+  match buf.dwarf {
+    Some(d) => {
+      if d.str_offsets.length() == 0 {
+        raise buf.error("DW_FORM_strx with no .debug_str_offsets section")
+      }
+      let (is64, known) = buf.format.dwarf64()
+      if not(known) {
+        raise buf.error("unknown offset size for DW_FORM_strx")
+      }
+      let mut off = index
+      if is64 {
+        off = off * 8UL
+      } else {
+        off = off * 4UL
+      }
+
+      // Add base offset if available (DWARF 5)
+      let str_base = u.str_offsets_base()
+      off = off + str_base
+      let b1 = make_buf(Some(d), buf.format, "str_offsets", 0, d.str_offsets)
+      b1.skip(off.to_int())
+      let str_off = if is64 { b1.uint64() } else { b1.uint32().to_uint64() }
+      if b1.err is Some(err) {
+        raise err
+      }
+      if str_off.to_int() < 0 {
+        raise buf.error("DW_FORM_strx indirect offset out of range")
+      }
+      let b2 = make_buf(Some(d), buf.format, "str", 0, d.str)
+      b2.skip(str_off.to_int())
+      let val = b2.string()
+      if b2.err is Some(err) {
+        raise err
+      }
+      val
+    }
+    None => raise buf.error("no dwarf data available")
+  }
 }
 
 ///|
@@ -689,32 +775,6 @@ struct Reader {
 }
 
 ///|
-/// Create a new Reader for this Data.
-/// The reader is positioned at byte offset 0 in the DWARF "info" section.
-pub fn Data::reader(self : Data) -> Reader raise {
-  let r = Reader::{
-    b: Buf::{
-      dwarf: None,
-      order: LittleEndian,
-      format: UnknownFormat::new(),
-      name: "",
-      off: 0,
-      data: @slice.new(),
-      err: None,
-    },
-    d: self,
-    err: None,
-    unit: 0,
-    last_unit: false,
-    last_children: false,
-    last_sibling: 0,
-    cu: None,
-  }
-  r.seek(0)
-  return r
-}
-
-///|
 /// Get address size of current compilation unit
 pub fn Reader::address_size(self : Reader) -> Int {
   self.d.unit[self.unit].asize
@@ -901,4 +961,73 @@ fn Reader::clone(r : Reader) -> Reader raise {
 /// Get current buffer offset
 pub fn Reader::offset(r : Reader) -> Offset {
   r.b.offset()
+}
+
+///|
+/// Implement TypeReader for Reader
+impl TypeReader for Reader with seek(r : Reader, off : Offset) -> @unit.T {
+  r.seek(off) catch {
+    err => r.err = Some(err)
+  }
+}
+
+///|
+impl TypeReader for Reader with next(r : Reader) -> Entry? raise {
+  r.next()
+}
+
+///|
+impl TypeReader for Reader with clone(r : Reader) -> Reader raise {
+  r.d.reader()
+}
+
+///|
+impl TypeReader for Reader with offset(r : Reader) -> Offset {
+  r.offset()
+}
+
+///|
+impl TypeReader for Reader with address_size(r : Reader) -> Int {
+  r.address_size()
+}
+
+///|
+/// SeekPC returns the Entry for the compilation unit that includes pc,
+/// and positions the reader to read the children of that unit. If pc
+/// is not covered by any unit, SeekPC returns ErrUnknownPC and the
+/// position of the reader is undefined.
+///
+/// Because compilation units can describe multiple regions of the
+/// executable, in the worst case SeekPC must search through all the
+/// ranges in all the compilation units. Each call to SeekPC starts the
+/// search at the compilation unit of the last call, so in general
+/// looking up a series of PCs will be faster if they are sorted. If
+/// the caller wishes to do repeated fast PC lookups, it should build
+/// an appropriate index using the Ranges method.
+pub fn Reader::seek_pc(r : Reader, pc : UInt64) -> Entry? raise {
+  let mut unit = r.unit
+  for i = 0; i < r.d.unit.length(); i = i + 1 {
+    if unit >= r.d.unit.length() {
+      unit = 0
+    }
+    r.err = None
+    r.last_children = false
+    r.unit = unit
+    r.cu = None
+    let u = r.d.unit[unit]
+    r.b = make_buf(Some(r.d), u, "info", u.off, u.data)
+    r.collect_dwarf5_base_offsets(u)
+    guard r.next() is Some(e) else { raise ErrUnknownPC }
+    if e.tag == Tag(0) {
+      raise ErrUnknownPC
+    }
+    let ranges = r.d.ranges(e)
+    for pcs in ranges {
+      if pcs.0 <= pc && pc < pcs.1 {
+        return Some(e)
+      }
+    }
+    unit += 1
+  }
+  raise ErrUnknownPC
 }

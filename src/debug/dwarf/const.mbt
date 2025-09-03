@@ -520,7 +520,7 @@ pub fn Attr::from_uint(val : UInt) -> Attr? {
 
 ///|
 /// A format is a DWARF data encoding format.
-priv enum Format {
+pub enum Format {
   // Value formats
   FormAddr
   FormDwarfBlock2
@@ -947,61 +947,61 @@ const OpReinterpret : UInt = 0xA9U
 
 ///|
 /// Basic type encodings -- the value for AttrEncoding in a TagBaseType Entry.
-const EncAddress : UInt = 0x01U
+const EncAddress : Int64 = 0x01
 
 ///|
-const EncBoolean : UInt = 0x02U
+const EncBoolean : Int64 = 0x02
 
 ///|
-const EncComplexFloat : UInt = 0x03U
+const EncComplexFloat : Int64 = 0x03
 
 ///|
-const EncFloat : UInt = 0x04U
+const EncFloat : Int64 = 0x04
 
 ///|
-const EncSigned : UInt = 0x05U
+const EncSigned : Int64 = 0x05
 
 ///|
-const EncSignedChar : UInt = 0x06U
+const EncSignedChar : Int64 = 0x06
 
 ///|
-const EncUnsigned : UInt = 0x07U
+const EncUnsigned : Int64 = 0x07
 
 ///|
-const EncUnsignedChar : UInt = 0x08U
+const EncUnsignedChar : Int64 = 0x08
 /// DWARF 3
 
 ///|
-const EncImaginaryFloat : UInt = 0x09U
+const EncImaginaryFloat : Int64 = 0x09
 
 ///|
-const EncPackedDecimal : UInt = 0x0AU
+const EncPackedDecimal : Int64 = 0x0A
 
 ///|
-const EncNumericString : UInt = 0x0BU
+const EncNumericString : Int64 = 0x0B
 
 ///|
-const EncEdited : UInt = 0x0CU
+const EncEdited : Int64 = 0x0C
 
 ///|
-const EncSignedFixed : UInt = 0x0DU
+const EncSignedFixed : Int64 = 0x0D
 
 ///|
-const EncUnsignedFixed : UInt = 0x0EU
+const EncUnsignedFixed : Int64 = 0x0E
 
 ///|
-const EncDecimalFloat : UInt = 0x0FU
+const EncDecimalFloat : Int64 = 0x0F
 /// DWARF 4
 
 ///|
-const EncUtf : UInt = 0x10U
+const EncUtf : Int64 = 0x10
 /// DWARF 5
 
 ///|
-const EncUcs : UInt = 0x11U
+const EncUcs : Int64 = 0x11
 
 ///|
-const EncAscii : UInt = 0x12U
+const EncAscii : Int64 = 0x12
 
 ///|
 /// Statement program standard opcode encodings.

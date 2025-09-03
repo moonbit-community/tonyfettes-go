@@ -15,7 +15,7 @@ priv trait DataFormat {
 
 ///|
 /// Some parts of DWARF have no data format, e.g., abbrevs.
-priv struct UnknownFormat {} derive(Show)
+priv struct UnknownFormat {}
 
 ///|
 fn UnknownFormat::new() -> UnknownFormat {
@@ -84,8 +84,8 @@ pub suberror DecodeError {
 ///|
 /// Create a new DecodeError
 pub fn DecodeError::new(
-  name~ : String,
-  offset~ : Offset,
+  name : String,
+  offset : Offset,
   err : String,
 ) -> DecodeError {
   DecodeError(name~, offset~, err)
@@ -296,7 +296,7 @@ fn Buf::error(self : Buf, s : String) -> DecodeError {
     return err
   } else {
     self.data = @slice.new()
-    let err = DecodeError::new(name=self.name, offset=self.off, s)
+    let err = DecodeError::new(self.name, self.off, s)
     self.err = Some(err)
     return err
   }
