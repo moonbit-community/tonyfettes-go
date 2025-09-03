@@ -105,7 +105,7 @@ suberror UnsupportedDwarfVersion UInt
 fn Data::parse_units(d : Data) -> FixedArray[Unit] raise {
   // Count units first
   let mut nunit = 0
-  let mut b = make_buf(Some(d), UnknownFormat::new(), "info", 0, d.info)
+  let mut b = make_buf(d, UnknownFormat::new(), "info", 0, d.info)
   while b.length() > 0 {
     let (len, _) = b.unit_length()
     if len < 0 {
@@ -121,7 +121,7 @@ fn Data::parse_units(d : Data) -> FixedArray[Unit] raise {
   }
 
   // Again, this time writing them down.
-  b = make_buf(Some(d), UnknownFormat::new(), "info", 0, d.info)
+  b = make_buf(d, UnknownFormat::new(), "info", 0, d.info)
   let units = FixedArray::makei(nunit, _ => Unit::default())
   for i in 0..<nunit {
     let u = units[i]
@@ -174,12 +174,37 @@ fn Data::parse_units(d : Data) -> FixedArray[Unit] raise {
 }
 
 ///|
+/// offsetToUnit returns the index of the unit containing offset off.
+/// It returns -1 if no unit contains this offset.
+fn Data::offset_to_unit(self : Data, off : Offset) -> Int {
+  // Find the unit after off using binary search
+  let mut left = 0
+  let mut right = self.unit.length()
+  while left < right {
+    let mid = (left + right) / 2
+    if self.unit[mid].off > off {
+      right = mid
+    } else {
+      left = mid + 1
+    }
+  }
+  if left == 0 {
+    return -1
+  }
+  let u = self.unit[left - 1]
+  if u.off <= off && off < u.off + u.data.length().reinterpret_as_uint() {
+    return left - 1
+  }
+  -1
+}
+
+///|
 /// Collect DWARF 5 base offsets from compilation unit
 fn Data::collect_dwarf5_base_offsets(d : Data, u : Unit) -> @unit.T raise {
   guard u.unit5 is Some(u5) else {
     abort("expected unit5 to be set up already")
   }
-  let b = make_buf(Some(d), u, "info", u.off, u.data)
+  let b = make_buf(d, u, "info", u.off, u.data)
   let cu = b.entry(None, u)
   guard cu is Some(cu) else {
     // Unknown abbreviation table entry or some other fatal

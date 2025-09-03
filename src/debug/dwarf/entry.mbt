@@ -42,14 +42,14 @@ fn Abbrev::fields(self : Abbrev) -> FixedArray[AField] {
 ///|
 priv struct AField {
   mut attr : Attr
-  mut format : Format
+  mut fmt : Format
   mut class : Class
   mut val : Int64 // for FormImplicitConst
 }
 
 ///|
 impl Default for AField with default() -> AField {
-  AField::{ attr: AttrName, format: FormString, class: ClassUnknown, val: 0L }
+  AField::{ attr: AttrName, fmt: FormString, class: ClassUnknown, val: 0L }
 }
 
 ///|
@@ -61,7 +61,7 @@ fn AField::attr(self : AField) -> Attr {
 ///|
 /// Get the format
 fn AField::format(self : AField) -> Format {
-  self.format
+  self.fmt
 }
 
 ///|
@@ -88,7 +88,7 @@ fn Data::parse_abbrev(d : Data, off : UInt64, vers : Int) -> AbbrevTable raise {
   } else {
     data[off.to_int():]
   }
-  let b = make_buf(Some(d), UnknownFormat::new(), "abbrev", 0, data)
+  let b = make_buf(d, UnknownFormat::new(), "abbrev", 0, data)
   let m : AbbrevTable = {}
   while true {
     // Table ends with id == 0
@@ -108,7 +108,7 @@ fn Data::parse_abbrev(d : Data, off : UInt64, vers : Int) -> AbbrevTable raise {
       if tag == 0UL && fmt == 0UL {
         break
       }
-      if fmt == format_to_uint(FormImplicitConst) {
+      if fmt == FormImplicitConst.to_uint().to_uint64() {
         let _ = b1.int()
 
       }
@@ -127,16 +127,15 @@ fn Data::parse_abbrev(d : Data, off : UInt64, vers : Int) -> AbbrevTable raise {
     a.children = b.uint8() != 0U
     a.fields = FixedArray::make(n, AField::default())
     for i = 0; i < n; i = i + 1 {
-      a.fields[i].attr = uint_to_attr(b.uint().to_uint()).unwrap_or(AttrName)
-      a.fields[i].format = uint_to_format(b.uint().to_uint()).unwrap_or(
-        FormString,
-      )
+      a.fields[i].attr = Attr::from_uint(b.uint().to_uint())
+      a.fields[i].fmt = Format::from_uint(b.uint().to_uint())
       a.fields[i].class = format_to_class(
-        a.fields[i].format,
+        a.fields[i].fmt,
         a.fields[i].attr,
         vers,
+        b,
       )
-      if a.fields[i].format == FormImplicitConst {
+      if a.fields[i].fmt == FormImplicitConst {
         a.fields[i].val = b.int()
       }
     }
@@ -202,7 +201,7 @@ pub enum FieldValue {
   Bytes(@slice.Slice[Byte])
   Bool(Bool)
   Int64(Int64)
-  String(@slice.Slice[Byte])
+  String(String)
   Offset(Offset)
 } derive(Show)
 
@@ -308,14 +307,12 @@ fn Buf::entry(b : Buf, cu : Entry?, u : Unit) -> Entry? raise {
     children: a.children(),
     fields: [],
   }
-
-  // Parse all fields according to the abbreviation
-  for field_def in a.fields() {
-    match parse_field(b, field_def, cu, u) {
+  for a_field in a.fields {
+    match parse_field(b, a_field, vers, u) {
       Some(field) => e.fields.push(field)
       None =>
         raise b.error(
-          "failed to parse field for attribute \{field_def.attr()} with format \{field_def.format()}",
+          "failed to parse field for attribute \{a_field.attr()} with format \{a_field.format()}",
         )
     }
   }
@@ -324,28 +321,20 @@ fn Buf::entry(b : Buf, cu : Entry?, u : Unit) -> Entry? raise {
 
 ///|
 /// Parse a single field from a buffer according to its definition
-fn parse_field(
-  buf : Buf,
-  field_def : AField,
-  cu : Entry?,
-  u : Unit,
-) -> Field? raise {
-  let attr = field_def.attr()
-  let format = field_def.format()
-  let class = field_def.class()
-
-  // Handle indirect format
-  let actual_format = if format == FormIndirect {
-    match uint_to_format(buf.uint().to_uint()) {
-      Some(f) => f
-      None => return None // Invalid format
-    }
+fn parse_field(b : Buf, a_field : AField, vers : Int, u : Unit) -> Field? raise {
+  let attr = a_field.attr
+  let fmt = a_field.fmt
+  let mut class = a_field.class
+  let fmt = if fmt == FormIndirect {
+    let fmt = Format::from_uint(b.uint().to_uint())
+    class = format_to_class(fmt, attr, vers, b)
+    fmt
   } else {
-    format
+    fmt
   }
 
   // Parse the value based on the format
-  match parse_field_value(buf, actual_format, attr, u) {
+  match parse_field_value(b, fmt, u) {
     Some(value) => Some(Field::new(attr, value, class))
     None => None
   }
@@ -353,13 +342,8 @@ fn parse_field(
 
 ///|
 /// Parse a field value based on its format
-fn parse_field_value(
-  b : Buf,
-  format : Format,
-  attr : Attr,
-  u : Unit,
-) -> FieldValue? raise {
-  match format {
+fn parse_field_value(b : Buf, fmt : Format, u : Unit) -> FieldValue? raise {
+  match fmt {
     // Address formats
     FormAddr => Some(UInt64(b.addr()))
     FormAddrx => Some(UInt64(parse_addrx(b, b.uint())))
@@ -467,106 +451,95 @@ fn parse_addrx(buf : Buf, index : UInt64) -> UInt64 {
 
 ///|
 /// Parse string pointer from .debug_str section
-fn parse_strp(buf : Buf) -> @slice.Slice[Byte] raise {
+fn parse_strp(b : Buf) -> String raise {
   let mut off : UInt64 = 0UL // offset into .debug_str
-  let (is64, known) = buf.format.dwarf64()
+  let (is64, known) = b.format.dwarf64()
   if not(known) {
-    raise buf.error("unknown size for DW_FORM_strp")
+    raise b.error("unknown size for DW_FORM_strp")
   } else if is64 {
-    off = buf.uint64()
+    off = b.uint64()
   } else {
-    off = buf.uint32().to_uint64()
+    off = b.uint32().to_uint64()
   }
-  if off.to_int() < 0 {
-    raise buf.error("DW_FORM_strp offset out of range")
+  if off.to_int().to_uint64() != off {
+    raise b.error("DW_FORM_strp offset out of range")
   }
-  match buf.dwarf {
-    Some(d) => {
-      let b1 = make_buf(Some(d), buf.format, "str", 0, d.str)
-      b1.skip(off.to_int())
-      let val = b1.string()
-      if b1.err is Some(err) {
-        raise err
-      }
-      val
-    }
-    None => raise buf.error("no dwarf data available")
+  if b.err is Some(err) {
+    raise err
   }
+  let b1 = make_buf(b.dwarf, b.format, "str", 0, b.dwarf.str)
+  b1.skip(off.to_int())
+  let val = b1.string()
+  if b1.err is Some(err) {
+    raise err
+  }
+  val
 }
 
 ///|
 /// Parse string pointer from .debug_line_str section
-fn parse_line_strp(buf : Buf) -> @slice.Slice[Byte] raise {
+fn parse_line_strp(b : Buf) -> String raise {
   let mut off : UInt64 = 0UL // offset into .debug_line_str
-  let (is64, known) = buf.format.dwarf64()
+  let (is64, known) = b.format.dwarf64()
   if not(known) {
-    raise buf.error("unknown size for DW_FORM_line_strp")
+    raise b.error("unknown size for DW_FORM_line_strp")
   } else if is64 {
-    off = buf.uint64()
+    off = b.uint64()
   } else {
-    off = buf.uint32().to_uint64()
+    off = b.uint32().to_uint64()
   }
   if off.to_int() < 0 {
-    raise buf.error("DW_FORM_line_strp offset out of range")
+    raise b.error("DW_FORM_line_strp offset out of range")
   }
-  match buf.dwarf {
-    Some(d) => {
-      if d.line_str.length() == 0 {
-        raise buf.error("DW_FORM_line_strp with no .debug_line_str section")
-      }
-      let b1 = make_buf(Some(d), buf.format, "line_str", 0, d.line_str)
-      b1.skip(off.to_int())
-      let val = b1.string()
-      if b1.err is Some(err) {
-        raise err
-      }
-      val
-    }
-    None => raise buf.error("no dwarf data available")
+  let d = b.dwarf
+  if d.line_str.length() == 0 {
+    raise b.error("DW_FORM_line_strp with no .debug_line_str section")
   }
+  let b1 = make_buf(d, b.format, "line_str", 0, d.line_str)
+  b1.skip(off.to_int())
+  let val = b1.string()
+  if b1.err is Some(err) {
+    raise err
+  }
+  val
 }
 
 ///|
 /// Parse string index (DWARF 5)
-fn parse_strx(buf : Buf, index : UInt64, u : Unit) -> @slice.Slice[Byte] raise {
-  match buf.dwarf {
-    Some(d) => {
-      if d.str_offsets.length() == 0 {
-        raise buf.error("DW_FORM_strx with no .debug_str_offsets section")
-      }
-      let (is64, known) = buf.format.dwarf64()
-      if not(known) {
-        raise buf.error("unknown offset size for DW_FORM_strx")
-      }
-      let mut off = index
-      if is64 {
-        off = off * 8UL
-      } else {
-        off = off * 4UL
-      }
-
-      // Add base offset if available (DWARF 5)
-      let str_base = u.str_offsets_base()
-      off = off + str_base
-      let b1 = make_buf(Some(d), buf.format, "str_offsets", 0, d.str_offsets)
-      b1.skip(off.to_int())
-      let str_off = if is64 { b1.uint64() } else { b1.uint32().to_uint64() }
-      if b1.err is Some(err) {
-        raise err
-      }
-      if str_off.to_int() < 0 {
-        raise buf.error("DW_FORM_strx indirect offset out of range")
-      }
-      let b2 = make_buf(Some(d), buf.format, "str", 0, d.str)
-      b2.skip(str_off.to_int())
-      let val = b2.string()
-      if b2.err is Some(err) {
-        raise err
-      }
-      val
-    }
-    None => raise buf.error("no dwarf data available")
+fn parse_strx(b : Buf, index : UInt64, u : Unit) -> String raise {
+  if b.dwarf.str_offsets.length() == 0 {
+    raise b.error("DW_FORM_strx with no .debug_str_offsets section")
   }
+  let (is64, known) = b.format.dwarf64()
+  if !known {
+    raise b.error("unknown offset size for DW_FORM_strx")
+  }
+  let mut off = index
+  if is64 {
+    off = off * 8UL
+  } else {
+    off = off * 4UL
+  }
+
+  // Add base offset if available (DWARF 5)
+  let str_base = u.str_offsets_base()
+  off = off + str_base
+  let b1 = make_buf(b.dwarf, b.format, "str_offsets", 0, b.dwarf.str_offsets)
+  b1.skip(off.to_int())
+  let str_off = if is64 { b1.uint64() } else { b1.uint32().to_uint64() }
+  if b1.err is Some(err) {
+    raise err
+  }
+  if str_off.to_int() < 0 {
+    raise b.error("DW_FORM_strx indirect offset out of range")
+  }
+  let b2 = make_buf(b.dwarf, b.format, "str", 0, b.dwarf.str)
+  b2.skip(str_off.to_int())
+  let val = b2.string()
+  if b2.err is Some(err) {
+    raise err
+  }
+  val
 }
 
 ///|
@@ -626,7 +599,7 @@ fn attr_ptr_class(attr : Attr) -> Class? {
 
 ///|
 /// Convert Format to Class based on attribute and DWARF version
-fn format_to_class(format : Format, attr : Attr, vers : Int) -> Class {
+fn format_to_class(format : Format, attr : Attr, vers : Int, b : Buf) -> Class {
   match format {
     FormAddr | FormAddrx | FormAddrx1 | FormAddrx2 | FormAddrx3 | FormAddrx4 =>
       ClassAddress
@@ -688,72 +661,61 @@ fn format_to_class(format : Format, attr : Attr, vers : Int) -> Class {
 }
 
 ///|
-/// Convert UInt to Attr
-fn uint_to_attr(val : UInt) -> Attr? {
-  Attr::from_uint(val)
-}
-
-///|
 /// Convert UInt to Tag
 fn uint_to_tag(val : UInt) -> Tag? {
   Tag::from_uint(val)
 }
 
 ///|
-/// Convert UInt to Format
-fn uint_to_format(val : UInt) -> Format? {
-  Format::from_uint(val)
-}
-
-///|
 /// Convert Format to UInt
-fn format_to_uint(format : Format) -> UInt64 {
+fn Format::to_uint(format : Format) -> UInt {
   match format {
-    FormAddr => 0x01UL
-    FormDwarfBlock2 => 0x03UL
-    FormDwarfBlock4 => 0x04UL
-    FormData2 => 0x05UL
-    FormData4 => 0x06UL
-    FormData8 => 0x07UL
-    FormString => 0x08UL
-    FormDwarfBlock => 0x09UL
-    FormDwarfBlock1 => 0x0AUL
-    FormData1 => 0x0BUL
-    FormFlag => 0x0CUL
-    FormSdata => 0x0DUL
-    FormStrp => 0x0EUL
-    FormUdata => 0x0FUL
-    FormRefAddr => 0x10UL
-    FormRef1 => 0x11UL
-    FormRef2 => 0x12UL
-    FormRef4 => 0x13UL
-    FormRef8 => 0x14UL
-    FormRefUdata => 0x15UL
-    FormIndirect => 0x16UL
-    FormSecOffset => 0x17UL
-    FormExprloc => 0x18UL
-    FormFlagPresent => 0x19UL
-    FormRefSig8 => 0x20UL
-    FormStrx => 0x1AUL
-    FormAddrx => 0x1BUL
-    FormRefSup4 => 0x1CUL
-    FormStrpSup => 0x1DUL
-    FormData16 => 0x1EUL
-    FormLineStrp => 0x1FUL
-    FormImplicitConst => 0x21UL
-    FormLoclistx => 0x22UL
-    FormRnglistx => 0x23UL
-    FormRefSup8 => 0x24UL
-    FormStrx1 => 0x25UL
-    FormStrx2 => 0x26UL
-    FormStrx3 => 0x27UL
-    FormStrx4 => 0x28UL
-    FormAddrx1 => 0x29UL
-    FormAddrx2 => 0x2AUL
-    FormAddrx3 => 0x2BUL
-    FormAddrx4 => 0x2CUL
-    FormGnuRefAlt => 0x1F20UL
-    FormGnuStrpAlt => 0x1F21UL
+    FormAddr => 0x01
+    FormDwarfBlock2 => 0x03
+    FormDwarfBlock4 => 0x04
+    FormData2 => 0x05
+    FormData4 => 0x06
+    FormData8 => 0x07
+    FormString => 0x08
+    FormDwarfBlock => 0x09
+    FormDwarfBlock1 => 0x0A
+    FormData1 => 0x0B
+    FormFlag => 0x0C
+    FormSdata => 0x0D
+    FormStrp => 0x0E
+    FormUdata => 0x0F
+    FormRefAddr => 0x10
+    FormRef1 => 0x11
+    FormRef2 => 0x12
+    FormRef4 => 0x13
+    FormRef8 => 0x14
+    FormRefUdata => 0x15
+    FormIndirect => 0x16
+    FormSecOffset => 0x17
+    FormExprloc => 0x18
+    FormFlagPresent => 0x19
+    FormRefSig8 => 0x20
+    FormStrx => 0x1A
+    FormAddrx => 0x1B
+    FormRefSup4 => 0x1C
+    FormStrpSup => 0x1D
+    FormData16 => 0x1E
+    FormLineStrp => 0x1F
+    FormImplicitConst => 0x21
+    FormLoclistx => 0x22
+    FormRnglistx => 0x23
+    FormRefSup8 => 0x24
+    FormStrx1 => 0x25
+    FormStrx2 => 0x26
+    FormStrx3 => 0x27
+    FormStrx4 => 0x28
+    FormAddrx1 => 0x29
+    FormAddrx2 => 0x2A
+    FormAddrx3 => 0x2B
+    FormAddrx4 => 0x2C
+    FormGnuRefAlt => 0x1F20
+    FormGnuStrpAlt => 0x1F21
+    Format(format) => format
   }
 }
 
@@ -802,7 +764,7 @@ pub fn Reader::seek(r : Reader, off : Offset) -> @unit.T raise {
     }
     let u = r.d.unit[0]
     r.unit = 0
-    r.b = make_buf(Some(r.d), u, "info", off, u.data)
+    r.b = make_buf(r.d, u, "info", off, u.data)
     r.cu = None
     return
   }
@@ -817,7 +779,7 @@ pub fn Reader::seek(r : Reader, off : Offset) -> @unit.T raise {
   let u = d.unit[i]
   r.unit = i
   r.b = make_buf(
-    Some(r.d),
+    r.d,
     u,
     "info",
     off,
@@ -843,7 +805,7 @@ fn Reader::next_unit(self : Reader) -> @unit.T {
   }
   let u = self.d.unit[self.unit]
   self.b = make_buf(
-    Some(self.d),
+    self.d,
     UnknownFormat::new(),
     "info",
     0, // Unit's data starts at its offset
@@ -1015,7 +977,7 @@ pub fn Reader::seek_pc(r : Reader, pc : UInt64) -> Entry? raise {
     r.unit = unit
     r.cu = None
     let u = r.d.unit[unit]
-    r.b = make_buf(Some(r.d), u, "info", u.off, u.data)
+    r.b = make_buf(r.d, u, "info", u.off, u.data)
     r.collect_dwarf5_base_offsets(u)
     guard r.next() is Some(e) else { raise UnknownPCError }
     if e.tag == Tag(0) {
@@ -1030,4 +992,289 @@ pub fn Reader::seek_pc(r : Reader, pc : UInt64) -> Entry? raise {
     unit += 1
   }
   raise UnknownPCError
+}
+
+///|
+/// Ranges returns the PC ranges covered by e, a slice of [low,high) pairs.
+/// Only some entry types, such as TagCompileUnit or TagSubprogram, have PC
+/// ranges; for others, this will return nil with no error.
+pub fn Data::ranges(d : Data, e : Entry) -> Array[(UInt64, UInt64)] raise {
+  let ret : Array[(UInt64, UInt64)] = []
+  let low_ok = match e.val(AttrLowpc) {
+    Some(UInt64(low)) => Some(low)
+    _ => None
+  }
+  let mut high_ok : UInt64? = None
+  match e.attr_field(AttrHighpc) {
+    Some(high_field) =>
+      match high_field.class {
+        ClassAddress =>
+          match high_field.val {
+            UInt64(high) => high_ok = Some(high)
+            _ => ()
+          }
+        ClassConstant =>
+          match (low_ok, high_field.val) {
+            (Some(low), Int64(off)) =>
+              if off >= 0L {
+                high_ok = Some(low + off.reinterpret_as_uint64())
+              }
+            _ => ()
+          }
+        _ => ()
+      }
+    None => ()
+  }
+  match (low_ok, high_ok) {
+    (Some(low), Some(high)) => ret.push((low, high))
+    _ => ()
+  }
+  let mut u : Unit? = None
+  let uidx = d.offset_to_unit(e.offset)
+  if uidx >= 0 && uidx < d.unit.length() {
+    u = Some(d.unit[uidx])
+  }
+  match u {
+    Some(unit) =>
+      if unit.vers >= 5 && d.rng_lists.length() > 0 {
+        // DWARF version 5 and later
+        match e.attr_field(AttrRanges) {
+          Some(field) =>
+            match field.class {
+              ClassRangeListPtr =>
+                match field.val {
+                  Int64(ranges) => {
+                    let (cu, base) = d.base_address_for_entry(e)
+                    let dwarf5_ranges = d.dwarf5_ranges(unit, cu, base, ranges)
+                    for range in dwarf5_ranges {
+                      ret.push(range)
+                    }
+                  }
+                  _ => ()
+                }
+              ClassRngList =>
+                match field.val {
+                  UInt64(rnglist) => {
+                    let (cu, base) = d.base_address_for_entry(e)
+                    let dwarf5_ranges = d.dwarf5_ranges(
+                      unit,
+                      cu,
+                      base,
+                      rnglist.reinterpret_as_int64(),
+                    )
+                    for range in dwarf5_ranges {
+                      ret.push(range)
+                    }
+                  }
+                  _ => ()
+                }
+              _ => ()
+            }
+          None => ()
+        }
+      } else {
+        // DWARF version 2 through 4
+        match e.val(AttrRanges) {
+          Some(Int64(ranges)) =>
+            if d.ranges.length() > 0 {
+              let (_, base) = d.base_address_for_entry(e)
+              let dwarf2_ranges = d.dwarf2_ranges(unit, base, ranges)
+              for range in dwarf2_ranges {
+                ret.push(range)
+              }
+            }
+          _ => ()
+        }
+      }
+    None => ()
+  }
+  ret
+}
+
+///|
+/// baseAddressForEntry returns the initial base address to be used when
+/// looking up the range list of entry e.
+/// DWARF specifies that this should be the lowpc attribute of the enclosing
+/// compilation unit, however comments in gdb/dwarf2read.c say that some
+/// versions of GCC use the entrypc attribute, so we check that too.
+fn Data::base_address_for_entry(d : Data, e : Entry) -> (Entry?, UInt64) raise {
+  let mut cu : Entry? = None
+  if e.tag == TagCompileUnit {
+    cu = Some(e)
+  } else {
+    let i = d.offset_to_unit(e.offset)
+    if i == -1 {
+      raise DecodeError::new("ranges", e.offset, "no unit for entry")
+    }
+    let u = d.unit[i]
+    let b = make_buf(d, u, "info", u.off, u.data)
+    match b.entry(None, u) {
+      Some(entry) => cu = Some(entry)
+      None =>
+        match b.err {
+          Some(err) => raise err
+          None =>
+            raise DecodeError::new("ranges", e.offset, "failed to parse CU")
+        }
+    }
+  }
+  match cu {
+    Some(cu_entry) =>
+      match cu_entry.val(AttrEntrypc) {
+        Some(UInt64(entry_pc)) => (Some(cu_entry), entry_pc)
+        _ =>
+          match cu_entry.val(AttrLowpc) {
+            Some(UInt64(low_pc)) => (Some(cu_entry), low_pc)
+            _ => (Some(cu_entry), 0UL)
+          }
+      }
+    None => (None, 0UL)
+  }
+}
+
+///|
+/// DWARF 2-4 ranges parsing
+fn Data::dwarf2_ranges(
+  d : Data,
+  u : Unit,
+  base : UInt64,
+  ranges : Int64,
+) -> Array[(UInt64, UInt64)] raise {
+  if ranges < 0L || ranges.to_int() > d.ranges.length() {
+    raise DecodeError::new(
+      "ranges",
+      ranges.to_int().reinterpret_as_uint(),
+      "invalid range offset \{ranges} (max \{d.ranges.length()})",
+    )
+  }
+  let buf = make_buf(
+    d,
+    u,
+    "ranges",
+    ranges.to_int().reinterpret_as_uint(),
+    d.ranges[ranges.to_int():],
+  )
+  let ret : Array[(UInt64, UInt64)] = []
+  let mut current_base = base
+  while buf.length() > 0 {
+    let low = buf.addr()
+    let high = buf.addr()
+    if low == 0UL && high == 0UL {
+      break
+    }
+
+    // Check for base address selection entry
+    let mask = (1UL << (u.asize * 8)) - 1UL
+    if low == mask {
+      current_base = high
+    } else {
+      ret.push((current_base + low, current_base + high))
+    }
+  }
+  ret
+}
+
+///|
+/// DWARF 5 ranges parsing
+fn Data::dwarf5_ranges(
+  d : Data,
+  u : Unit,
+  cu : Entry?,
+  base : UInt64,
+  ranges : Int64,
+) -> Array[(UInt64, UInt64)] raise {
+  if ranges < 0L || ranges.to_int() > d.rng_lists.length() {
+    raise DecodeError::new(
+      "rnglists",
+      ranges.to_int().reinterpret_as_uint(),
+      "invalid rnglist offset \{ranges} (max \{d.rng_lists.length()})",
+    )
+  }
+  let mut addr_base : Int64 = 0L
+  match cu {
+    Some(cu_entry) =>
+      match cu_entry.val(AttrAddrBase) {
+        Some(Int64(ab)) => addr_base = ab
+        _ => ()
+      }
+    None => ()
+  }
+  let buf = make_buf(d, u, "rnglists", 0, d.rng_lists)
+  buf.skip(ranges.to_int())
+  let ret : Array[(UInt64, UInt64)] = []
+  let mut current_base = base
+  while true {
+    let opcode = buf.uint8()
+    match opcode {
+      RleEndOfList => break
+      RleBaseAddressx => {
+        let base_idx = buf.uint()
+        current_base = d.debug_addr(
+          u,
+          addr_base.reinterpret_as_uint64(),
+          base_idx,
+        )
+      }
+      RleStartxEndx => {
+        let start_idx = buf.uint()
+        let end_idx = buf.uint()
+        let start = d.debug_addr(
+          u,
+          addr_base.reinterpret_as_uint64(),
+          start_idx,
+        )
+        let end = d.debug_addr(u, addr_base.reinterpret_as_uint64(), end_idx)
+        ret.push((start, end))
+      }
+      RleStartxLength => {
+        let start_idx = buf.uint()
+        let len = buf.uint()
+        let start = d.debug_addr(
+          u,
+          addr_base.reinterpret_as_uint64(),
+          start_idx,
+        )
+        ret.push((start, start + len))
+      }
+      RleOffsetPair => {
+        let off1 = buf.uint()
+        let off2 = buf.uint()
+        ret.push((current_base + off1, current_base + off2))
+      }
+      RleBaseAddress => current_base = buf.addr()
+      RleStartEnd => {
+        let start = buf.addr()
+        let end = buf.addr()
+        ret.push((start, end))
+      }
+      RleStartLength => {
+        let start = buf.addr()
+        let len = buf.uint()
+        ret.push((start, start + len))
+      }
+      _ => break // Unknown opcode
+    }
+  }
+  ret
+}
+
+///|
+/// debugAddr returns the address at idx in debug_addr
+fn Data::debug_addr(
+  d : Data,
+  format : Unit,
+  addr_base : UInt64,
+  idx : UInt64,
+) -> UInt64 raise {
+  let off = idx * format.asize.to_uint64() + addr_base
+  if off.to_int() < 0 {
+    raise DecodeError::new("addr", 0, "offset out of range")
+  }
+  let b = make_buf(d, format, "addr", 0, d.addr)
+  b.skip(off.to_int())
+  let val = b.addr()
+  match b.err {
+    Some(err) => raise err
+    None => val
+  }
 }

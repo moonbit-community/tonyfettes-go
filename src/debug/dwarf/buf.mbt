@@ -43,13 +43,26 @@ impl DataFormat for UnknownFormat with addrsize(_) {
 ///|
 /// Data buffer being decoded.
 priv struct Buf {
-  dwarf : Data?
+  dwarf : Data
   order : ByteOrder
   format : &DataFormat
   name : String
   mut off : Offset
   mut data : @slice.Slice[Byte]
   mut err : DecodeError?
+}
+
+///|
+impl Default for Buf with default() -> Buf {
+  Buf::{
+    dwarf: Data::default(),
+    order: LittleEndian,
+    format: UnknownFormat::new(),
+    name: "",
+    off: 0,
+    data: @slice.new(),
+    err: None,
+  }
 }
 
 ///|
@@ -60,19 +73,14 @@ pub enum ByteOrder {
 } derive(Show, Eq)
 
 ///|
-/// Create a new buffer
 fn[DataFormat : DataFormat] make_buf(
-  d : Data?,
+  d : Data,
   format : DataFormat,
   name : String,
   off : Offset,
   data : @slice.Slice[Byte],
 ) -> Buf {
-  let order = match d {
-    Some(data) => if data.big_endian { BigEndian } else { LittleEndian }
-    None => LittleEndian
-  }
-  { dwarf: d, order, format, name, off, data, err: None }
+  { dwarf: d, order: d.order, format, name, off, data, err: None }
 }
 
 ///|
@@ -132,7 +140,7 @@ fn Buf::skip(self : Buf, n : Int) -> @unit.T raise {
 
 ///|
 /// Read a null-terminated string
-fn Buf::string(self : Buf) -> @slice.Slice[Byte] raise {
+fn Buf::string(self : Buf) -> String raise {
   let i = @bytes.index_byte(self.data, 0)
   if i < 0 {
     raise self.error("underflow")
@@ -140,7 +148,7 @@ fn Buf::string(self : Buf) -> @slice.Slice[Byte] raise {
   let s = self.data[:i]
   self.data = self.data[i + 1:]
   self.off += (i + 1).reinterpret_as_uint()
-  s
+  @encoding.decoder(UTF8).decode_lossy(s.bytesview())
 }
 
 ///|

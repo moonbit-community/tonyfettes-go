@@ -6,6 +6,11 @@ pub(all) enum Type {
 }
 
 ///|
+pub fn Type::common_type(common_type : CommonType) -> Type {
+  CommonType(byte_size=0, name="", common_type)
+}
+
+///|
 pub fn Type::size(self : Type) -> Int64 {
   match self {
     CommonType(QualType(type_~, ..), ..) => type_.size()
@@ -267,7 +272,7 @@ pub(all) struct EnumValue {
 priv trait TypeReader {
   seek(self : Self, off : Offset) -> @unit.T
   next(self : Self) -> Entry? raise
-  clone(self : Self) -> Reader raise
+  clone(self : Self) -> Self raise
   offset(self : Self) -> Offset
   /// AddressSize returns the size in bytes of addresses in the current
   /// compilation unit.
@@ -314,24 +319,14 @@ fn TypeFixer::apply(self : TypeFixer) -> @unit.T {
 }
 
 ///|
-/// Helper function to convert byte slice to string safely
-fn slice_to_string(bytes : @slice.Slice[Byte]) -> String {
-  let sb = StringBuilder::new()
-  for i = 0; i < bytes.length(); i = i + 1 {
-    sb.write_char(bytes[i].to_char())
-  }
-  sb.to_string()
-}
-
-///|
 /// readType reads a type from r at off of name. It adds types to the
 /// type cache, appends new typedef types to typedefs, and computes the
 /// sizes of types. Callers should pass nil for typedefs; this is used
 /// for internal recursion.
-fn Data::read_type(
+fn[TypeReader : TypeReader] Data::read_type(
   d : Data,
   name : String,
-  r : Reader,
+  r : TypeReader,
   off : Offset,
   type_cache : Map[Offset, Type],
   fixups : TypeFixer?,
@@ -341,63 +336,63 @@ fn Data::read_type(
     None => ()
   }
   r.seek(off)
-  match r.next() {
-    Some(e) => {
-      let address_size = r.address_size()
-      if e.offset != off {
-        raise DecodeError::new(name, off, "no type at offset")
-      }
-
-      // If this is the root of the recursion, prepare to resolve
-      // typedef sizes and perform other fixups once the recursion is
-      // done. This must be done after the type graph is constructed
-      // because it may need to resolve cycles in a different order than
-      // readType encounters them.
-      let mut actual_fixups = fixups
-      if actual_fixups is None {
-        actual_fixups = Some(TypeFixer::{ typedefs: [], arraytypes: [] })
-      }
-
-      // Parse type from Entry.
-      // Must always set typeCache[off] before calling
-      // d.readType recursively, to handle circular types correctly.
-      let typ = d.parse_type_from_entry(
-        e,
-        r,
-        name,
-        type_cache,
-        actual_fixups.unwrap(),
-        address_size,
-      )
-      match fixups {
-        None =>
-          match actual_fixups {
-            Some(fixer) => fixer.apply()
-            None => ()
-          }
-        Some(_) => ()
-      }
-      typ
-    }
-    None => raise DecodeError::new(name, off, "no entry at offset")
+  guard r.next() is Some(e) && e.offset != off else {
+    raise DecodeError::new(name, off, "no type at offset")
   }
-}
+  let address_size = r.address_size()
 
-///|
-/// Parse a specific type from a DWARF entry
-fn Data::parse_type_from_entry(
-  d : Data,
-  e : Entry,
-  r : Reader,
-  name : String,
-  type_cache : Map[Offset, Type],
-  fixups : TypeFixer,
-  address_size : Int,
-) -> Type raise {
-  // This is a simplified implementation focusing on the most common types
-  // A full implementation would handle all DWARF type tags
+  // If this is the root of the recursion, prepare to resolve
+  // typedef sizes and perform other fixups once the recursion is
+  // done. This must be done after the type graph is constructed
+  // because it may need to resolve cycles in a different order than
+  // readType encounters them.
+  let mut fixup = fixups
+  if fixup is None {
+    let fixer = TypeFixer::{ typedefs: [], arraytypes: [] }
+    defer fixer.apply()
+    fixup = Some(fixer)
+  }
 
-  match e.tag {
+  // Parse type from Entry.
+  // Must always set typeCache[off] before calling
+  // d.readType recursively, to handle circular types correctly.
+  let mut next_depth = 0
+  fn next() -> Entry? raise {
+    if !e.children {
+      return None
+    }
+    for {
+      let kid = r.next()
+      guard kid is Some(kid) else {
+        raise DecodeError::new(name, off, "no child entry")
+      }
+      if kid.tag is Tag(0) {
+        if next_depth > 0 {
+          next_depth -= 1
+          continue
+        }
+        return None
+      }
+      if kid.children {
+        next_depth += 1
+      }
+      if next_depth > 0 {
+        continue
+      }
+      return Some(kid)
+    }
+  }
+
+  fn type_of(e : Entry) -> Type raise {
+    match e.val(AttrType) {
+      Some(Offset(toff)) =>
+        d.read_type(name, r.clone(), toff, type_cache, fixup)
+      Some(UInt64(toff)) => d.sig_to_type(toff)
+      _ => Type::common_type(VoidType)
+    }
+  }
+
+  let typ = match e.tag {
     TagBaseType => {
       // Basic type.  (DWARF v2 §5.1)
       // Attributes:
@@ -411,7 +406,7 @@ fn Data::parse_type_from_entry(
       // For most languages BitOffset/DataBitOffset/BitSize will not be present
       // for base types.
       let type_name = match e.val(AttrName) {
-        Some(String(name_bytes)) => slice_to_string(name_bytes)
+        Some(String(name_bytes)) => name_bytes
         _ => ""
       }
       guard e.val(AttrEncoding) is Some(Int64(enc)) else {
@@ -471,4 +466,5 @@ fn Data::parse_type_from_entry(
       typ
     }
   }
+  typ
 }
