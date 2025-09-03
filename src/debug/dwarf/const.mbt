@@ -733,220 +733,220 @@ pub fn Tag::to_uint(self : Tag) -> UInt {
 ///|
 /// Location expression operators
 /// The debug info encodes value locations like 8(R3) as a sequence of these op codes.
-const OpAddr : UInt = 0x03U
+const OpAddr : UInt = 0x03
 
 ///|
-const OpDeref : UInt = 0x06U
+const OpDeref : UInt = 0x06
 
 ///|
-const OpConst1u : UInt = 0x08U
+const OpConst1u : UInt = 0x08
 
 ///|
-const OpConst1s : UInt = 0x09U
+const OpConst1s : UInt = 0x09
 
 ///|
-const OpConst2u : UInt = 0x0AU
+const OpConst2u : UInt = 0x0A
 
 ///|
-const OpConst2s : UInt = 0x0BU
+const OpConst2s : UInt = 0x0B
 
 ///|
-const OpConst4u : UInt = 0x0CU
+const OpConst4u : UInt = 0x0C
 
 ///|
-const OpConst4s : UInt = 0x0DU
+const OpConst4s : UInt = 0x0D
 
 ///|
-const OpConst8u : UInt = 0x0EU
+const OpConst8u : UInt = 0x0E
 
 ///|
-const OpConst8s : UInt = 0x0FU
+const OpConst8s : UInt = 0x0F
 
 ///|
-const OpConstu : UInt = 0x10U
+const OpConstu : UInt = 0x10
 
 ///|
-const OpConsts : UInt = 0x11U
+const OpConsts : UInt = 0x11
 
 ///|
-const OpDup : UInt = 0x12U
+const OpDup : UInt = 0x12
 
 ///|
-const OpDrop : UInt = 0x13U
+const OpDrop : UInt = 0x13
 
 ///|
-const OpOver : UInt = 0x14U
+const OpOver : UInt = 0x14
 
 ///|
-const OpPick : UInt = 0x15U
+const OpPick : UInt = 0x15
 
 ///|
-const OpSwap : UInt = 0x16U
+const OpSwap : UInt = 0x16
 
 ///|
-const OpRot : UInt = 0x17U
+const OpRot : UInt = 0x17
 
 ///|
-const OpXderef : UInt = 0x18U
+const OpXderef : UInt = 0x18
 
 ///|
-const OpAbs : UInt = 0x19U
+const OpAbs : UInt = 0x19
 
 ///|
-const OpAnd : UInt = 0x1AU
+const OpAnd : UInt = 0x1A
 
 ///|
-const OpDiv : UInt = 0x1BU
+const OpDiv : UInt = 0x1B
 
 ///|
-const OpMinus : UInt = 0x1CU
+const OpMinus : UInt = 0x1C
 
 ///|
-const OpMod : UInt = 0x1DU
+const OpMod : UInt = 0x1D
 
 ///|
-const OpMul : UInt = 0x1EU
+const OpMul : UInt = 0x1E
 
 ///|
-const OpNeg : UInt = 0x1FU
+const OpNeg : UInt = 0x1F
 
 ///|
-const OpNot : UInt = 0x20U
+const OpNot : UInt = 0x20
 
 ///|
-const OpOr : UInt = 0x21U
+const OpOr : UInt = 0x21
 
 ///|
-const OpPlus : UInt = 0x22U
+const OpPlus : UInt = 0x22
 
 ///|
-const OpPlusUconst : UInt = 0x23U
+const OpPlusUconst : UInt = 0x23
 
 ///|
-const OpShl : UInt = 0x24U
+const OpShl : UInt = 0x24
 
 ///|
-const OpShr : UInt = 0x25U
+const OpShr : UInt = 0x25
 
 ///|
-const OpShra : UInt = 0x26U
+const OpShra : UInt = 0x26
 
 ///|
-const OpXor : UInt = 0x27U
+const OpXor : UInt = 0x27
 
 ///|
-const OpSkip : UInt = 0x2FU
+const OpSkip : UInt = 0x2F
 
 ///|
-const OpBra : UInt = 0x28U
+const OpBra : UInt = 0x28
 
 ///|
-const OpEq : UInt = 0x29U
+const OpEq : UInt = 0x29
 
 ///|
-const OpGe : UInt = 0x2AU
+const OpGe : UInt = 0x2A
 
 ///|
-const OpGt : UInt = 0x2BU
+const OpGt : UInt = 0x2B
 
 ///|
-const OpLe : UInt = 0x2CU
+const OpLe : UInt = 0x2C
 
 ///|
-const OpLt : UInt = 0x2DU
+const OpLt : UInt = 0x2D
 
 ///|
-const OpNe : UInt = 0x2EU
+const OpNe : UInt = 0x2E
 
 ///|
-const OpLit0 : UInt = 0x30U
+const OpLit0 : UInt = 0x30
 
 ///|
-const OpReg0 : UInt = 0x50U
+const OpReg0 : UInt = 0x50
 
 ///|
-const OpBreg0 : UInt = 0x70U
+const OpBreg0 : UInt = 0x70
 
 ///|
-const OpRegx : UInt = 0x90U
+const OpRegx : UInt = 0x90
 
 ///|
-const OpFbreg : UInt = 0x91U
+const OpFbreg : UInt = 0x91
 
 ///|
-const OpBregx : UInt = 0x92U
+const OpBregx : UInt = 0x92
 
 ///|
-const OpPiece : UInt = 0x93U
+const OpPiece : UInt = 0x93
 
 ///|
-const OpDerefSize : UInt = 0x94U
+const OpDerefSize : UInt = 0x94
 
 ///|
-const OpXderefSize : UInt = 0x95U
+const OpXderefSize : UInt = 0x95
 
 ///|
-const OpNop : UInt = 0x96U
+const OpNop : UInt = 0x96
 /// DWARF 3
 
 ///|
-const OpPushObjAddr : UInt = 0x97U
+const OpPushObjAddr : UInt = 0x97
 
 ///|
-const OpCall2 : UInt = 0x98U
+const OpCall2 : UInt = 0x98
 
 ///|
-const OpCall4 : UInt = 0x99U
+const OpCall4 : UInt = 0x99
 
 ///|
-const OpCallRef : UInt = 0x9AU
+const OpCallRef : UInt = 0x9A
 
 ///|
-const OpFormTlsAddress : UInt = 0x9BU
+const OpFormTlsAddress : UInt = 0x9B
 
 ///|
-const OpCallFrameCfa : UInt = 0x9CU
+const OpCallFrameCfa : UInt = 0x9C
 
 ///|
-const OpBitPiece : UInt = 0x9DU
+const OpBitPiece : UInt = 0x9D
 /// DWARF 4
 
 ///|
-const OpImplicitValue : UInt = 0x9EU
+const OpImplicitValue : UInt = 0x9E
 
 ///|
-const OpStackValue : UInt = 0x9FU
+const OpStackValue : UInt = 0x9F
 /// DWARF 5
 
 ///|
-const OpImplicitPointer : UInt = 0xA0U
+const OpImplicitPointer : UInt = 0xA0
 
 ///|
-const OpAddrx : UInt = 0xA1U
+const OpAddrx : UInt = 0xA1
 
 ///|
-const OpConstx : UInt = 0xA2U
+const OpConstx : UInt = 0xA2
 
 ///|
-const OpEntryValue : UInt = 0xA3U
+const OpEntryValue : UInt = 0xA3
 
 ///|
-const OpConstType : UInt = 0xA4U
+const OpConstType : UInt = 0xA4
 
 ///|
-const OpRegvalType : UInt = 0xA5U
+const OpRegvalType : UInt = 0xA5
 
 ///|
-const OpDerefType : UInt = 0xA6U
+const OpDerefType : UInt = 0xA6
 
 ///|
-const OpXderefType : UInt = 0xA7U
+const OpXderefType : UInt = 0xA7
 
 ///|
-const OpConvert : UInt = 0xA8U
+const OpConvert : UInt = 0xA8
 
 ///|
-const OpReinterpret : UInt = 0xA9U
+const OpReinterpret : UInt = 0xA9
 
 ///|
 /// Basic type encodings -- the value for AttrEncoding in a TagBaseType Entry.
@@ -1008,55 +1008,55 @@ const EncAscii : Int64 = 0x12
 
 ///|
 /// Statement program standard opcode encodings.
-const LnsCopy : UInt = 1U
+const LnsCopy : UInt = 1
 
 ///|
-const LnsAdvancePc : UInt = 2U
+const LnsAdvancePc : UInt = 2
 
 ///|
-const LnsAdvanceLine : UInt = 3U
+const LnsAdvanceLine : UInt = 3
 
 ///|
-const LnsSetFile : UInt = 4U
+const LnsSetFile : UInt = 4
 
 ///|
-const LnsSetColumn : UInt = 5U
+const LnsSetColumn : UInt = 5
 
 ///|
-const LnsNegateStmt : UInt = 6U
+const LnsNegateStmt : UInt = 6
 
 ///|
-const LnsSetBasicBlock : UInt = 7U
+const LnsSetBasicBlock : UInt = 7
 
 ///|
-const LnsConstAddPc : UInt = 8U
+const LnsConstAddPc : UInt = 8
 
 ///|
-const LnsFixedAdvancePc : UInt = 9U
+const LnsFixedAdvancePc : UInt = 9
 /// DWARF 3
 
 ///|
-const LnsSetPrologueEnd : UInt = 10U
+const LnsSetPrologueEnd : UInt = 10
 
 ///|
-const LnsSetEpilogueBegin : UInt = 11U
+const LnsSetEpilogueBegin : UInt = 11
 
 ///|
-const LnsSetISA : UInt = 12U
+const LnsSetISA : UInt = 12
 
 ///|
 /// Statement program extended opcode encodings.
-const LneEndSequence : UInt = 1U
+const LneEndSequence : UInt = 1
 
 ///|
-const LneSetAddress : UInt = 2U
+const LneSetAddress : UInt = 2
 
 ///|
-const LneDefineFile : UInt = 3U
+const LneDefineFile : UInt = 3
 /// DWARF 4
 
 ///|
-const LneSetDiscriminator : UInt = 4U
+const LneSetDiscriminator : UInt = 4
 
 ///|
 /// Line table directory and file name entry formats.
@@ -1064,42 +1064,42 @@ const LneSetDiscriminator : UInt = 4U
 const LnctPath : UInt = 0x01U
 
 ///|
-const LnctDirectoryIndex : UInt = 0x02U
+const LnctDirectoryIndex : UInt = 0x02
 
 ///|
-const LnctTimestamp : UInt = 0x03U
+const LnctTimestamp : UInt = 0x03
 
 ///|
-const LnctSize : UInt = 0x04U
+const LnctSize : UInt = 0x04
 
 ///|
-const LnctMD5 : UInt = 0x05U
+const LnctMD5 : UInt = 0x05
 
 ///|
 /// Location list entry codes.
 /// These are new in DWARF 5.
-const LleEndOfList : UInt = 0x00U
+const LleEndOfList : UInt = 0x00
 
 ///|
-const LleBaseAddressx : UInt = 0x01U
+const LleBaseAddressx : UInt = 0x01
 
 ///|
-const LleStartxEndx : UInt = 0x02U
+const LleStartxEndx : UInt = 0x02
 
 ///|
-const LleStartxLength : UInt = 0x03U
+const LleStartxLength : UInt = 0x03
 
 ///|
-const LleOffsetPair : UInt = 0x04U
+const LleOffsetPair : UInt = 0x04
 
 ///|
-const LleDefaultLocation : UInt = 0x05U
+const LleDefaultLocation : UInt = 0x05
 
 ///|
-const LleBaseAddress : UInt = 0x06U
+const LleBaseAddress : UInt = 0x06
 
 ///|
-const LleStartEnd : UInt = 0x07U
+const LleStartEnd : UInt = 0x07
 
 ///|
 const LleStartLength : UInt = 0x08U
@@ -1107,44 +1107,44 @@ const LleStartLength : UInt = 0x08U
 ///|
 /// Unit header unit type encodings.
 /// These are new in DWARF 5.
-const UtCompile : UInt = 0x01U
+const UtCompile : UInt = 0x01
 
 ///|
-const UtType : UInt = 0x02U
+const UtType : UInt = 0x02
 
 ///|
-const UtPartial : UInt = 0x03U
+const UtPartial : UInt = 0x03
 
 ///|
-const UtSkeleton : UInt = 0x04U
+const UtSkeleton : UInt = 0x04
 
 ///|
-const UtSplitCompile : UInt = 0x05U
+const UtSplitCompile : UInt = 0x05
 
 ///|
-const UtSplitType : UInt = 0x06U
+const UtSplitType : UInt = 0x06
 
 ///|
 /// Opcodes for DWARFv5 debug_rnglists section.
-const RleEndOfList : UInt = 0x0U
+const RleEndOfList : UInt = 0x0
 
 ///|
-const RleBaseAddressx : UInt = 0x1U
+const RleBaseAddressx : UInt = 0x1
 
 ///|
-const RleStartxEndx : UInt = 0x2U
+const RleStartxEndx : UInt = 0x2
 
 ///|
-const RleStartxLength : UInt = 0x3U
+const RleStartxLength : UInt = 0x3
 
 ///|
-const RleOffsetPair : UInt = 0x4U
+const RleOffsetPair : UInt = 0x4
 
 ///|
-const RleBaseAddress : UInt = 0x5U
+const RleBaseAddress : UInt = 0x5
 
 ///|
-const RleStartEnd : UInt = 0x6U
+const RleStartEnd : UInt = 0x6
 
 ///|
-const RleStartLength : UInt = 0x7U
+const RleStartLength : UInt = 0x7

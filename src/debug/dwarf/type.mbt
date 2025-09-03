@@ -129,10 +129,10 @@ pub(all) enum CommonType {
     mut data_bit_offset~ : Int64,
     BasicType
   )
-  QualType(qual~ : String, type_~ : Type)
-  ArrayType(type_~ : Type, stride_bit_size~ : Int64, count~ : Int64)
+  QualType(qual~ : String, mut type_~ : Type)
+  ArrayType(mut type_~ : Type, mut stride_bit_size~ : Int64, mut count~ : Int64)
   VoidType
-  PtrType(type_~ : Type)
+  PtrType(mut type_~ : Type)
   StructType(
     struct_name~ : String,
     kind~ : String,
@@ -140,9 +140,9 @@ pub(all) enum CommonType {
     incomplete~ : Bool
   )
   EnumType(enum_name~ : String, val~ : Array[EnumValue])
-  FuncType(return_type~ : Type?, param_type~ : Array[Type])
+  FuncType(mut return_type~ : Type?, param_type~ : Array[Type])
   DotDotDotType
-  TypedefType(type_~ : Type)
+  TypedefType(mut type_~ : Type)
   UnsupportedType(tag~ : Tag)
 }
 
@@ -234,13 +234,13 @@ pub(all) enum BasicType {
 /// captured for base types, but it is worth noting that it is not
 /// possible to trigger this behavior using mainstream languages.
 pub(all) struct StructField {
-  name : String
-  type_ : Type
-  byte_offset : Int64
-  byte_size : Int64
-  bit_offset : Int64
-  data_bit_offset : Int64
-  bit_size : Int64
+  mut name : String
+  mut type_ : Type
+  mut byte_offset : Int64
+  mut byte_size : Int64
+  mut bit_offset : Int64
+  mut data_bit_offset : Int64
+  mut bit_size : Int64
 }
 
 ///|
@@ -393,6 +393,70 @@ fn[TypeReader : TypeReader] Data::read_type(
   }
 
   let typ = match e.tag {
+    TagArrayType => {
+      // Multi-dimensional array.  (DWARF v2 §5.4)
+      // Attributes:
+      //	AttrType:subtype [required]
+      //	AttrStrideSize: size in bits of each element of the array
+      //	AttrByteSize: size of entire array
+      // Children:
+      //	TagSubrangeType or TagEnumerationType giving one dimension.
+      //	dimensions are in left to right order.
+      let t = CommonType(
+        byte_size=0,
+        name="",
+        ArrayType(type_=Type::common_type(VoidType), stride_bit_size=0, count=0),
+      )
+      type_cache[off] = t
+      guard t is CommonType(ArrayType(..) as at, ..)
+      at.type_ = type_of(e)
+      if e.val(AttrStrideSize) is Some(Int64(stride)) {
+        at.stride_bit_size = stride
+      }
+
+      // Accumulate dimensions
+      let dims : Array[Int64] = []
+      let mut kid = next()
+      while kid is Some(kid_entry) {
+        // TODO(rsc): Can also be TagEnumerationType
+        // but haven't seen that in the wild yet.
+        match kid_entry.tag {
+          TagSubrangeType => {
+            let count = match kid_entry.val(AttrCount) {
+              Some(Int64(count)) => count
+              _ =>
+                // Old binaries may have an upper bound instead.
+                match kid_entry.val(AttrUpperBound) {
+                  Some(Int64(ub)) => ub + 1L // Length is one more than upper bound.
+                  _ => if dims.length() == 0 { -1L } else { 0L } // As in x[].
+                }
+            }
+            dims.push(count)
+          }
+          TagEnumerationType =>
+            raise DecodeError::new(
+              name,
+              kid_entry.offset,
+              "cannot handle enumeration type as array bound",
+            )
+          _ => () // Skip other child types
+        }
+        kid = next()
+      }
+      if dims.length() == 0 {
+        // LLVM generates this for x[].
+        dims.push(-1L)
+      }
+      at.count = dims[0]
+      for i = dims.length() - 1; i >= 1; i = i - 1 {
+        at.type_ = CommonType(
+          byte_size=0,
+          name="",
+          ArrayType(type_=at.type_, stride_bit_size=0, count=dims[i]),
+        )
+      }
+      t
+    }
     TagBaseType => {
       // Basic type.  (DWARF v2 §5.1)
       // Attributes:
@@ -427,21 +491,35 @@ fn[TypeReader : TypeReader] Data::read_type(
       let typ = match enc {
         EncAddress => basic_type(AddrType)
         EncBoolean => basic_type(BoolType)
-        EncComplexFloat => basic_type(ComplexType)
+        EncComplexFloat => {
+          let t = basic_type(ComplexType)
+          // clang writes out 'complex' instead of 'complex float' or 'complex double'.
+          // clang also writes out a byte size that we can use to distinguish.
+          // See issue 8694.
+          if type_name == "complex" {
+            guard t is (CommonType(BasicType(ComplexType, ..), ..) as ct)
+            match e.val(AttrByteSize) {
+              Some(Int64(8L)) => ct.name = "complex float"
+              Some(Int64(16L)) => ct.name = "complex double"
+              _ => ct.name = type_name
+            }
+          }
+          t
+        }
         EncFloat => basic_type(FloatType)
         EncSigned => basic_type(IntType)
-        EncUnsigned => basic_type(CharType)
-        EncSignedChar => basic_type(UintType)
+        EncUnsigned => basic_type(UintType)
+        EncSignedChar => basic_type(CharType)
         EncUnsignedChar => basic_type(UcharType)
         _ =>
           raise DecodeError::new(
             name,
             e.offset,
-            "unsupported base type encoding \{enc} for \{type_name}",
+            "unrecognized encoding attribute value",
           )
       }
       guard typ is (CommonType(BasicType(_, ..) as t, ..) as c)
-      c.name = name
+      c.name = type_name
       if e.val(AttrBitSize) is Some(Int64(bit_size)) {
         t.bit_size = bit_size
       }
@@ -465,6 +543,330 @@ fn[TypeReader : TypeReader] Data::read_type(
       }
       typ
     }
+    TagClassType | TagStructType | TagUnionType => {
+      // Structure, union, or class type.  (DWARF v2 §5.5)
+      // Attributes:
+      //	AttrName: name of struct, union, or class
+      //	AttrByteSize: byte size [required]
+      //	AttrDeclaration: if true, struct/union/class is incomplete
+      // Children:
+      //	TagMember to describe one member.
+      //		AttrName: name of member [required]
+      //		AttrType: type of member [required]
+      //		AttrByteSize: size in bytes
+      //		AttrBitOffset: bit offset within bytes for bit fields
+      //		AttrDataBitOffset: field bit offset relative to struct start
+      //		AttrBitSize: bit size for bit fields
+      //		AttrDataMemberLoc: location within struct [required for struct, class]
+      // There is much more to handle C++, all ignored for now.
+      let kind = match e.tag {
+        TagClassType => "class"
+        TagStructType => "struct"
+        TagUnionType => "union"
+        _ => "struct" // fallback
+      }
+      let struct_name = match e.val(AttrName) {
+        Some(String(name)) => name
+        _ => ""
+      }
+      let incomplete = e.val(AttrDeclaration) is Some(_)
+      let fields : Array[StructField] = []
+      let t = CommonType(
+        byte_size=0,
+        name="",
+        StructType(struct_name~, kind~, fields~, incomplete~),
+      )
+      type_cache[off] = t
+      let mut last_field_type : Type? = None
+      let mut last_field_bit_size = 0L
+      let mut last_field_byte_offset = 0L
+      let mut kid = next()
+      while kid is Some(kid_entry) {
+        if kid_entry.tag != TagMember {
+          kid = next()
+          continue
+        }
+        let f = StructField::{
+          name: "",
+          type_: Type::common_type(VoidType),
+          byte_offset: 0L,
+          byte_size: 0L,
+          bit_offset: 0L,
+          data_bit_offset: 0L,
+          bit_size: 0L,
+        }
+        f.type_ = type_of(kid_entry)
+        match kid_entry.val(AttrDataMemberLoc) {
+          Some(Bytes(loc)) => {
+            // TODO: Should have original compilation
+            // unit here, not unknownFormat.
+            let b = make_buf(d, UnknownFormat::new(), "location", 0, loc)
+            if b.uint8() != OpPlusUconst {
+              raise DecodeError::new(
+                name,
+                kid_entry.offset,
+                "unexpected opcode",
+              )
+            }
+            f.byte_offset = b.uint().reinterpret_as_int64()
+            match b.err {
+              Some(err) => raise err
+              None => ()
+            }
+          }
+          Some(Int64(loc)) => f.byte_offset = loc
+          _ => () // no location
+        }
+        f.name = match kid_entry.val(AttrName) {
+          Some(String(n)) => n
+          _ => ""
+        }
+        f.byte_size = match kid_entry.val(AttrByteSize) {
+          Some(Int64(size)) => size
+          _ => 0
+        }
+        let mut have_bit_offset = false
+        let mut have_data_bit_offset = false
+        if kid_entry.val(AttrBitOffset) is Some(Int64(bit_offset)) {
+          have_bit_offset = true
+          f.bit_offset = bit_offset
+        }
+        if kid_entry.val(AttrDataBitOffset) is Some(Int64(data_bit_offset)) {
+          have_data_bit_offset = true
+          f.data_bit_offset = data_bit_offset
+        }
+        if have_bit_offset && have_data_bit_offset {
+          raise DecodeError::new(
+            name,
+            e.offset,
+            "duplicate bit offset attributes",
+          )
+        }
+        f.bit_size = match kid_entry.val(AttrBitSize) {
+          Some(Int64(size)) => size
+          _ => 0L
+        }
+        fields.push(f)
+        if last_field_bit_size == 0L &&
+          last_field_byte_offset == f.byte_offset &&
+          kind != "union" {
+          // Last field was zero width. Fix array length.
+          // (DWARF writes out 0-length arrays as if they were 1-length arrays.)
+          guard fixup is Some(fixup)
+          fixup.record_array_type(last_field_type)
+        }
+        last_field_type = Some(f.type_)
+        last_field_byte_offset = f.byte_offset
+        last_field_bit_size = f.bit_size
+        kid = next()
+      }
+      if kind != "union" {
+        match e.val(AttrByteSize) {
+          Some(Int64(b)) =>
+            if b == last_field_byte_offset {
+              // Final field must be zero width. Fix array length.
+              guard fixup is Some(fixup)
+              fixup.record_array_type(last_field_type)
+            }
+          _ => ()
+        }
+      }
+      t
+    }
+    TagConstType | TagVolatileType | TagRestrictType => {
+      // Type modifier (DWARF v2 §5.2)
+      // Attributes:
+      //	AttrType: subtype
+      let qual = match e.tag {
+        TagConstType => "const"
+        TagRestrictType => "restrict"
+        TagVolatileType => "volatile"
+        _ => "" // fallback
+      }
+      let t = Type::common_type(QualType(qual~, type_=type_of(e)))
+      type_cache[off] = t
+      t
+    }
+    TagEnumerationType => {
+      // Enumeration type (DWARF v2 §5.6)
+      // Attributes:
+      //	AttrName: enum name if any
+      //	AttrByteSize: bytes required to represent largest value
+      // Children:
+      //	TagEnumerator:
+      //		AttrName: name of constant
+      //		AttrConstValue: value of constant
+      let enum_name = match e.val(AttrName) {
+        Some(String(name)) => name
+        _ => ""
+      }
+      let val : Array[EnumValue] = []
+      let t = CommonType(byte_size=0, name="", EnumType(enum_name~, val~))
+      type_cache[off] = t
+      let mut kid = next()
+      while kid is Some(kid_entry) {
+        if kid_entry.tag == TagEnumerator {
+          let f = EnumValue::{
+            name: match kid_entry.val(AttrName) {
+              Some(String(n)) => n
+              _ => ""
+            },
+            val: match kid_entry.val(AttrConstValue) {
+              Some(Int64(v)) => v
+              _ => 0L
+            },
+          }
+          val.push(f)
+        }
+        kid = next()
+      }
+      t
+    }
+    TagPointerType => {
+      // Type modifier (DWARF v2 §5.2)
+      // Attributes:
+      //	AttrType: subtype [not required!  void* has no AttrType]
+      //	AttrAddrClass: address class [ignored]
+      let t = CommonType(
+        byte_size=0,
+        name="",
+        PtrType(type_=Type::common_type(VoidType)),
+      )
+      type_cache[off] = t
+      type_cache[off] = t
+      let new_type = if e.val(AttrType) is None {
+        Type::common_type(VoidType)
+      } else {
+        type_of(e)
+      }
+      guard t is (CommonType(PtrType(..), ..) as ct)
+      let updated_t = CommonType(
+        byte_size=ct.byte_size,
+        name=ct.name,
+        PtrType(type_=new_type),
+      )
+      type_cache[off] = updated_t
+      updated_t
+    }
+    TagSubroutineType => {
+      // Subroutine type.  (DWARF v2 §5.7)
+      // Attributes:
+      //	AttrType: type of return value if any
+      //	AttrName: possible name of type [ignored]
+      //	AttrPrototyped: whether used ANSI C prototype [ignored]
+      // Children:
+      //	TagFormalParameter: typed parameter
+      //		AttrType: type of parameter
+      //	TagUnspecifiedParameter: final ...
+      let param_type : Array[Type] = []
+      let t = CommonType(
+        byte_size=0,
+        name="",
+        FuncType(return_type=None, param_type~),
+      )
+      type_cache[off] = t
+      guard t is (CommonType(FuncType(return_type=_, param_type~), ..) as ct)
+      let new_return_type = Some(type_of(e))
+      let updated_t = CommonType(
+        byte_size=ct.byte_size,
+        name=ct.name,
+        FuncType(return_type=new_return_type, param_type~),
+      )
+      type_cache[off] = updated_t
+      let mut kid = next()
+      while kid is Some(kid_entry) {
+        match kid_entry.tag {
+          TagFormalParameter => {
+            let tkid = type_of(kid_entry)
+            param_type.push(tkid)
+          }
+          TagUnspecifiedParameters => {
+            let tkid = CommonType(byte_size=0, name="", DotDotDotType)
+            param_type.push(tkid)
+          }
+          _ => () // Skip other children
+        }
+        kid = next()
+      }
+      t
+    }
+    TagTypedef => {
+      // Typedef (DWARF v2 §5.3)
+      // Attributes:
+      //	AttrName: name [required]
+      //	AttrType: type definition [required]
+      let t = CommonType(
+        byte_size=0,
+        name="",
+        TypedefType(type_=Type::common_type(VoidType)),
+      )
+      type_cache[off] = t
+      guard t is (CommonType(TypedefType(..), ..) as ct)
+      let new_name = match e.val(AttrName) {
+        Some(String(n)) => n
+        _ => ""
+      }
+      let new_type = type_of(e)
+      let updated_t = CommonType(
+        byte_size=ct.byte_size,
+        name=new_name,
+        TypedefType(type_=new_type),
+      )
+      type_cache[off] = updated_t
+      updated_t
+    }
+    TagUnspecifiedType => {
+      // Unspecified type (DWARF v3 §5.2)
+      // Attributes:
+      //	AttrName: name
+      let t = CommonType(
+        byte_size=0,
+        name="",
+        BasicType(bit_size=0, bit_offset=0, data_bit_offset=0, UnspecifiedType),
+      )
+      type_cache[off] = t
+      guard t is (CommonType(BasicType(UnspecifiedType, ..), ..) as ct)
+      ct.name = match e.val(AttrName) {
+        Some(String(n)) => n
+        _ => ""
+      }
+      t
+    }
+    _ => {
+      // This is some other type DIE that we're currently not
+      // equipped to handle. Return an abstract "unsupported type"
+      // object in such cases.
+      let t = CommonType(byte_size=0, name="", UnsupportedType(tag=e.tag))
+      type_cache[off] = t
+      guard t is (CommonType(UnsupportedType(tag=_), ..) as ct)
+      ct.name = match e.val(AttrName) {
+        Some(String(n)) => n
+        _ => ""
+      }
+      t
+    }
   }
+
+  // Set the byte size
+  let b = match e.val(AttrByteSize) {
+    Some(Int64(size)) => size
+    _ => {
+      let mut b = -1L
+      match typ {
+        CommonType(TypedefType(..), ..) => {
+          // Record that we need to resolve this
+          // type's size once the type graph is
+          // constructed.
+          guard fixup is Some(fixup)
+          fixup.typedefs.push(typ)
+        }
+        CommonType(PtrType(..), ..) => b = address_size.to_int64()
+        _ => ()
+      }
+      b
+    }
+  }
+  guard typ is (CommonType(_, ..) as ct)
+  ct.byte_size = b
   typ
 }
