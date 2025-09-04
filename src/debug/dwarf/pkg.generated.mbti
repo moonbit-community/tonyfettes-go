@@ -325,7 +325,7 @@ pub struct LineEntry {
 impl Show for LineEntry
 
 pub struct LineFile {
-  name : @string.StringView
+  name : @string.View
   mtime : UInt64
   length : Int
 }
@@ -346,7 +346,7 @@ pub struct LineReader {
   mut line_range : Int
   mut opcode_base : Int
   mut opcode_lengths : Array[Int]
-  mut directories : Array[@string.StringView]
+  mut directories : Array[@string.View]
   mut file_entries : Array[LineFile?]
   mut program_offset : UInt
   mut end_offset : UInt

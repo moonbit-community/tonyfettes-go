@@ -115,7 +115,7 @@ pub(open) trait WriteTo {
 pub(open) trait Writer {
   write(Self, @slice.Slice[Byte]) -> Int raise
 }
-impl Writer for @buffer.T
+impl Writer for @buffer.Buffer
 
 pub(open) trait WriterAt {
   write_at(Self, @slice.Slice[Byte], Int64) -> Int raise

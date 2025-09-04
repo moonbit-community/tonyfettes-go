@@ -1,0 +1,30 @@
+// Generated using `moon info`, DON'T EDIT IT
+package "tonyfettes/go/path"
+
+import(
+  "moonbitlang/core/string"
+)
+
+// Values
+fn base(@string.View) -> @string.View raise
+
+fn clean(@string.View) -> @string.View
+
+fn dir(@string.View) -> @string.View raise
+
+fn ext(@string.View) -> @string.View raise
+
+fn is_abs(@string.View) -> Bool
+
+fn join(Array[@string.View]) -> @string.View
+
+fn split(@string.View) -> (@string.View, @string.View) raise
+
+// Errors
+
+// Types and methods
+
+// Type aliases
+
+// Traits
+
