@@ -3,7 +3,7 @@
 priv struct HCode {
   code : UInt
   len : UInt
-} derive(Eq, Show)
+} derive(Eq)
 
 ///|
 /// Set the code and length of an HCode (returns new HCode since structs are immutable)
@@ -16,7 +16,7 @@ fn HCode::new(code : UInt, length : UInt) -> HCode {
 priv struct LiteralNode {
   literal : UInt
   freq : Int
-} derive(Eq, Show)
+} derive(Eq)
 
 ///|
 /// Create a max node sentinel

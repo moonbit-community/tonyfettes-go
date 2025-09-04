@@ -16,8 +16,8 @@ pub(open) trait Writer {
 }
 
 ///|
-pub impl Writer for @buffer.T with write(
-  self : @buffer.T,
+pub impl Writer for @buffer.Buffer with write(
+  self : @buffer.Buffer,
   bytes : @slice.Slice[Byte],
 ) -> Int {
   for i in 0..<bytes.length() {

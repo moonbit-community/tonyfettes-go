@@ -78,7 +78,7 @@ priv struct CompressionLevel {
   nice : Int
   chain : Int
   fast_skip_hashing : Int
-} derive(Show)
+}
 
 ///|
 /// Compression levels array matching Go implementation
