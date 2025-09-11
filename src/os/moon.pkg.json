@@ -1,0 +1,6 @@
+{
+  "import": [
+    "tonyfettes/go/io/fs",
+    "tonyfettes/go/internal/poll"
+  ]
+}

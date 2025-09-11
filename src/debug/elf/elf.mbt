@@ -1513,3 +1513,1065 @@ pub fn ProgFlag::to_int(self : ProgFlag) -> Int {
     PF_MASKPROC => 0xf0000000
   }
 }
+
+///|
+/// Dyn.Tag
+pub(all) enum DynTag {
+  /// 0  Terminating entry.
+  DT_NULL
+  /// 1  String table offset of a needed shared library.
+  DT_NEEDED
+  /// 2  Total size in bytes of PLT relocations.
+  DT_PLTRELSZ
+  /// 3  Processor-dependent address.
+  DT_PLTGOT
+  /// 4  Address of symbol hash table.
+  DT_HASH
+  /// 5  Address of string table.
+  DT_STRTAB
+  /// 6  Address of symbol table.
+  DT_SYMTAB
+  /// 7  Address of ElfNN_Rela relocations.
+  DT_RELA
+  /// 8  Total size of ElfNN_Rela relocations.
+  DT_RELASZ
+  /// 9  Size of each ElfNN_Rela relocation entry.
+  DT_RELAENT
+  /// 10 Size of string table.
+  DT_STRSZ
+  /// 11 Size of each symbol table entry.
+  DT_SYMENT
+  /// 12 Address of initialization function.
+  DT_INIT
+  /// 13 Address of finalization function.
+  DT_FINI
+  /// 14 String table offset of shared object name.
+  DT_SONAME
+  /// 15 String table offset of library path. [sup]
+  DT_RPATH
+  /// 16 Indicates "symbolic" linking. [sup]
+  DT_SYMBOLIC
+  /// 17 Address of ElfNN_Rel relocations.
+  DT_REL
+  /// 18 Total size of ElfNN_Rel relocations.
+  DT_RELSZ
+  /// 19 Size of each ElfNN_Rel relocation.
+  DT_RELENT
+  /// 20 Type of relocation used for PLT.
+  DT_PLTREL
+  /// 21 Reserved (not used).
+  DT_DEBUG
+  /// 22 Indicates there may be relocations in non-writable segments. [sup]
+  DT_TEXTREL
+  /// 23 Address of PLT relocations.
+  DT_JMPREL
+  /// 24 [sup]
+  DT_BIND_NOW
+  /// 25 Address of the array of pointers to initialization functions
+  DT_INIT_ARRAY
+  /// 26 Address of the array of pointers to termination functions
+  DT_FINI_ARRAY
+  /// 27 Size in bytes of the array of initialization functions.
+  DT_INIT_ARRAYSZ
+  /// 28 Size in bytes of the array of termination functions.
+  DT_FINI_ARRAYSZ
+  /// 29 String table offset of a null-terminated library search path string.
+  DT_RUNPATH
+  /// 30 Object specific flag values.
+  DT_FLAGS
+  /// 32 Values greater than or equal to DT_ENCODING
+  /// and less than DT_LOOS follow the rules for
+  /// the interpretation of the d_un union
+  /// as follows: even == 'd_ptr', even == 'd_val'
+  /// or none
+  DT_ENCODING
+  /// 32 Address of the array of pointers to pre-initialization functions.
+  DT_PREINIT_ARRAY
+  /// 33 Size in bytes of the array of pre-initialization functions.
+  DT_PREINIT_ARRAYSZ
+  /// 34 Address of SHT_SYMTAB_SHNDX section.
+  DT_SYMTAB_SHNDX
+  /// 0x6000000d First OS-specific
+  DT_LOOS
+  /// 0x6ffff000 Last OS-specific
+  DT_HIOS
+  /// 0x6ffffd00
+  DT_VALRNGLO
+  /// 0x6ffffdf5
+  DT_GNU_PRELINKED
+  /// 0x6ffffdf6
+  DT_GNU_CONFLICTSZ
+  /// 0x6ffffdf7
+  DT_GNU_LIBLISTSZ
+  /// 0x6ffffdf8
+  DT_CHECKSUM
+  /// 0x6ffffdf9
+  DT_PLTPADSZ
+  /// 0x6ffffdfa
+  DT_MOVEENT
+  /// 0x6ffffdfb
+  DT_MOVESZ
+  /// 0x6ffffdfc
+  DT_FEATURE
+  /// 0x6ffffdfd
+  DT_POSFLAG_1
+  /// 0x6ffffdfe
+  DT_SYMINSZ
+  /// 0x6ffffdff
+  DT_SYMINENT
+  /// 0x6ffffdff
+  DT_VALRNGHI
+  /// 0x6ffffe00
+  DT_ADDRRNGLO
+  /// 0x6ffffef5
+  DT_GNU_HASH
+  /// 0x6ffffef6
+  DT_TLSDESC_PLT
+  /// 0x6ffffef7
+  DT_TLSDESC_GOT
+  /// 0x6ffffef8
+  DT_GNU_CONFLICT
+  /// 0x6ffffef9
+  DT_GNU_LIBLIST
+  /// 0x6ffffefa
+  DT_CONFIG
+  /// 0x6ffffefb
+  DT_DEPAUDIT
+  /// 0x6ffffefc
+  DT_AUDIT
+  /// 0x6ffffefd
+  DT_PLTPAD
+  /// 0x6ffffefe
+  DT_MOVETAB
+  /// 0x6ffffeff
+  DT_SYMINFO
+  /// 0x6ffffeff
+  DT_ADDRRNGHI
+  /// 0x6ffffff0
+  DT_VERSYM
+  /// 0x6ffffff9
+  DT_RELACOUNT
+  /// 0x6ffffffa
+  DT_RELCOUNT
+  /// 0x6ffffffb
+  DT_FLAGS_1
+  /// 0x6ffffffc
+  DT_VERDEF
+  /// 0x6ffffffd
+  DT_VERDEFNUM
+  /// 0x6ffffffe
+  DT_VERNEED
+  /// 0x6fffffff
+  DT_VERNEEDNUM
+  /// 0x70000000 First processor-specific type.
+  DT_LOPROC
+  /// 0x70000001
+  DT_MIPS_RLD_VERSION
+  /// 0x70000002
+  DT_MIPS_TIME_STAMP
+  /// 0x70000003
+  DT_MIPS_ICHECKSUM
+  /// 0x70000004
+  DT_MIPS_IVERSION
+  /// 0x70000005
+  DT_MIPS_FLAGS
+  /// 0x70000006
+  DT_MIPS_BASE_ADDRESS
+  /// 0x70000007
+  DT_MIPS_MSYM
+  /// 0x70000008
+  DT_MIPS_CONFLICT
+  /// 0x70000009
+  DT_MIPS_LIBLIST
+  /// 0x7000000a
+  DT_MIPS_LOCAL_GOTNO
+  /// 0x7000000b
+  DT_MIPS_CONFLICTNO
+  /// 0x70000010
+  DT_MIPS_LIBLISTNO
+  /// 0x70000011
+  DT_MIPS_SYMTABNO
+  /// 0x70000012
+  DT_MIPS_UNREFEXTNO
+  /// 0x70000013
+  DT_MIPS_GOTSYM
+  /// 0x70000014
+  DT_MIPS_HIPAGENO
+  /// 0x70000016
+  DT_MIPS_RLD_MAP
+  /// 0x70000017
+  DT_MIPS_DELTA_CLASS
+  /// 0x70000018
+  DT_MIPS_DELTA_CLASS_NO
+  /// 0x70000019
+  DT_MIPS_DELTA_INSTANCE
+  /// 0x7000001a
+  DT_MIPS_DELTA_INSTANCE_NO
+  /// 0x7000001b
+  DT_MIPS_DELTA_RELOC
+  /// 0x7000001c
+  DT_MIPS_DELTA_RELOC_NO
+  /// 0x7000001d
+  DT_MIPS_DELTA_SYM
+  /// 0x7000001e
+  DT_MIPS_DELTA_SYM_NO
+  /// 0x70000020
+  DT_MIPS_DELTA_CLASSSYM
+  /// 0x70000021
+  DT_MIPS_DELTA_CLASSSYM_NO
+  /// 0x70000022
+  DT_MIPS_CXX_FLAGS
+  /// 0x70000023
+  DT_MIPS_PIXIE_INIT
+  /// 0x70000024
+  DT_MIPS_SYMBOL_LIB
+  /// 0x70000025
+  DT_MIPS_LOCALPAGE_GOTIDX
+  /// 0x70000026
+  DT_MIPS_LOCAL_GOTIDX
+  /// 0x70000027
+  DT_MIPS_HIDDEN_GOTIDX
+  /// 0x70000028
+  DT_MIPS_PROTECTED_GOTIDX
+  /// 0x70000029
+  DT_MIPS_OPTIONS
+  /// 0x7000002a
+  DT_MIPS_INTERFACE
+  /// 0x7000002b
+  DT_MIPS_DYNSTR_ALIGN
+  /// 0x7000002c
+  DT_MIPS_INTERFACE_SIZE
+  /// 0x7000002d
+  DT_MIPS_RLD_TEXT_RESOLVE_ADDR
+  /// 0x7000002e
+  DT_MIPS_PERF_SUFFIX
+  /// 0x7000002f
+  DT_MIPS_COMPACT_SIZE
+  /// 0x70000030
+  DT_MIPS_GP_VALUE
+  /// 0x70000031
+  DT_MIPS_AUX_DYNAMIC
+  /// 0x70000032
+  DT_MIPS_PLTGOT
+  /// 0x70000034
+  DT_MIPS_RWPLT
+  /// 0x70000035
+  DT_MIPS_RLD_MAP_REL
+  /// 0x70000000
+  DT_PPC_GOT
+  /// 0x70000001
+  DT_PPC_OPT
+  /// 0x70000000
+  DT_PPC64_GLINK
+  /// 0x70000001
+  DT_PPC64_OPD
+  /// 0x70000002
+  DT_PPC64_OPDSZ
+  /// 0x70000003
+  DT_PPC64_OPT
+  /// 0x70000001
+  DT_SPARC_REGISTER
+  /// 0x7ffffffd
+  DT_AUXILIARY
+  /// 0x7ffffffe
+  DT_USED
+  /// 0x7fffffff
+  DT_FILTER
+  /// 0x7fffffff Last processor-specific type.
+  DT_HIPROC
+} derive(Eq, Show, ToJson(style="flat"))
+
+///|
+pub fn DynTag::to_int(self : DynTag) -> Int {
+  match self {
+    DT_NULL => 0
+    DT_NEEDED => 1
+    DT_PLTRELSZ => 2
+    DT_PLTGOT => 3
+    DT_HASH => 4
+    DT_STRTAB => 5
+    DT_SYMTAB => 6
+    DT_RELA => 7
+    DT_RELASZ => 8
+    DT_RELAENT => 9
+    DT_STRSZ => 10
+    DT_SYMENT => 11
+    DT_INIT => 12
+    DT_FINI => 13
+    DT_SONAME => 14
+    DT_RPATH => 15
+    DT_SYMBOLIC => 16
+    DT_REL => 17
+    DT_RELSZ => 18
+    DT_RELENT => 19
+    DT_PLTREL => 20
+    DT_DEBUG => 21
+    DT_TEXTREL => 22
+    DT_JMPREL => 23
+    DT_BIND_NOW => 24
+    DT_INIT_ARRAY => 25
+    DT_FINI_ARRAY => 26
+    DT_INIT_ARRAYSZ => 27
+    DT_FINI_ARRAYSZ => 28
+    DT_RUNPATH => 29
+    DT_FLAGS => 30
+    DT_ENCODING => 32
+    DT_PREINIT_ARRAY => 32
+    DT_PREINIT_ARRAYSZ => 33
+    DT_SYMTAB_SHNDX => 34
+    DT_LOOS => 0x6000000d
+    DT_HIOS => 0x6ffff000
+    DT_VALRNGLO => 0x6ffffd00
+    DT_GNU_PRELINKED => 0x6ffffdf5
+    DT_GNU_CONFLICTSZ => 0x6ffffdf6
+    DT_GNU_LIBLISTSZ => 0x6ffffdf7
+    DT_CHECKSUM => 0x6ffffdf8
+    DT_PLTPADSZ => 0x6ffffdf9
+    DT_MOVEENT => 0x6ffffdfa
+    DT_MOVESZ => 0x6ffffdfb
+    DT_FEATURE => 0x6ffffdfc
+    DT_POSFLAG_1 => 0x6ffffdfd
+    DT_SYMINSZ => 0x6ffffdfe
+    DT_SYMINENT => 0x6ffffdff
+    DT_VALRNGHI => 0x6ffffdff
+    DT_ADDRRNGLO => 0x6ffffe00
+    DT_GNU_HASH => 0x6ffffef5
+    DT_TLSDESC_PLT => 0x6ffffef6
+    DT_TLSDESC_GOT => 0x6ffffef7
+    DT_GNU_CONFLICT => 0x6ffffef8
+    DT_GNU_LIBLIST => 0x6ffffef9
+    DT_CONFIG => 0x6ffffefa
+    DT_DEPAUDIT => 0x6ffffefb
+    DT_AUDIT => 0x6ffffefc
+    DT_PLTPAD => 0x6ffffefd
+    DT_MOVETAB => 0x6ffffefe
+    DT_SYMINFO => 0x6ffffeff
+    DT_ADDRRNGHI => 0x6ffffeff
+    DT_VERSYM => 0x6ffffff0
+    DT_RELACOUNT => 0x6ffffff9
+    DT_RELCOUNT => 0x6ffffffa
+    DT_FLAGS_1 => 0x6ffffffb
+    DT_VERDEF => 0x6ffffffc
+    DT_VERDEFNUM => 0x6ffffffd
+    DT_VERNEED => 0x6ffffffe
+    DT_VERNEEDNUM => 0x6fffffff
+    DT_LOPROC => 0x70000000
+    DT_MIPS_RLD_VERSION => 0x70000001
+    DT_MIPS_TIME_STAMP => 0x70000002
+    DT_MIPS_ICHECKSUM => 0x70000003
+    DT_MIPS_IVERSION => 0x70000004
+    DT_MIPS_FLAGS => 0x70000005
+    DT_MIPS_BASE_ADDRESS => 0x70000006
+    DT_MIPS_MSYM => 0x70000007
+    DT_MIPS_CONFLICT => 0x70000008
+    DT_MIPS_LIBLIST => 0x70000009
+    DT_MIPS_LOCAL_GOTNO => 0x7000000a
+    DT_MIPS_CONFLICTNO => 0x7000000b
+    DT_MIPS_LIBLISTNO => 0x70000010
+    DT_MIPS_SYMTABNO => 0x70000011
+    DT_MIPS_UNREFEXTNO => 0x70000012
+    DT_MIPS_GOTSYM => 0x70000013
+    DT_MIPS_HIPAGENO => 0x70000014
+    DT_MIPS_RLD_MAP => 0x70000016
+    DT_MIPS_DELTA_CLASS => 0x70000017
+    DT_MIPS_DELTA_CLASS_NO => 0x70000018
+    DT_MIPS_DELTA_INSTANCE => 0x70000019
+    DT_MIPS_DELTA_INSTANCE_NO => 0x7000001a
+    DT_MIPS_DELTA_RELOC => 0x7000001b
+    DT_MIPS_DELTA_RELOC_NO => 0x7000001c
+    DT_MIPS_DELTA_SYM => 0x7000001d
+    DT_MIPS_DELTA_SYM_NO => 0x7000001e
+    DT_MIPS_DELTA_CLASSSYM => 0x70000020
+    DT_MIPS_DELTA_CLASSSYM_NO => 0x70000021
+    DT_MIPS_CXX_FLAGS => 0x70000022
+    DT_MIPS_PIXIE_INIT => 0x70000023
+    DT_MIPS_SYMBOL_LIB => 0x70000024
+    DT_MIPS_LOCALPAGE_GOTIDX => 0x70000025
+    DT_MIPS_LOCAL_GOTIDX => 0x70000026
+    DT_MIPS_HIDDEN_GOTIDX => 0x70000027
+    DT_MIPS_PROTECTED_GOTIDX => 0x70000028
+    DT_MIPS_OPTIONS => 0x70000029
+    DT_MIPS_INTERFACE => 0x7000002a
+    DT_MIPS_DYNSTR_ALIGN => 0x7000002b
+    DT_MIPS_INTERFACE_SIZE => 0x7000002c
+    DT_MIPS_RLD_TEXT_RESOLVE_ADDR => 0x7000002d
+    DT_MIPS_PERF_SUFFIX => 0x7000002e
+    DT_MIPS_COMPACT_SIZE => 0x7000002f
+    DT_MIPS_GP_VALUE => 0x70000030
+    DT_MIPS_AUX_DYNAMIC => 0x70000031
+    DT_MIPS_PLTGOT => 0x70000032
+    DT_MIPS_RWPLT => 0x70000034
+    DT_MIPS_RLD_MAP_REL => 0x70000035
+    DT_PPC_GOT => 0x70000000
+    DT_PPC_OPT => 0x70000001
+    DT_PPC64_GLINK => 0x70000000
+    DT_PPC64_OPD => 0x70000001
+    DT_PPC64_OPDSZ => 0x70000002
+    DT_PPC64_OPT => 0x70000003
+    DT_SPARC_REGISTER => 0x70000001
+    DT_AUXILIARY => 0x7ffffffd
+    DT_USED => 0x7ffffffe
+    DT_FILTER => 0x7fffffff
+    DT_HIPROC => 0x7fffffff
+  }
+}
+
+///|
+pub fn DynTag::from_int(i : Int) -> DynTag {
+  match i {
+    0 => DT_NULL
+    1 => DT_NEEDED
+    2 => DT_PLTRELSZ
+    3 => DT_PLTGOT
+    4 => DT_HASH
+    5 => DT_STRTAB
+    6 => DT_SYMTAB
+    7 => DT_RELA
+    8 => DT_RELASZ
+    9 => DT_RELAENT
+    10 => DT_STRSZ
+    11 => DT_SYMENT
+    12 => DT_INIT
+    13 => DT_FINI
+    14 => DT_SONAME
+    15 => DT_RPATH
+    16 => DT_SYMBOLIC
+    17 => DT_REL
+    18 => DT_RELSZ
+    19 => DT_RELENT
+    20 => DT_PLTREL
+    21 => DT_DEBUG
+    22 => DT_TEXTREL
+    23 => DT_JMPREL
+    24 => DT_BIND_NOW
+    25 => DT_INIT_ARRAY
+    26 => DT_FINI_ARRAY
+    27 => DT_INIT_ARRAYSZ
+    28 => DT_FINI_ARRAYSZ
+    29 => DT_RUNPATH
+    30 => DT_FLAGS
+    32 => DT_ENCODING
+    33 => DT_PREINIT_ARRAYSZ
+    34 => DT_SYMTAB_SHNDX
+    0x6000000d => DT_LOOS
+    0x6ffff000 => DT_HIOS
+    0x6ffffd00 => DT_VALRNGLO
+    0x6ffffdf5 => DT_GNU_PRELINKED
+    0x6ffffdf6 => DT_GNU_CONFLICTSZ
+    0x6ffffdf7 => DT_GNU_LIBLISTSZ
+    0x6ffffdf8 => DT_CHECKSUM
+    0x6ffffdf9 => DT_PLTPADSZ
+    0x6ffffdfa => DT_MOVEENT
+    0x6ffffdfb => DT_MOVESZ
+    0x6ffffdfc => DT_FEATURE
+    0x6ffffdfd => DT_POSFLAG_1
+    0x6ffffdfe => DT_SYMINSZ
+    0x6ffffdff => DT_SYMINENT
+    0x6ffffe00 => DT_ADDRRNGLO
+    0x6ffffef5 => DT_GNU_HASH
+    0x6ffffef6 => DT_TLSDESC_PLT
+    0x6ffffef7 => DT_TLSDESC_GOT
+    0x6ffffef8 => DT_GNU_CONFLICT
+    0x6ffffef9 => DT_GNU_LIBLIST
+    0x6ffffefa => DT_CONFIG
+    0x6ffffefb => DT_DEPAUDIT
+    0x6ffffefc => DT_AUDIT
+    0x6ffffefd => DT_PLTPAD
+    0x6ffffefe => DT_MOVETAB
+    0x6ffffeff => DT_SYMINFO
+    0x6ffffff0 => DT_VERSYM
+    0x6ffffff9 => DT_RELACOUNT
+    0x6ffffffa => DT_RELCOUNT
+    0x6ffffffb => DT_FLAGS_1
+    0x6ffffffc => DT_VERDEF
+    0x6ffffffd => DT_VERDEFNUM
+    0x6ffffffe => DT_VERNEED
+    0x6fffffff => DT_VERNEEDNUM
+    0x70000000 => DT_LOPROC
+    0x70000001 => DT_MIPS_RLD_VERSION
+    0x70000002 => DT_MIPS_TIME_STAMP
+    0x70000003 => DT_MIPS_ICHECKSUM
+    0x70000004 => DT_MIPS_IVERSION
+    0x70000005 => DT_MIPS_FLAGS
+    0x70000006 => DT_MIPS_BASE_ADDRESS
+    0x70000007 => DT_MIPS_MSYM
+    0x70000008 => DT_MIPS_CONFLICT
+    0x70000009 => DT_MIPS_LIBLIST
+    0x7000000a => DT_MIPS_LOCAL_GOTNO
+    0x7000000b => DT_MIPS_CONFLICTNO
+    0x70000010 => DT_MIPS_LIBLISTNO
+    0x70000011 => DT_MIPS_SYMTABNO
+    0x70000012 => DT_MIPS_UNREFEXTNO
+    0x70000013 => DT_MIPS_GOTSYM
+    0x70000014 => DT_MIPS_HIPAGENO
+    0x70000016 => DT_MIPS_RLD_MAP
+    0x70000017 => DT_MIPS_DELTA_CLASS
+    0x70000018 => DT_MIPS_DELTA_CLASS_NO
+    0x70000019 => DT_MIPS_DELTA_INSTANCE
+    0x7000001a => DT_MIPS_DELTA_INSTANCE_NO
+    0x7000001b => DT_MIPS_DELTA_RELOC
+    0x7000001c => DT_MIPS_DELTA_RELOC_NO
+    0x7000001d => DT_MIPS_DELTA_SYM
+    0x7000001e => DT_MIPS_DELTA_SYM_NO
+    0x70000020 => DT_MIPS_DELTA_CLASSSYM
+    0x70000021 => DT_MIPS_DELTA_CLASSSYM_NO
+    0x70000022 => DT_MIPS_CXX_FLAGS
+    0x70000023 => DT_MIPS_PIXIE_INIT
+    0x70000024 => DT_MIPS_SYMBOL_LIB
+    0x70000025 => DT_MIPS_LOCALPAGE_GOTIDX
+    0x70000026 => DT_MIPS_LOCAL_GOTIDX
+    0x70000027 => DT_MIPS_HIDDEN_GOTIDX
+    0x70000028 => DT_MIPS_PROTECTED_GOTIDX
+    0x70000029 => DT_MIPS_OPTIONS
+    0x7000002a => DT_MIPS_INTERFACE
+    0x7000002b => DT_MIPS_DYNSTR_ALIGN
+    0x7000002c => DT_MIPS_INTERFACE_SIZE
+    0x7000002d => DT_MIPS_RLD_TEXT_RESOLVE_ADDR
+    0x7000002e => DT_MIPS_PERF_SUFFIX
+    0x7000002f => DT_MIPS_COMPACT_SIZE
+    0x70000030 => DT_MIPS_GP_VALUE
+    0x70000031 => DT_MIPS_AUX_DYNAMIC
+    0x70000032 => DT_MIPS_PLTGOT
+    0x70000034 => DT_MIPS_RWPLT
+    0x70000035 => DT_MIPS_RLD_MAP_REL
+    0x7ffffffd => DT_AUXILIARY
+    0x7ffffffe => DT_USED
+    0x7fffffff => DT_FILTER
+    _ => DT_NULL
+  }
+}
+
+///|
+/// Symbol Binding - ELFNN_ST_BIND - st_info
+pub(all) enum SymBind {
+  /// 0  Local symbol
+  STB_LOCAL
+  /// 1  Global symbol
+  STB_GLOBAL
+  /// 2  like global - lower precedence
+  STB_WEAK
+  /// 10 Reserved range for operating system
+  STB_LOOS
+  /// 12   specific semantics.
+  STB_HIOS
+  /// 13 reserved range for processor
+  STB_LOPROC
+  /// 15   specific semantics.
+  STB_HIPROC
+} derive(Eq, Show, ToJson(style="flat"))
+
+///|
+pub fn SymBind::to_int(self : SymBind) -> Int {
+  match self {
+    STB_LOCAL => 0
+    STB_GLOBAL => 1
+    STB_WEAK => 2
+    STB_LOOS => 10
+    STB_HIOS => 12
+    STB_LOPROC => 13
+    STB_HIPROC => 15
+  }
+}
+
+///|
+pub fn SymBind::from_int(i : Int) -> SymBind {
+  match i {
+    0 => STB_LOCAL
+    1 => STB_GLOBAL
+    2 => STB_WEAK
+    10 => STB_LOOS
+    12 => STB_HIOS
+    13 => STB_LOPROC
+    15 => STB_HIPROC
+    _ => STB_LOCAL
+  }
+}
+
+///|
+/// Symbol type - ELFNN_ST_TYPE - st_info
+pub(all) enum SymType {
+  /// 0  Unspecified type.
+  STT_NOTYPE
+  /// 1  Data object.
+  STT_OBJECT
+  /// 2  Function.
+  STT_FUNC
+  /// 3  Section.
+  STT_SECTION
+  /// 4  Source file.
+  STT_FILE
+  /// 5  Uninitialized common block.
+  STT_COMMON
+  /// 6  TLS object.
+  STT_TLS
+  /// 10 Reserved range for operating system
+  STT_LOOS
+  /// 12   specific semantics.
+  STT_HIOS
+  /// 13 reserved range for processor
+  STT_LOPROC
+  /// 15   specific semantics.
+  STT_HIPROC
+  /// Non-standard symbol types.
+  /// 8  Complex relocation expression.
+  STT_RELC
+  /// 9  Signed complex relocation expression.
+  STT_SRELC
+  /// 10 Indirect code object.
+  STT_GNU_IFUNC
+} derive(Eq, Show, ToJson(style="flat"))
+
+///|
+pub fn SymType::to_int(self : SymType) -> Int {
+  match self {
+    STT_NOTYPE => 0
+    STT_OBJECT => 1
+    STT_FUNC => 2
+    STT_SECTION => 3
+    STT_FILE => 4
+    STT_COMMON => 5
+    STT_TLS => 6
+    STT_RELC => 8
+    STT_SRELC => 9
+    STT_LOOS => 10
+    STT_GNU_IFUNC => 10
+    STT_HIOS => 12
+    STT_LOPROC => 13
+    STT_HIPROC => 15
+  }
+}
+
+///|
+pub fn SymType::from_int(i : Int) -> SymType {
+  match i {
+    0 => STT_NOTYPE
+    1 => STT_OBJECT
+    2 => STT_FUNC
+    3 => STT_SECTION
+    4 => STT_FILE
+    5 => STT_COMMON
+    6 => STT_TLS
+    8 => STT_RELC
+    9 => STT_SRELC
+    10 => STT_LOOS
+    12 => STT_HIOS
+    13 => STT_LOPROC
+    15 => STT_HIPROC
+    _ => STT_NOTYPE
+  }
+}
+
+///|
+/// Symbol binding and type helper functions
+
+///|
+/// ST_BIND extracts binding from st_info
+pub fn st_bind(st_info : Byte) -> SymBind {
+  SymBind::from_int((st_info >> 4).to_int())
+}
+
+///|
+/// ST_TYPE extracts type from st_info  
+pub fn st_type(st_info : Byte) -> SymType {
+  SymType::from_int((st_info & 0xf).to_int())
+}
+
+///|
+/// ST_INFO constructs st_info from binding and type
+pub fn st_info(bind : SymBind, typ : SymType) -> Byte {
+  ((bind.to_int() << 4) | typ.to_int()).to_byte()
+}
+
+///|
+/// Dynamic version flags.
+pub struct DynamicVersionFlag {
+  value : UInt
+} derive(Show, ToJson, Eq)
+
+///|
+/// Create a new DynamicVersionFlag
+pub fn DynamicVersionFlag::new(value : UInt) -> DynamicVersionFlag {
+  DynamicVersionFlag::{ value, }
+}
+
+///|
+/// Version flag constants
+pub const VER_FLG_BASE : UInt = 0x1U    /// Version definition of the file.
+pub const VER_FLG_WEAK : UInt = 0x2U    /// Weak version identifier.
+pub const VER_FLG_INFO : UInt = 0x4U    /// Reference exists for informational purposes.
+
+///|
+/// Relocation types for x86-64.
+pub(all) enum R_X86_64 {
+  /// 0 No relocation.
+  R_X86_64_NONE
+  /// 1 Add 64 bit symbol value.
+  R_X86_64_64
+  /// 2 PC-relative 32 bit signed sym value.
+  R_X86_64_PC32
+  /// 3 PC-relative 32 bit GOT offset.
+  R_X86_64_GOT32
+  /// 4 PC-relative 32 bit PLT offset.
+  R_X86_64_PLT32
+  /// 5 Copy data from shared object.
+  R_X86_64_COPY
+  /// 6 Set GOT entry to data address.
+  R_X86_64_GLOB_DAT
+  /// 7 Set GOT entry to code address.
+  R_X86_64_JMP_SLOT
+  /// 8 Add load address of shared object.
+  R_X86_64_RELATIVE
+  /// 9 Add 32 bit signed pcrel offset to GOT.
+  R_X86_64_GOTPCREL
+  /// 10 Add 32 bit zero extended symbol value
+  R_X86_64_32
+  /// 11 Add 32 bit sign extended symbol value
+  R_X86_64_32S
+  /// 12 Add 16 bit zero extended symbol value
+  R_X86_64_16
+  /// 13 Add 16 bit signed extended pc relative symbol value
+  R_X86_64_PC16
+  /// 14 Add 8 bit zero extended symbol value
+  R_X86_64_8
+  /// 15 Add 8 bit signed extended pc relative symbol value
+  R_X86_64_PC8
+  /// 16 ID of module containing symbol
+  R_X86_64_DTPMOD64
+  /// 17 Offset in TLS block
+  R_X86_64_DTPOFF64
+  /// 18 Offset in static TLS block
+  R_X86_64_TPOFF64
+  /// 19 PC relative offset to GD GOT entry
+  R_X86_64_TLSGD
+  /// 20 PC relative offset to LD GOT entry
+  R_X86_64_TLSLD
+  /// 21 Offset in TLS block
+  R_X86_64_DTPOFF32
+  /// 22 PC relative offset to IE GOT entry
+  R_X86_64_GOTTPOFF
+  /// 23 Offset in static TLS block
+  R_X86_64_TPOFF32
+  /// 24 PC relative 64-bit sign extended symbol value.
+  R_X86_64_PC64
+  /// 25
+  R_X86_64_GOTOFF64
+  /// 26
+  R_X86_64_GOTPC32
+  /// 27
+  R_X86_64_GOT64
+  /// 28
+  R_X86_64_GOTPCREL64
+  /// 29
+  R_X86_64_GOTPC64
+  /// 30
+  R_X86_64_GOTPLT64
+  /// 31
+  R_X86_64_PLTOFF64
+  /// 32
+  R_X86_64_SIZE32
+  /// 33
+  R_X86_64_SIZE64
+  /// 34
+  R_X86_64_GOTPC32_TLSDESC
+  /// 35
+  R_X86_64_TLSDESC_CALL
+  /// 36
+  R_X86_64_TLSDESC
+  /// 37
+  R_X86_64_IRELATIVE
+  /// 38
+  R_X86_64_RELATIVE64
+  /// 39
+  R_X86_64_PC32_BND
+  /// 40
+  R_X86_64_PLT32_BND
+  /// 41
+  R_X86_64_GOTPCRELX
+  /// 42
+  R_X86_64_REX_GOTPCRELX
+} derive(Eq, Show, ToJson(style="flat"))
+
+///|
+pub fn R_X86_64::to_int(self : R_X86_64) -> Int {
+  match self {
+    R_X86_64_NONE => 0
+    R_X86_64_64 => 1
+    R_X86_64_PC32 => 2
+    R_X86_64_GOT32 => 3
+    R_X86_64_PLT32 => 4
+    R_X86_64_COPY => 5
+    R_X86_64_GLOB_DAT => 6
+    R_X86_64_JMP_SLOT => 7
+    R_X86_64_RELATIVE => 8
+    R_X86_64_GOTPCREL => 9
+    R_X86_64_32 => 10
+    R_X86_64_32S => 11
+    R_X86_64_16 => 12
+    R_X86_64_PC16 => 13
+    R_X86_64_8 => 14
+    R_X86_64_PC8 => 15
+    R_X86_64_DTPMOD64 => 16
+    R_X86_64_DTPOFF64 => 17
+    R_X86_64_TPOFF64 => 18
+    R_X86_64_TLSGD => 19
+    R_X86_64_TLSLD => 20
+    R_X86_64_DTPOFF32 => 21
+    R_X86_64_GOTTPOFF => 22
+    R_X86_64_TPOFF32 => 23
+    R_X86_64_PC64 => 24
+    R_X86_64_GOTOFF64 => 25
+    R_X86_64_GOTPC32 => 26
+    R_X86_64_GOT64 => 27
+    R_X86_64_GOTPCREL64 => 28
+    R_X86_64_GOTPC64 => 29
+    R_X86_64_GOTPLT64 => 30
+    R_X86_64_PLTOFF64 => 31
+    R_X86_64_SIZE32 => 32
+    R_X86_64_SIZE64 => 33
+    R_X86_64_GOTPC32_TLSDESC => 34
+    R_X86_64_TLSDESC_CALL => 35
+    R_X86_64_TLSDESC => 36
+    R_X86_64_IRELATIVE => 37
+    R_X86_64_RELATIVE64 => 38
+    R_X86_64_PC32_BND => 39
+    R_X86_64_PLT32_BND => 40
+    R_X86_64_GOTPCRELX => 41
+    R_X86_64_REX_GOTPCRELX => 42
+  }
+}
+
+///|
+pub fn R_X86_64::from_int(i : Int) -> R_X86_64 {
+  match i {
+    0 => R_X86_64_NONE
+    1 => R_X86_64_64
+    2 => R_X86_64_PC32
+    3 => R_X86_64_GOT32
+    4 => R_X86_64_PLT32
+    5 => R_X86_64_COPY
+    6 => R_X86_64_GLOB_DAT
+    7 => R_X86_64_JMP_SLOT
+    8 => R_X86_64_RELATIVE
+    9 => R_X86_64_GOTPCREL
+    10 => R_X86_64_32
+    11 => R_X86_64_32S
+    12 => R_X86_64_16
+    13 => R_X86_64_PC16
+    14 => R_X86_64_8
+    15 => R_X86_64_PC8
+    16 => R_X86_64_DTPMOD64
+    17 => R_X86_64_DTPOFF64
+    18 => R_X86_64_TPOFF64
+    19 => R_X86_64_TLSGD
+    20 => R_X86_64_TLSLD
+    21 => R_X86_64_DTPOFF32
+    22 => R_X86_64_GOTTPOFF
+    23 => R_X86_64_TPOFF32
+    24 => R_X86_64_PC64
+    25 => R_X86_64_GOTOFF64
+    26 => R_X86_64_GOTPC32
+    27 => R_X86_64_GOT64
+    28 => R_X86_64_GOTPCREL64
+    29 => R_X86_64_GOTPC64
+    30 => R_X86_64_GOTPLT64
+    31 => R_X86_64_PLTOFF64
+    32 => R_X86_64_SIZE32
+    33 => R_X86_64_SIZE64
+    34 => R_X86_64_GOTPC32_TLSDESC
+    35 => R_X86_64_TLSDESC_CALL
+    36 => R_X86_64_TLSDESC
+    37 => R_X86_64_IRELATIVE
+    38 => R_X86_64_RELATIVE64
+    39 => R_X86_64_PC32_BND
+    40 => R_X86_64_PLT32_BND
+    41 => R_X86_64_GOTPCRELX
+    42 => R_X86_64_REX_GOTPCRELX
+    _ => R_X86_64_NONE
+  }
+}
+
+///|
+/// Relocation types for 386.
+pub(all) enum R_386 {
+  /// 0 No relocation.
+  R_386_NONE
+  /// 1 Add symbol value.
+  R_386_32
+  /// 2 Add PC-relative symbol value.
+  R_386_PC32
+  /// 3 Add PC-relative GOT offset.
+  R_386_GOT32
+  /// 4 Add PC-relative PLT offset.
+  R_386_PLT32
+  /// 5 Copy data from shared object.
+  R_386_COPY
+  /// 6 Set GOT entry to data address.
+  R_386_GLOB_DAT
+  /// 7 Set GOT entry to code address.
+  R_386_JMP_SLOT
+  /// 8 Add load address of shared object.
+  R_386_RELATIVE
+  /// 9 Add GOT-relative symbol address.
+  R_386_GOTOFF
+  /// 10 Add PC-relative GOT table address.
+  R_386_GOTPC
+  /// 11
+  R_386_32PLT
+  /// 14 Negative offset in static TLS block
+  R_386_TLS_TPOFF
+  /// 15 Absolute address of GOT for -ve static TLS
+  R_386_TLS_IE
+  /// 16 GOT entry for negative static TLS block
+  R_386_TLS_GOTIE
+  /// 17 Negative offset relative to static TLS
+  R_386_TLS_LE
+  /// 18 32 bit offset to GOT (index,off) pair
+  R_386_TLS_GD
+  /// 19 32 bit offset to GOT (index,zero) pair
+  R_386_TLS_LDM
+  /// 20
+  R_386_16
+  /// 21
+  R_386_PC16
+  /// 22
+  R_386_8
+  /// 23
+  R_386_PC8
+  /// 24 32 bit offset to GOT (index,off) pair
+  R_386_TLS_GD_32
+  /// 25 pushl instruction for Sun ABI GD sequence
+  R_386_TLS_GD_PUSH
+  /// 26 call instruction for Sun ABI GD sequence
+  R_386_TLS_GD_CALL
+  /// 27 popl instruction for Sun ABI GD sequence
+  R_386_TLS_GD_POP
+  /// 28 32 bit offset to GOT (index,zero) pair
+  R_386_TLS_LDM_32
+  /// 29 pushl instruction for Sun ABI LD sequence
+  R_386_TLS_LDM_PUSH
+  /// 30 call instruction for Sun ABI LD sequence
+  R_386_TLS_LDM_CALL
+  /// 31 popl instruction for Sun ABI LD sequence
+  R_386_TLS_LDM_POP
+  /// 32 32 bit offset from start of TLS block
+  R_386_TLS_LDO_32
+  /// 33 32 bit offset to GOT static TLS offset entry
+  R_386_TLS_IE_32
+  /// 34 32 bit offset within static TLS block
+  R_386_TLS_LE_32
+  /// 35 GOT entry containing TLS index
+  R_386_TLS_DTPMOD32
+  /// 36 GOT entry containing TLS offset
+  R_386_TLS_DTPOFF32
+  /// 37 GOT entry of -ve static TLS offset
+  R_386_TLS_TPOFF32
+  /// 38
+  R_386_SIZE32
+  /// 39
+  R_386_TLS_GOTDESC
+  /// 40
+  R_386_TLS_DESC_CALL
+  /// 41
+  R_386_TLS_DESC
+  /// 42
+  R_386_IRELATIVE
+  /// 43
+  R_386_GOT32X
+} derive(Eq, Show, ToJson(style="flat"))
+
+///|
+pub fn R_386::to_int(self : R_386) -> Int {
+  match self {
+    R_386_NONE => 0
+    R_386_32 => 1
+    R_386_PC32 => 2
+    R_386_GOT32 => 3
+    R_386_PLT32 => 4
+    R_386_COPY => 5
+    R_386_GLOB_DAT => 6
+    R_386_JMP_SLOT => 7
+    R_386_RELATIVE => 8
+    R_386_GOTOFF => 9
+    R_386_GOTPC => 10
+    R_386_32PLT => 11
+    R_386_TLS_TPOFF => 14
+    R_386_TLS_IE => 15
+    R_386_TLS_GOTIE => 16
+    R_386_TLS_LE => 17
+    R_386_TLS_GD => 18
+    R_386_TLS_LDM => 19
+    R_386_16 => 20
+    R_386_PC16 => 21
+    R_386_8 => 22
+    R_386_PC8 => 23
+    R_386_TLS_GD_32 => 24
+    R_386_TLS_GD_PUSH => 25
+    R_386_TLS_GD_CALL => 26
+    R_386_TLS_GD_POP => 27
+    R_386_TLS_LDM_32 => 28
+    R_386_TLS_LDM_PUSH => 29
+    R_386_TLS_LDM_CALL => 30
+    R_386_TLS_LDM_POP => 31
+    R_386_TLS_LDO_32 => 32
+    R_386_TLS_IE_32 => 33
+    R_386_TLS_LE_32 => 34
+    R_386_TLS_DTPMOD32 => 35
+    R_386_TLS_DTPOFF32 => 36
+    R_386_TLS_TPOFF32 => 37
+    R_386_SIZE32 => 38
+    R_386_TLS_GOTDESC => 39
+    R_386_TLS_DESC_CALL => 40
+    R_386_TLS_DESC => 41
+    R_386_IRELATIVE => 42
+    R_386_GOT32X => 43
+  }
+}
+
+///|
+pub fn R_386::from_int(i : Int) -> R_386 {
+  match i {
+    0 => R_386_NONE
+    1 => R_386_32
+    2 => R_386_PC32
+    3 => R_386_GOT32
+    4 => R_386_PLT32
+    5 => R_386_COPY
+    6 => R_386_GLOB_DAT
+    7 => R_386_JMP_SLOT
+    8 => R_386_RELATIVE
+    9 => R_386_GOTOFF
+    10 => R_386_GOTPC
+    11 => R_386_32PLT
+    14 => R_386_TLS_TPOFF
+    15 => R_386_TLS_IE
+    16 => R_386_TLS_GOTIE
+    17 => R_386_TLS_LE
+    18 => R_386_TLS_GD
+    19 => R_386_TLS_LDM
+    20 => R_386_16
+    21 => R_386_PC16
+    22 => R_386_8
+    23 => R_386_PC8
+    24 => R_386_TLS_GD_32
+    25 => R_386_TLS_GD_PUSH
+    26 => R_386_TLS_GD_CALL
+    27 => R_386_TLS_GD_POP
+    28 => R_386_TLS_LDM_32
+    29 => R_386_TLS_LDM_PUSH
+    30 => R_386_TLS_LDM_CALL
+    31 => R_386_TLS_LDM_POP
+    32 => R_386_TLS_LDO_32
+    33 => R_386_TLS_IE_32
+    34 => R_386_TLS_LE_32
+    35 => R_386_TLS_DTPMOD32
+    36 => R_386_TLS_DTPOFF32
+    37 => R_386_TLS_TPOFF32
+    38 => R_386_SIZE32
+    39 => R_386_TLS_GOTDESC
+    40 => R_386_TLS_DESC_CALL
+    41 => R_386_TLS_DESC
+    42 => R_386_IRELATIVE
+    43 => R_386_GOT32X
+    _ => R_386_NONE
+  }
+}

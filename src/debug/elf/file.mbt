@@ -1,3 +1,17 @@
+/// Copyright 2009 The Go Authors. All rights reserved.
+/// Use of this source code is governed by a BSD-style
+/// license that can be found in the LICENSE file.
+
+/// Package elf implements access to ELF object files.
+///
+/// # Security
+///
+/// This package is not designed to be hardened against adversarial inputs, and is
+/// outside the scope of https://go.dev/security/policy. In particular, only basic
+/// validation is done when parsing object files. As such, care should be taken when
+/// parsing untrusted inputs, as parsing malformed files may consume significant
+/// resources, or cause panics.
+
 ///|
 /// A FileHeader represents an ELF file header.
 pub struct FileHeader {
@@ -6,7 +20,7 @@ pub struct FileHeader {
   version : Version
   osabi : OSABI
   abi_version : Byte
-  byte_order : &@binary.ByteOrder
+  byte_order : @binary.LittleEndian // Simplified - using concrete type for now
   type_ : Type
   machine : Machine
   entry : UInt64
@@ -18,10 +32,10 @@ pub struct File {
   file_header : FileHeader
   sections : Array[Section]
   progs : Array[Prog]
-  priv closer : &@io.Closer?
+  priv mut closer : &@io.Closer?
   priv dyn_vers : Array[DynamicVersion]
   priv dyn_ver_needs : Array[DynamicVersionNeed]
-  priv gnu_versym : @slice.Slice[Byte] // Omitted for now since Bytes doesn't implement ToJson
+  priv gnu_versym : Bytes // Simplified - using Bytes instead of slice
 }
 
 ///|
@@ -43,6 +57,26 @@ pub struct SectionHeader {
   /// uncompressed data.
   file_size : UInt64
 } derive(Show, ToJson)
+
+///|
+/// Data reads and returns the contents of the ELF section.
+/// Even if the section is stored compressed in the ELF file,
+/// Data returns uncompressed data.
+pub fn Section::data(self : Section) -> Bytes raise ElfError {
+  // FIXME: This is a simplified implementation
+  // The real implementation would handle compression and use io.ReaderAt
+  raise ElfError::NotImplemented("Section::data not fully implemented")
+}
+
+///|
+/// Open returns a new ReadSeeker reading the ELF section.
+/// Even if the section is stored compressed in the ELF file,
+/// the ReadSeeker reads uncompressed data.
+pub fn Section::open(self : Section) -> &@io.ReadSeeker raise ElfError {
+  // FIXME: This is a simplified implementation
+  // The real implementation would handle compression and NOBITS sections
+  raise ElfError::NotImplemented("Section::open not fully implemented")
+}
 
 ///|
 /// A Section represents a single section in an ELF file.
@@ -87,16 +121,16 @@ pub struct Symbol {
   other : Byte
   /// HasVersion reports whether the symbol has any version information.
   /// This will only be true for the dynamic symbol table.
-  has_version : Bool
+  mut has_version : Bool
   /// VersionIndex is the symbol's version index.
   /// This field is only meaningful if HasVersion is true.
-  version_index : VersionIndex
+  mut version_index : VersionIndex
   section : SectionIndex
   value : UInt64
   size : UInt64
   /// These fields are present only for the dynamic symbol table.
-  version : String
-  library : String
+  mut version : String
+  mut library : String
 } derive(Show, ToJson)
 
 ///|
@@ -163,18 +197,6 @@ pub fn VersionIndex::new(value : UInt) -> VersionIndex {
 }
 
 ///|
-/// DynamicVersionFlag represents flags for dynamic versions.
-pub struct DynamicVersionFlag {
-  value : UInt
-} derive(Show, ToJson, Eq)
-
-///|
-/// Create a new DynamicVersionFlag
-pub fn DynamicVersionFlag::new(value : UInt) -> DynamicVersionFlag {
-  DynamicVersionFlag::{ value, }
-}
-
-///|
 /// DynamicVersion is a version defined by a dynamic object.
 pub struct DynamicVersion {
   /// Name of version defined by this index.
@@ -212,3 +234,312 @@ pub struct ImportedSymbol {
   version : String
   library : String
 } derive(Show, ToJson)
+
+///|
+/// NoSymbolsError is returned by File.Symbols and File.DynamicSymbols
+/// if there is no such section in the File.
+pub(all) suberror NoSymbolsError
+
+///|
+/// Open opens the named file using os.Open and prepares it for use as an ELF binary.
+pub fn open(name : String) -> File raise {
+  // FIXME: Need to implement file opening functionality
+  // For now, this is a placeholder
+  raise ElfError::NotImplemented("open function not implemented yet")
+}
+
+///|
+/// Close closes the File.
+/// If the File was created using NewFile directly instead of Open,
+/// Close has no effect.
+pub fn File::close(self : File) -> Unit raise {
+  match self.closer {
+    Some(closer) => {
+      closer.close()
+      self.closer = None
+    }
+    None => ()
+  }
+}
+
+///|
+/// SectionByType returns the first section in f with the
+/// given type, or None if there is no such section.
+pub fn File::section_by_type(self : File, typ : SectionType) -> Section? {
+  for s in self.sections {
+    if s.section_header.type_ == typ {
+      return Some(s)
+    }
+  }
+  None
+}
+
+///|
+/// Section returns a section with the given name, or None if no such
+/// section exists.
+pub fn File::section(self : File, name : String) -> Section? {
+  for s in self.sections {
+    if s.section_header.name == name {
+      return Some(s)
+    }
+  }
+  None
+}
+
+///|
+/// getString extracts a string from an ELF string table.
+fn get_string(section : Bytes, start : Int) -> (String, Bool) {
+  if start < 0 || start >= section.length() {
+    return ("", false)
+  }
+  let mut end = start
+  while end < section.length() {
+    if section[end] == 0 {
+      // Convert bytes to string - this may not be perfectly UTF-8 safe
+      // but matches the Go implementation behavior
+      let bytes_slice = section[start:end]
+      return (bytes_slice.to_string(), true)
+    }
+    end = end + 1
+  }
+  ("", false)
+}
+
+///|
+/// Open returns a new ReadSeeker reading the ELF program body.
+pub fn Prog::open(self : Prog) -> &@io.ReadSeeker raise ElfError {
+  // FIXME: This is a simplified implementation
+  raise ElfError::NotImplemented("Prog::open not fully implemented")
+}
+
+///|
+/// NewFile creates a new File for accessing an ELF binary in an underlying reader.
+/// The ELF binary is expected to start at position 0 in the ReaderAt.
+pub fn new_file(r : &@io.ReaderAt) -> File raise ElfError {
+  // Read and decode ELF identifier
+  let ident : FixedArray[Byte] = FixedArray::make(16, 0)
+  let ident_slice = @slice.array(ident)
+  try {
+    let n = r.read_at(ident_slice, 0L)
+    if n != 16 {
+      raise ElfError::Format(FormatError::{
+        off: 0L,
+        msg: "incomplete ELF header",
+        val: "",
+      })
+    }
+  } catch {
+    err =>
+      raise ElfError::Format(FormatError::{
+        off: 0L,
+        msg: "cannot read ELF header",
+        val: err.to_string(),
+      })
+  }
+  if ident[0] != 0x7f ||
+    ident[1] != 'E'.to_int().to_byte() ||
+    ident[2] != 'L'.to_int().to_byte() ||
+    ident[3] != 'F'.to_int().to_byte() {
+    let magic_bytes : Bytes = [ident[0], ident[1], ident[2], ident[3]]
+    raise ElfError::BadMagic(magic_bytes)
+  }
+  let f = File::{
+    file_header: FileHeader::{
+      class: Class::from_int(ident[EI_CLASS].to_int()),
+      data: Data::from_byte(ident[EI_DATA]),
+      version: Version::from_byte(ident[EI_VERSION]),
+      osabi: OSABI::from_int(ident[EI_OSABI].to_int()),
+      abi_version: ident[EI_ABIVERSION],
+      byte_order: @binary.little_endian, // FIXME: should be determined by data field
+      type_: Type::from_int(0), // FIXME: read from header
+      machine: Machine::from_int(0), // FIXME: read from header
+      entry: 0UL, // FIXME: read from header
+    },
+    sections: [],
+    progs: [],
+    closer: None,
+    dyn_vers: [],
+    dyn_ver_needs: [],
+    gnu_versym: Bytes::make(0, 0),
+  }
+
+  // FIXME: This is a very simplified implementation
+  // The real implementation would:
+  // 1. Validate the class, data, and version fields
+  // 2. Read the full ELF header based on class (32/64 bit)
+  // 3. Read program headers
+  // 4. Read section headers
+  // 5. Parse section names
+  // 6. Handle special sections
+
+  f
+}
+
+///|
+/// Symbols returns the symbol table for f. The symbols will be listed in the order
+/// they appear in f.
+///
+/// For compatibility with Go 1.0, Symbols omits the null symbol at index 0.
+/// After retrieving the symbols as symtab, an externally supplied index x
+/// corresponds to symtab[x-1], not symtab[x].
+pub fn File::symbols(self : File) -> Array[Symbol] raise ElfError {
+  let (sym, _, _) = self.get_symbols(SHT_SYMTAB)
+  sym
+}
+
+///|
+/// DynamicSymbols returns the dynamic symbol table for f. The symbols
+/// will be listed in the order they appear in f.
+///
+/// If f has a symbol version table, the returned symbols will have
+/// initialized Version and Library fields.
+///
+/// For compatibility with File.Symbols, DynamicSymbols omits the null symbol at index 0.
+/// After retrieving the symbols as symtab, an externally supplied index x
+/// corresponds to symtab[x-1], not symtab[x].
+pub fn File::dynamic_symbols(self : File) -> Array[Symbol] raise ElfError {
+  let (sym, str, _) = self.get_symbols(SHT_DYNSYM)
+  let has_versions = self.gnu_version_init(str)
+  if has_versions {
+    for i in 0..<sym.length() {
+      let (has_ver, ver_idx, version, library) = self.gnu_version(i)
+      sym[i].has_version = has_ver
+      sym[i].version_index = ver_idx
+      sym[i].version = version
+      sym[i].library = library
+    }
+  }
+  sym
+}
+
+///|
+/// ImportedSymbols returns the names of all symbols
+/// referred to by the binary f that are expected to be
+/// satisfied by other libraries at dynamic load time.
+/// It does not return weak symbols.
+pub fn File::imported_symbols(
+  self : File,
+) -> Array[ImportedSymbol] raise ElfError {
+  let (sym, str, _) = self.get_symbols(SHT_DYNSYM)
+  self.gnu_version_init(str) |> ignore
+  let all : Array[ImportedSymbol] = []
+  for i in 0..<sym.length() {
+    let s = sym[i]
+    if st_bind(s.info) == STB_GLOBAL && s.section == SHN_UNDEF {
+      let (_, _, version, library) = self.gnu_version(i)
+      all.push(ImportedSymbol::{ name: s.name, version, library })
+    }
+  }
+  all
+}
+
+///|
+/// ImportedLibraries returns the names of all libraries
+/// referred to by the binary f that are expected to be
+/// linked with the binary at dynamic link time.
+pub fn File::imported_libraries(self : File) -> Array[String] raise ElfError {
+  self.dyn_string(DT_NEEDED)
+}
+
+///|
+/// DynString returns the strings listed for the given tag in the file's dynamic
+/// section.
+///
+/// The tag must be one that takes string values: DT_NEEDED, DT_SONAME, DT_RPATH, or
+/// DT_RUNPATH.
+pub fn File::dyn_string(
+  self : File,
+  tag : DynTag,
+) -> Array[String] raise ElfError {
+  match tag {
+    DT_NEEDED | DT_SONAME | DT_RPATH | DT_RUNPATH => ()
+    _ =>
+      raise ElfError::Format(FormatError::{
+        off: 0L,
+        msg: "non-string-valued tag",
+        val: tag.to_int().to_string(),
+      })
+  }
+
+  // FIXME: This is a placeholder implementation
+  // The real implementation would:
+  // 1. Find the SHT_DYNAMIC section
+  // 2. Parse dynamic entries
+  // 3. Find entries matching the tag
+  // 4. Look up strings in the string table
+  []
+}
+
+///|
+/// DynValue returns the values listed for the given tag in the file's dynamic
+/// section.
+fn File::dyn_value(self : File, tag : DynTag) -> Array[UInt64] {
+  // FIXME: This is a placeholder implementation
+  []
+}
+
+///|
+/// getSymbols returns a slice of Symbols from parsing the symbol table
+/// with the given type, along with the associated string table.
+fn File::get_symbols(
+  self : File,
+  typ : SectionType,
+) -> (Array[Symbol], Bytes, Array[UInt]) raise ElfError {
+  match self.file_header.class {
+    ELFCLASS64 => self.get_symbols64(typ)
+    ELFCLASS32 => self.get_symbols32(typ)
+    _ => raise ElfError::NotImplemented("unsupported class")
+  }
+}
+
+///|
+fn File::get_symbols32(
+  self : File,
+  typ : SectionType,
+) -> (Array[Symbol], Bytes, Array[UInt]) raise ElfError {
+  // FIXME: Implementation needed
+  raise ElfError::NotImplemented("get_symbols32 not implemented")
+}
+
+///|
+fn File::get_symbols64(
+  self : File,
+  typ : SectionType,
+) -> (Array[Symbol], Bytes, Array[UInt]) raise ElfError {
+  // FIXME: Implementation needed
+  raise ElfError::NotImplemented("get_symbols64 not implemented")
+}
+
+///|
+/// stringTable reads and returns the string table given by the
+/// specified link value.
+fn File::string_table(self : File, link : UInt) -> Bytes raise ElfError {
+  if link <= 0U || link >= self.sections.length().to_uint() {
+    raise ElfError::Format(FormatError::{
+      off: 0L,
+      msg: "section has invalid string table link",
+      val: link.to_string(),
+    })
+  }
+  self.sections[link.to_int()].data()
+}
+
+///|
+/// gnuVersionInit parses the GNU version tables
+/// for use by calls to gnuVersion.
+/// It reports whether any version tables were found.
+fn File::gnu_version_init(self : File, str : Bytes) -> Bool {
+  // FIXME: Implementation needed
+  false
+}
+
+///|
+/// gnuVersion adds Library and Version information to sym,
+/// which came from offset i of the symbol table.
+fn File::gnu_version(
+  self : File,
+  i : Int,
+) -> (Bool, VersionIndex, String, String) {
+  // FIXME: Implementation needed
+  (false, VersionIndex::new(0U), "", "")
+}

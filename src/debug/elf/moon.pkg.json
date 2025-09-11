@@ -2,6 +2,8 @@
   "import": [
     "tonyfettes/go/io",
     "tonyfettes/go/slice",
-    "tonyfettes/go/encoding/binary"
+    "tonyfettes/go/encoding/binary",
+    "tonyfettes/go/internal/oserror",
+    "tonyfettes/go/os"
   ]
 }

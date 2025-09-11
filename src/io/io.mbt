@@ -82,7 +82,7 @@ pub fn SectionReader::read(
 }
 
 ///|
-suberror SeekError {
+pub(all) suberror SeekError {
   InvalidOffset(Int64)
 }
 
@@ -98,7 +98,7 @@ pub fn SectionReader::seek(
   s : SectionReader,
   offset : Int64,
   whence : SeekWhence,
-) -> Int64 raise SeekError {
+) -> Int64 raise {
   let offset = match whence {
     Start => offset + s.base
     Current => offset + s.off
@@ -192,22 +192,21 @@ pub(open) trait ByteWriter {
 }
 
 ///|
-/// ReadSeeker is the interface that groups the basic Read and Seek methods.
-pub(open) trait ReadSeeker: Reader {
-  seek(self : Self, offset : Int64, whence : SeekWhence) -> Int64 raise SeekError
+pub(open) trait Seeker {
+  seek(self : Self, offset : Int64, whence : SeekWhence) -> Int64 raise
 }
+
+///|
+/// ReadSeeker is the interface that groups the basic Read and Seek methods.
+pub(open) trait ReadSeeker: Reader + Seeker {}
 
 ///|
 /// WriteSeeker is the interface that groups the basic Write and Seek methods.
-pub(open) trait WriteSeeker: Writer {
-  seek(self : Self, offset : Int64, whence : SeekWhence) -> Int64 raise SeekError
-}
+pub(open) trait WriteSeeker: Writer + Seeker {}
 
 ///|
 /// ReadWriteSeeker is the interface that groups the basic Read, Write and Seek methods.
-pub(open) trait ReadWriteSeeker: Reader + Writer {
-  seek(self : Self, offset : Int64, whence : SeekWhence) -> Int64 raise SeekError
-}
+pub(open) trait ReadWriteSeeker: Reader + Writer + Seeker {}
 
 ///|
 /// StringWriter is the interface that wraps the write_string method.
