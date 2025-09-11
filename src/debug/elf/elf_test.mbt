@@ -2,16 +2,16 @@
 /// Basic test for ELF constants and types
 test "elf constants" {
   // Test Version enum
-  @json.inspect(Version::EV_CURRENT.to_int(), content=1)
-  @json.inspect(Version::from_int(1), content="EV_CURRENT")
+  @json.inspect(Version::EV_CURRENT.to_byte(), content=1)
+  @json.inspect(Version::from_byte(1), content="EV_CURRENT")
 
   // Test Class enum
   @json.inspect(Class::ELFCLASS64.to_int(), content=2)
   @json.inspect(Class::from_int(2), content="ELFCLASS64")
 
   // Test Data enum
-  @json.inspect(Data::ELFDATA2LSB.to_int(), content=1)
-  @json.inspect(Data::from_int(1), content="ELFDATA2LSB")
+  @json.inspect(Data::ELFDATA2LSB.to_byte(), content=1)
+  @json.inspect(Data::from_byte(1), content="ELFDATA2LSB")
 
   // Test Machine enum
   @json.inspect(Machine::EM_X86_64.to_int(), content=62)
@@ -34,7 +34,7 @@ test "version index operations" {
 
 ///|
 test "magic constant" {
-  @json.inspect(ELFMAG, content="ELF")
+  @json.inspect(ELFMAG.to_array(), content=[127, 69, 76, 70])
 }
 
 ///|
