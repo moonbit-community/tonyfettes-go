@@ -1,0 +1,799 @@
+// Generated using `moon info`, DON'T EDIT IT
+package "tonyfettes/go/debug/elf"
+
+import(
+  "tonyfettes/go/encoding/binary"
+)
+
+// Values
+const EI_ABIVERSION : Int = 8
+
+const EI_CLASS : Int = 4
+
+const EI_DATA : Int = 5
+
+const EI_NIDENT : Int = 16
+
+const EI_OSABI : Int = 7
+
+const EI_PAD : Int = 9
+
+const EI_VERSION : Int = 6
+
+const ELFMAG : String = "ELF"
+
+const Sym32Size : Int = 16
+
+const Sym64Size : Int = 24
+
+fn r_info(UInt, UInt) -> UInt64
+
+fn r_info32(UInt, UInt) -> UInt
+
+fn r_sym32(UInt) -> UInt
+
+fn r_sym64(UInt64) -> UInt
+
+fn r_type32(UInt) -> UInt
+
+fn r_type64(UInt64) -> UInt
+
+// Errors
+pub(all) suberror ElfError {
+  Format(FormatError)
+  NoSymbols
+  InvalidOffset(Int64)
+  BadMagic(Bytes)
+  UnknownClass(Class)
+  UnknownData(Data)
+  UnknownVersion(Version)
+  MismatchedVersion(Version)
+  InvalidShoff(Int64)
+  InvalidPhoff(Int64)
+  InvalidShnum(Int)
+  InvalidShstrndx(Int)
+  InvalidPhentsize(Int)
+  InvalidShentsize(Int)
+  TooManySections(Int)
+  SectionHeaderOverflow(Int)
+  InvalidSectionOffset(Int64)
+  InvalidSectionSize(Int64)
+  BadSectionNameIndex(UInt)
+  NotImplemented(String)
+}
+
+// Types and methods
+pub struct Chdr32 {
+  type_ : UInt
+  size : UInt
+  addralign : UInt
+}
+impl Show for Chdr32
+impl ToJson for Chdr32
+
+pub struct Chdr64 {
+  type_ : UInt
+  size : UInt64
+  addralign : UInt64
+}
+impl Show for Chdr64
+impl ToJson for Chdr64
+
+pub(all) enum Class {
+  ELFCLASSNONE
+  ELFCLASS32
+  ELFCLASS64
+}
+fn Class::from_int(Int) -> Self
+fn Class::to_int(Self) -> Int
+impl Eq for Class
+impl Show for Class
+impl ToJson for Class
+
+pub(all) enum CompressionType {
+  COMPRESS_ZLIB
+  COMPRESS_ZSTD
+  COMPRESS_LOOS
+  COMPRESS_HIOS
+  COMPRESS_LOPROC
+  COMPRESS_HIPROC
+}
+fn CompressionType::from_int(Int) -> Self
+fn CompressionType::to_int(Self) -> Int
+impl Eq for CompressionType
+impl Show for CompressionType
+impl ToJson for CompressionType
+
+pub(all) enum Data {
+  ELFDATANONE
+  ELFDATA2LSB
+  ELFDATA2MSB
+}
+fn Data::from_int(Int) -> Self
+fn Data::to_int(Self) -> Int
+impl Eq for Data
+impl Show for Data
+impl ToJson for Data
+
+pub struct Dyn32 {
+  tag : Int
+  val : UInt
+}
+impl Show for Dyn32
+impl ToJson for Dyn32
+
+pub struct Dyn64 {
+  tag : Int64
+  val : UInt64
+}
+impl Show for Dyn64
+impl ToJson for Dyn64
+
+pub struct DynamicVersion {
+  name : String
+  index : UInt
+  flags : DynamicVersionFlag
+  deps : Array[String]
+}
+impl Show for DynamicVersion
+impl ToJson for DynamicVersion
+
+pub struct DynamicVersionDep {
+  flags : DynamicVersionFlag
+  index : UInt
+  dep : String
+}
+impl Show for DynamicVersionDep
+impl ToJson for DynamicVersionDep
+
+pub struct DynamicVersionFlag {
+  value : UInt
+}
+fn DynamicVersionFlag::new(UInt) -> Self
+impl Eq for DynamicVersionFlag
+impl Show for DynamicVersionFlag
+impl ToJson for DynamicVersionFlag
+
+pub struct DynamicVersionNeed {
+  name : String
+  needs : Array[DynamicVersionDep]
+}
+impl Show for DynamicVersionNeed
+impl ToJson for DynamicVersionNeed
+
+pub struct File {
+  file_header : FileHeader
+  sections : Array[Section]
+  progs : Array[Prog]
+  // private fields
+}
+
+pub struct FileHeader {
+  class : Class
+  data : Data
+  version : Version
+  osabi : OSABI
+  abi_version : Byte
+  byte_order : &@binary.ByteOrder
+  type_ : Type
+  machine : Machine
+  entry : UInt64
+}
+
+pub struct FormatError {
+  off : Int64
+  msg : String
+  val : String
+}
+fn FormatError::error_message(Self) -> String
+impl Show for FormatError
+impl ToJson for FormatError
+
+pub struct Header32 {
+  ident : FixedArray[Byte]
+  type_ : UInt
+  machine : UInt
+  version : UInt
+  entry : UInt
+  phoff : UInt
+  shoff : UInt
+  flags : UInt
+  ehsize : UInt
+  phentsize : UInt
+  phnum : UInt
+  shentsize : UInt
+  shnum : UInt
+  shstrndx : UInt
+}
+impl Show for Header32
+impl ToJson for Header32
+
+pub struct Header64 {
+  ident : FixedArray[Byte]
+  type_ : UInt
+  machine : UInt
+  version : UInt
+  entry : UInt64
+  phoff : UInt64
+  shoff : UInt64
+  flags : UInt
+  ehsize : UInt
+  phentsize : UInt
+  phnum : UInt
+  shentsize : UInt
+  shnum : UInt
+  shstrndx : UInt
+}
+impl Show for Header64
+impl ToJson for Header64
+
+pub struct ImportedSymbol {
+  name : String
+  version : String
+  library : String
+}
+impl Show for ImportedSymbol
+impl ToJson for ImportedSymbol
+
+pub(all) enum Machine {
+  EM_NONE
+  EM_M32
+  EM_SPARC
+  EM_386
+  EM_68K
+  EM_88K
+  EM_860
+  EM_MIPS
+  EM_S370
+  EM_MIPS_RS3_LE
+  EM_PARISC
+  EM_VPP500
+  EM_SPARC32PLUS
+  EM_960
+  EM_PPC
+  EM_PPC64
+  EM_S390
+  EM_V800
+  EM_FR20
+  EM_RH32
+  EM_RCE
+  EM_ARM
+  EM_SH
+  EM_SPARCV9
+  EM_TRICORE
+  EM_ARC
+  EM_H8_300
+  EM_H8_300H
+  EM_H8S
+  EM_H8_500
+  EM_IA_64
+  EM_MIPS_X
+  EM_COLDFIRE
+  EM_68HC12
+  EM_MMA
+  EM_PCP
+  EM_NCPU
+  EM_NDR1
+  EM_STARCORE
+  EM_ME16
+  EM_ST100
+  EM_TINYJ
+  EM_X86_64
+  EM_PDSP
+  EM_PDP10
+  EM_PDP11
+  EM_FX66
+  EM_ST9PLUS
+  EM_ST7
+  EM_68HC16
+  EM_68HC11
+  EM_68HC08
+  EM_68HC05
+  EM_SVX
+  EM_ST19
+  EM_VAX
+  EM_CRIS
+  EM_JAVELIN
+  EM_FIREPATH
+  EM_ZSP
+  EM_MMIX
+  EM_HUANY
+  EM_PRISM
+  EM_AVR
+  EM_FR30
+  EM_D10V
+  EM_D30V
+  EM_V850
+  EM_M32R
+  EM_MN10300
+  EM_MN10200
+  EM_PJ
+  EM_OPENRISC
+  EM_ARC_COMPACT
+  EM_XTENSA
+  EM_VIDEOCORE
+  EM_TMM_GPP
+  EM_NS32K
+  EM_TPC
+  EM_SNP1K
+  EM_ST200
+  EM_IP2K
+  EM_MAX
+  EM_CR
+  EM_F2MC16
+  EM_MSP430
+  EM_BLACKFIN
+  EM_SE_C33
+  EM_SEP
+  EM_ARCA
+  EM_UNICORE
+  EM_EXCESS
+  EM_DXP
+  EM_ALTERA_NIOS2
+  EM_CRX
+  EM_XGATE
+  EM_C166
+  EM_M16C
+  EM_DSPIC30F
+  EM_CE
+  EM_M32C
+  EM_TSK3000
+  EM_RS08
+  EM_SHARC
+  EM_ECOG2
+  EM_SCORE7
+  EM_DSP24
+  EM_VIDEOCORE3
+  EM_LATTICEMICO32
+  EM_SE_C17
+  EM_TI_C6000
+  EM_TI_C2000
+  EM_TI_C5500
+  EM_TI_ARP32
+  EM_TI_PRU
+  EM_MMDSP_PLUS
+  EM_CYPRESS_M8C
+  EM_R32C
+  EM_TRIMEDIA
+  EM_QDSP6
+  EM_8051
+  EM_STXP7X
+  EM_NDS32
+  EM_ECOG1
+  EM_ECOG1X
+  EM_MAXQ30
+  EM_XIMO16
+  EM_MANIK
+  EM_CRAYNV2
+  EM_RX
+  EM_METAG
+  EM_MCST_ELBRUS
+  EM_ECOG16
+  EM_CR16
+  EM_ETPU
+  EM_SLE9X
+  EM_L10M
+  EM_K10M
+  EM_AARCH64
+  EM_AVR32
+  EM_STM8
+  EM_TILE64
+  EM_TILEPRO
+  EM_MICROBLAZE
+  EM_CUDA
+  EM_TILEGX
+  EM_CLOUDSHIELD
+  EM_COREA_1ST
+  EM_COREA_2ND
+  EM_ARC_COMPACT2
+  EM_OPEN8
+  EM_RL78
+  EM_VIDEOCORE5
+  EM_78KOR
+  EM_56800EX
+  EM_BA1
+  EM_BA2
+  EM_XCORE
+  EM_MCHP_PIC
+  EM_INTEL205
+  EM_INTEL206
+  EM_INTEL207
+  EM_INTEL208
+  EM_INTEL209
+  EM_KM32
+  EM_KMX32
+  EM_KMX16
+  EM_KMX8
+  EM_KVARC
+  EM_CDP
+  EM_COGE
+  EM_COOL
+  EM_NORC
+  EM_CSR_KALIMBA
+  EM_Z80
+  EM_VISIUM
+  EM_FT32
+  EM_MOXIE
+  EM_AMDGPU
+  EM_RISCV
+  EM_LANAI
+  EM_BPF
+  EM_LOONGARCH
+  EM_486
+  EM_MIPS_RS4_BE
+  EM_ALPHA_STD
+  EM_ALPHA
+}
+fn Machine::from_int(Int) -> Self
+fn Machine::to_int(Self) -> Int
+impl Eq for Machine
+impl Show for Machine
+impl ToJson for Machine
+
+pub(all) enum OSABI {
+  ELFOSABI_NONE
+  ELFOSABI_HPUX
+  ELFOSABI_NETBSD
+  ELFOSABI_LINUX
+  ELFOSABI_HURD
+  ELFOSABI_86OPEN
+  ELFOSABI_SOLARIS
+  ELFOSABI_AIX
+  ELFOSABI_IRIX
+  ELFOSABI_FREEBSD
+  ELFOSABI_TRU64
+  ELFOSABI_MODESTO
+  ELFOSABI_OPENBSD
+  ELFOSABI_OPENVMS
+  ELFOSABI_NSK
+  ELFOSABI_AROS
+  ELFOSABI_FENIXOS
+  ELFOSABI_CLOUDABI
+  ELFOSABI_ARM
+  ELFOSABI_STANDALONE
+}
+fn OSABI::from_int(Int) -> Self
+fn OSABI::to_int(Self) -> Int
+impl Eq for OSABI
+impl Show for OSABI
+impl ToJson for OSABI
+
+pub struct Prog {
+  prog_header : ProgHeader
+}
+impl Show for Prog
+impl ToJson for Prog
+
+pub struct Prog32 {
+  type_ : UInt
+  off : UInt
+  vaddr : UInt
+  paddr : UInt
+  filesz : UInt
+  memsz : UInt
+  flags : UInt
+  align : UInt
+}
+impl Show for Prog32
+impl ToJson for Prog32
+
+pub struct Prog64 {
+  type_ : UInt
+  flags : UInt
+  off : UInt64
+  vaddr : UInt64
+  paddr : UInt64
+  filesz : UInt64
+  memsz : UInt64
+  align : UInt64
+}
+impl Show for Prog64
+impl ToJson for Prog64
+
+pub(all) enum ProgFlag {
+  PF_X
+  PF_W
+  PF_R
+  PF_MASKOS
+  PF_MASKPROC
+}
+fn ProgFlag::to_int(Self) -> Int
+impl Eq for ProgFlag
+impl Show for ProgFlag
+impl ToJson for ProgFlag
+
+pub struct ProgHeader {
+  type_ : ProgType
+  flags : ProgFlag
+  off : UInt64
+  vaddr : UInt64
+  paddr : UInt64
+  filesz : UInt64
+  memsz : UInt64
+  align : UInt64
+}
+impl Show for ProgHeader
+impl ToJson for ProgHeader
+
+pub(all) enum ProgType {
+  PT_NULL
+  PT_LOAD
+  PT_DYNAMIC
+  PT_INTERP
+  PT_NOTE
+  PT_SHLIB
+  PT_PHDR
+  PT_TLS
+  PT_LOOS
+  PT_GNU_EH_FRAME
+  PT_GNU_STACK
+  PT_GNU_RELRO
+  PT_GNU_PROPERTY
+  PT_GNU_MBIND_LO
+  PT_GNU_MBIND_HI
+  PT_PAX_FLAGS
+  PT_OPENBSD_RANDOMIZE
+  PT_OPENBSD_WXNEEDED
+  PT_OPENBSD_NOBTCFI
+  PT_OPENBSD_BOOTDATA
+  PT_SUNW_EH_FRAME
+  PT_SUNWSTACK
+  PT_HIOS
+  PT_LOPROC
+  PT_ARM_ARCHEXT
+  PT_ARM_EXIDX
+  PT_AARCH64_ARCHEXT
+  PT_AARCH64_UNWIND
+  PT_MIPS_REGINFO
+  PT_MIPS_RTPROC
+  PT_MIPS_OPTIONS
+  PT_MIPS_ABIFLAGS
+  PT_RISCV_ATTRIBUTES
+  PT_S390_PGSTE
+  PT_HIPROC
+}
+fn ProgType::from_int(Int) -> Self
+fn ProgType::to_int(Self) -> Int
+impl Eq for ProgType
+impl Show for ProgType
+impl ToJson for ProgType
+
+pub struct Rel32 {
+  off : UInt
+  info : UInt
+}
+impl Show for Rel32
+impl ToJson for Rel32
+
+pub struct Rel64 {
+  off : UInt64
+  info : UInt64
+}
+impl Show for Rel64
+impl ToJson for Rel64
+
+pub struct Rela32 {
+  off : UInt
+  info : UInt
+  addend : Int
+}
+impl Show for Rela32
+impl ToJson for Rela32
+
+pub struct Rela64 {
+  off : UInt64
+  info : UInt64
+  addend : Int64
+}
+impl Show for Rela64
+impl ToJson for Rela64
+
+pub struct Section {
+  section_header : SectionHeader
+  compression_type : CompressionType
+  compression_offset : Int64
+}
+impl Show for Section
+impl ToJson for Section
+
+pub struct Section32 {
+  name : UInt
+  type_ : UInt
+  flags : UInt
+  addr : UInt
+  off : UInt
+  size : UInt
+  link : UInt
+  info : UInt
+  addralign : UInt
+  entsize : UInt
+}
+impl Show for Section32
+impl ToJson for Section32
+
+pub struct Section64 {
+  name : UInt
+  type_ : UInt
+  flags : UInt64
+  addr : UInt64
+  off : UInt64
+  size : UInt64
+  link : UInt
+  info : UInt
+  addralign : UInt64
+  entsize : UInt64
+}
+impl Show for Section64
+impl ToJson for Section64
+
+pub(all) enum SectionFlag {
+  SHF_WRITE
+  SHF_ALLOC
+  SHF_EXECINSTR
+  SHF_MERGE
+  SHF_STRINGS
+  SHF_INFO_LINK
+  SHF_LINK_ORDER
+  SHF_OS_NONCONFORMING
+  SHF_GROUP
+  SHF_TLS
+  SHF_COMPRESSED
+  SHF_MASKOS
+  SHF_MASKPROC
+}
+fn SectionFlag::to_int(Self) -> Int
+impl Eq for SectionFlag
+impl Show for SectionFlag
+impl ToJson for SectionFlag
+
+pub struct SectionHeader {
+  name : String
+  type_ : SectionType
+  flags : SectionFlag
+  addr : UInt64
+  offset : UInt64
+  size : UInt64
+  link : UInt
+  info : UInt
+  addralign : UInt64
+  entsize : UInt64
+  file_size : UInt64
+}
+impl Show for SectionHeader
+impl ToJson for SectionHeader
+
+pub(all) enum SectionIndex {
+  SHN_UNDEF
+  SHN_LORESERVE
+  SHN_LOPROC
+  SHN_HIPROC
+  SHN_LOOS
+  SHN_HIOS
+  SHN_ABS
+  SHN_COMMON
+  SHN_XINDEX
+  SHN_HIRESERVE
+}
+fn SectionIndex::from_int(Int) -> Self
+fn SectionIndex::to_int(Self) -> Int
+impl Eq for SectionIndex
+impl Show for SectionIndex
+impl ToJson for SectionIndex
+
+pub(all) enum SectionType {
+  SHT_NULL
+  SHT_PROGBITS
+  SHT_SYMTAB
+  SHT_STRTAB
+  SHT_RELA
+  SHT_HASH
+  SHT_DYNAMIC
+  SHT_NOTE
+  SHT_NOBITS
+  SHT_REL
+  SHT_SHLIB
+  SHT_DYNSYM
+  SHT_INIT_ARRAY
+  SHT_FINI_ARRAY
+  SHT_PREINIT_ARRAY
+  SHT_GROUP
+  SHT_SYMTAB_SHNDX
+  SHT_LOOS
+  SHT_GNU_ATTRIBUTES
+  SHT_GNU_HASH
+  SHT_GNU_LIBLIST
+  SHT_GNU_VERDEF
+  SHT_GNU_VERNEED
+  SHT_GNU_VERSYM
+  SHT_HIOS
+  SHT_LOPROC
+  SHT_RISCV_ATTRIBUTES
+  SHT_MIPS_ABIFLAGS
+  SHT_HIPROC
+  SHT_LOUSER
+  SHT_HIUSER
+}
+fn SectionType::from_int(Int) -> Self
+fn SectionType::to_int(Self) -> Int
+impl Eq for SectionType
+impl Show for SectionType
+impl ToJson for SectionType
+
+pub struct Sym32 {
+  name : UInt
+  value : UInt
+  size : UInt
+  info : Byte
+  other : Byte
+  shndx : UInt
+}
+impl Show for Sym32
+impl ToJson for Sym32
+
+pub struct Sym64 {
+  name : UInt
+  info : Byte
+  other : Byte
+  shndx : UInt
+  value : UInt64
+  size : UInt64
+}
+impl Show for Sym64
+impl ToJson for Sym64
+
+pub struct Symbol {
+  name : String
+  info : Byte
+  other : Byte
+  has_version : Bool
+  version_index : VersionIndex
+  section : SectionIndex
+  value : UInt64
+  size : UInt64
+  version : String
+  library : String
+}
+impl Show for Symbol
+impl ToJson for Symbol
+
+pub(all) enum Type {
+  ET_NONE
+  ET_REL
+  ET_EXEC
+  ET_DYN
+  ET_CORE
+  ET_LOOS
+  ET_HIOS
+  ET_LOPROC
+  ET_HIPROC
+}
+fn Type::from_int(Int) -> Self
+fn Type::to_int(Self) -> Int
+impl Eq for Type
+impl Show for Type
+impl ToJson for Type
+
+pub(all) enum Version {
+  EV_NONE
+  EV_CURRENT
+}
+fn Version::from_int(Int) -> Self
+fn Version::to_int(Self) -> Int
+impl Eq for Version
+impl Show for Version
+impl ToJson for Version
+
+pub struct VersionIndex {
+  value : UInt
+}
+fn VersionIndex::index(Self) -> UInt
+fn VersionIndex::is_hidden(Self) -> Bool
+fn VersionIndex::new(UInt) -> Self
+impl Eq for VersionIndex
+impl Show for VersionIndex
+impl ToJson for VersionIndex
+
+// Type aliases
+
+// Traits
+

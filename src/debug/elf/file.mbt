@@ -6,11 +6,11 @@ pub struct FileHeader {
   version : Version
   osabi : OSABI
   abi_version : Byte
-  byte_order : &@binary.ByteOrder // This will need to be properly defined
+  byte_order : &@binary.ByteOrder
   type_ : Type
   machine : Machine
   entry : UInt64
-} derive(Show, ToJson)
+}
 
 ///|
 /// A File represents an open ELF file.

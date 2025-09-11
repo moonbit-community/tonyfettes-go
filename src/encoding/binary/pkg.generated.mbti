@@ -1,0 +1,41 @@
+// Generated using `moon info`, DON'T EDIT IT
+package "tonyfettes/go/encoding/binary"
+
+import(
+  "tonyfettes/go/slice"
+)
+
+// Values
+let big_endian : BigEndian
+
+let little_endian : LittleEndian
+
+// Errors
+
+// Types and methods
+type BigEndian
+impl AppendByteOrder for BigEndian
+impl ByteOrder for BigEndian
+
+type LittleEndian
+impl AppendByteOrder for LittleEndian
+impl ByteOrder for LittleEndian
+
+// Type aliases
+
+// Traits
+pub trait AppendByteOrder {
+  append_uint16(Self, @slice.Slice[Byte], UInt16) -> @slice.Slice[Byte]
+  append_uint32(Self, @slice.Slice[Byte], UInt) -> @slice.Slice[Byte]
+  append_uint64(Self, @slice.Slice[Byte], UInt64) -> @slice.Slice[Byte]
+}
+
+pub trait ByteOrder {
+  uint16(Self, @slice.Slice[Byte]) -> UInt16
+  uint32(Self, @slice.Slice[Byte]) -> UInt
+  uint64(Self, @slice.Slice[Byte]) -> UInt64
+  put_uint16(Self, @slice.Slice[Byte], UInt16) -> Unit
+  put_uint32(Self, @slice.Slice[Byte], UInt) -> Unit
+  put_uint64(Self, @slice.Slice[Byte], UInt64) -> Unit
+}
+
