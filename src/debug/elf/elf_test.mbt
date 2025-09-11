@@ -40,27 +40,23 @@ test "magic constant" {
 ///|
 test "section types" {
   @json.inspect(SectionType::SHT_PROGBITS.to_int(), content=1)
-  @json.inspect(SectionType::from_int(1), content={ "$tag": "SHT_PROGBITS" })
+  @json.inspect(SectionType::from_int(1), content="SHT_PROGBITS")
   @json.inspect(SectionType::SHT_SYMTAB.to_int(), content=2)
-  @json.inspect(SectionType::from_int(2), content={ "$tag": "SHT_SYMTAB" })
+  @json.inspect(SectionType::from_int(2), content="SHT_SYMTAB")
 }
 
 ///|
 test "program types" {
   @json.inspect(ProgType::PT_LOAD.to_int(), content=1)
-  @json.inspect(ProgType::from_int(1), content={ "$tag": "PT_LOAD" })
+  @json.inspect(ProgType::from_int(1), content="PT_LOAD")
   @json.inspect(ProgType::PT_DYNAMIC.to_int(), content=2)
-  @json.inspect(ProgType::from_int(2), content={ "$tag": "PT_DYNAMIC" })
+  @json.inspect(ProgType::from_int(2), content="PT_DYNAMIC")
 }
 
 ///|
 test "compression types" {
   @json.inspect(CompressionType::COMPRESS_ZLIB.to_int(), content=1)
-  @json.inspect(CompressionType::from_int(1), content={
-    "$tag": "COMPRESS_ZLIB",
-  })
+  @json.inspect(CompressionType::from_int(1), content="COMPRESS_ZLIB")
   @json.inspect(CompressionType::COMPRESS_ZSTD.to_int(), content=2)
-  @json.inspect(CompressionType::from_int(2), content={
-    "$tag": "COMPRESS_ZSTD",
-  })
+  @json.inspect(CompressionType::from_int(2), content="COMPRESS_ZSTD")
 }
