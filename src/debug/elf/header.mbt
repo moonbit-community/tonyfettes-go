@@ -271,7 +271,7 @@ pub const Sym64Size : Int = 24
 ///|
 /// R_SYM32 extracts symbol index from 32-bit relocation info
 pub fn r_sym32(info : UInt) -> UInt {
-  info.lsr(8)
+  info >> 8
 }
 
 ///|
@@ -283,23 +283,23 @@ pub fn r_type32(info : UInt) -> UInt {
 ///|
 /// R_INFO32 constructs 32-bit relocation info from symbol and type
 pub fn r_info32(sym : UInt, typ : UInt) -> UInt {
-  sym.lsl(8) | typ
+  (sym << 8) | typ
 }
 
 ///|
 /// R_SYM64 extracts symbol index from 64-bit relocation info
 pub fn r_sym64(info : UInt64) -> UInt {
-  info.lsr(32).to_int().to_uint()
+  (info >> 32).to_uint()
 }
 
 ///|
 /// R_TYPE64 extracts relocation type from 64-bit relocation info
 pub fn r_type64(info : UInt64) -> UInt {
-  (info & 0xffffffff).to_int().to_uint()
+  (info & 0xffffffff).to_uint()
 }
 
 ///|
 /// R_INFO constructs 64-bit relocation info from symbol and type
 pub fn r_info(sym : UInt, typ : UInt) -> UInt64 {
-  sym.to_uint64().lsl(32) | typ.to_uint64()
+  (sym.to_uint64() << 32) | typ.to_uint64()
 }

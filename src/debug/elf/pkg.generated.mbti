@@ -20,7 +20,7 @@ const EI_PAD : Int = 9
 
 const EI_VERSION : Int = 6
 
-const ELFMAG : String = "ELF"
+const ELFMAG : Bytes = \x7FELF
 
 const Sym32Size : Int = 16
 
@@ -109,8 +109,8 @@ pub(all) enum Data {
   ELFDATA2LSB
   ELFDATA2MSB
 }
-fn Data::from_int(Int) -> Self
-fn Data::to_int(Self) -> Int
+fn Data::from_byte(Byte) -> Self
+fn Data::to_byte(Self) -> Byte
 impl Eq for Data
 impl Show for Data
 impl ToJson for Data
@@ -777,8 +777,8 @@ pub(all) enum Version {
   EV_NONE
   EV_CURRENT
 }
-fn Version::from_int(Int) -> Self
-fn Version::to_int(Self) -> Int
+fn Version::from_byte(Byte) -> Self
+fn Version::to_byte(Self) -> Byte
 impl Eq for Version
 impl Show for Version
 impl ToJson for Version
