@@ -2,34 +2,77 @@
 /// ELF32 File header.
 pub struct Header32 {
   /// File identification. [16]
-  /// File type.
-  /// Machine architecture.
-  /// ELF format version.
-  /// Entry point.
-  /// Program header file offset.
-  /// Section header file offset.
-  /// Architecture-specific flags.
-  /// Size of ELF header in bytes.
-  /// Size of program header entry.
-  /// Number of program header entries.
-  /// Size of section header entry.
-  /// Number of section header entries.
-  /// Section name strings section.
   ident : FixedArray[Byte]
+  /// File type.
   type_ : UInt
+  /// Machine architecture.
   machine : UInt
+  /// ELF format version.
   version : UInt
+  /// Entry point.
   entry : UInt
+  /// Program header file offset.
   phoff : UInt
+  /// Section header file offset.
   shoff : UInt
+  /// Architecture-specific flags.
   flags : UInt
+  /// Size of ELF header in bytes.
   ehsize : UInt
+  /// Size of program header entry.
   phentsize : UInt
+  /// Number of program header entries.
   phnum : UInt
+  /// Size of section header entry.
   shentsize : UInt
+  /// Number of section header entries.
   shnum : UInt
+  /// Section name strings section.
   shstrndx : UInt
-} derive(Show, ToJson)
+} derive(Show, ToJson, Default)
+
+///|
+enum Header32Metadata {
+  Ident
+  Type
+  Machine
+  Version
+  Entry
+  Phoff
+  Shoff
+  Flags
+  Ehsize
+  Phentsize
+  Phnum
+  Shentsize
+  Shnum
+  Shstrndx
+}
+
+///|
+pub fn Header32Metadata::sizeof() -> Int {
+  52
+}
+
+///|
+pub fn Header32Metadata::offset_of(self : Header32Metadata) -> Int {
+  match self {
+    Ident => 0
+    Type => 16
+    Machine => 18
+    Version => 20
+    Entry => 24
+    Phoff => 28
+    Shoff => 32
+    Flags => 36
+    Ehsize => 40
+    Phentsize => 42
+    Phnum => 44
+    Shentsize => 46
+    Shnum => 48
+    Shstrndx => 50
+  }
+}
 
 ///|
 /// ELF32 Section header.
@@ -336,7 +379,7 @@ pub(all) enum SymVis {
   STV_HIDDEN
   /// 3 Not preemptible, not exported.
   STV_PROTECTED
-} derive(Eq, Show, ToJson(style="flat"))
+} derive(Eq, Show, ToJson)
 
 ///|
 pub fn SymVis::to_int(self : SymVis) -> Int {

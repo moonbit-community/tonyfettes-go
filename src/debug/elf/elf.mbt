@@ -53,7 +53,7 @@ pub(all) enum Version {
   EV_NONE
   /// 1
   EV_CURRENT
-} derive(Eq, Show, ToJson(style="flat"))
+} derive(Eq, Show, ToJson)
 
 ///|
 pub fn Version::to_byte(self : Version) -> Byte {
@@ -81,7 +81,7 @@ pub(all) enum Class {
   ELFCLASS32
   /// 2 64-bit architecture.
   ELFCLASS64
-} derive(Eq, Show, ToJson(style="flat"))
+} derive(Eq, Show, ToJson)
 
 ///|
 pub fn Class::to_int(self : Class) -> Int {
@@ -111,7 +111,7 @@ pub(all) enum Data {
   ELFDATA2LSB
   /// 2 2's complement big-endian.
   ELFDATA2MSB
-} derive(Eq, Show, ToJson(style="flat"))
+} derive(Eq, Show, ToJson)
 
 ///|
 pub fn Data::to_byte(self : Data) -> Byte {
@@ -175,10 +175,15 @@ pub(all) enum OSABI {
   ELFOSABI_ARM
   /// 255 Standalone (embedded) application
   ELFOSABI_STANDALONE
-} derive(Eq, Show, ToJson(style="flat"))
+} derive(Eq, Show, ToJson)
 
 ///|
-pub fn OSABI::to_int(self : OSABI) -> Int {
+pub impl Default for OSABI with default() {
+  ELFOSABI_NONE
+}
+
+///|
+pub fn OSABI::to_byte(self : OSABI) -> Byte {
   match self {
     ELFOSABI_NONE => 0
     ELFOSABI_HPUX => 1
@@ -204,8 +209,8 @@ pub fn OSABI::to_int(self : OSABI) -> Int {
 }
 
 ///|
-pub fn OSABI::from_int(i : Int) -> OSABI {
-  match i {
+pub fn OSABI::from_byte(b : Byte) -> OSABI {
+  match b {
     0 => ELFOSABI_NONE
     1 => ELFOSABI_HPUX
     2 => ELFOSABI_NETBSD
@@ -251,7 +256,7 @@ pub(all) enum Type {
   ET_LOPROC
   /// 0xffff Last processor-specific.
   ET_HIPROC
-} derive(Eq, Show, ToJson(style="flat"))
+} derive(Eq, Show, ToJson)
 
 ///|
 pub fn Type::to_int(self : Type) -> Int {
@@ -662,7 +667,7 @@ pub(all) enum Machine {
   EM_ALPHA_STD
   /// 0x9026 Alpha (written in the absence of an ABI)
   EM_ALPHA
-} derive(Eq, Show, ToJson(style="flat"))
+} derive(Eq, Show, ToJson)
 
 ///|
 pub fn Machine::to_int(self : Machine) -> Int {
@@ -1072,7 +1077,7 @@ pub(all) enum SectionIndex {
   SHN_XINDEX
   /// 0xffff Last of reserved range.
   SHN_HIRESERVE
-} derive(Eq, Show, ToJson(style="flat"))
+} derive(Eq, Show, ToJson)
 
 ///|
 pub fn SectionIndex::to_int(self : SectionIndex) -> Int {
@@ -1170,7 +1175,12 @@ pub(all) enum SectionType {
   SHT_LOUSER
   /// 0xffffffff specific indexes
   SHT_HIUSER
-} derive(Eq, Show, ToJson(style="flat"))
+} derive(Eq, Show, ToJson)
+
+///|
+pub impl Default for SectionType with default() -> SectionType {
+  SHT_NULL
+}
 
 ///|
 pub fn SectionType::to_int(self : SectionType) -> Int {
@@ -1210,7 +1220,7 @@ pub fn SectionType::to_int(self : SectionType) -> Int {
 }
 
 ///|
-pub fn SectionType::from_int(i : Int) -> SectionType {
+pub fn SectionType::from_uint(i : UInt) -> SectionType {
   match i {
     0 => SHT_NULL
     1 => SHT_PROGBITS
@@ -1249,6 +1259,7 @@ pub fn SectionType::from_int(i : Int) -> SectionType {
 ///|
 /// Section flags.
 pub(all) enum SectionFlag {
+  SHF(UInt)
   /// 0x1        Section contains writable data.
   SHF_WRITE
   /// 0x2        Section occupies memory.
@@ -1275,11 +1286,17 @@ pub(all) enum SectionFlag {
   SHF_MASKOS
   /// 0xf0000000 Processor-specific semantics.
   SHF_MASKPROC
-} derive(Eq, Show, ToJson(style="flat"))
+} derive(Eq, Show, ToJson)
 
 ///|
-pub fn SectionFlag::to_int(self : SectionFlag) -> Int {
+pub impl Default for SectionFlag with default() -> SectionFlag {
+  SHF(0)
+}
+
+///|
+pub fn SectionFlag::to_uint(self : SectionFlag) -> UInt {
   match self {
+    SHF(flag) => flag
     SHF_WRITE => 0x1
     SHF_ALLOC => 0x2
     SHF_EXECINSTR => 0x4
@@ -1297,8 +1314,38 @@ pub fn SectionFlag::to_int(self : SectionFlag) -> Int {
 }
 
 ///|
+pub fn SectionFlag::from_uint(i : UInt) -> SectionFlag {
+  match i {
+    0x1 => SHF_WRITE
+    0x2 => SHF_ALLOC
+    0x4 => SHF_EXECINSTR
+    0x10 => SHF_MERGE
+    0x20 => SHF_STRINGS
+    0x40 => SHF_INFO_LINK
+    0x80 => SHF_LINK_ORDER
+    0x100 => SHF_OS_NONCONFORMING
+    0x200 => SHF_GROUP
+    0x400 => SHF_TLS
+    0x800 => SHF_COMPRESSED
+    0x0ff00000 => SHF_MASKOS
+    0xf0000000 => SHF_MASKPROC
+    _ => SHF(i)
+  }
+}
+
+///|
+pub impl BitAnd for SectionFlag with land(
+  self : SectionFlag,
+  other : SectionFlag,
+) -> SectionFlag {
+  SHF(self.to_uint() & other.to_uint())
+}
+
+///|
 /// Section compression type.
 pub(all) enum CompressionType {
+  /// 0          No compression.
+  COMPRESS_NONE
   /// 1          ZLIB compression.
   COMPRESS_ZLIB
   /// 2          ZSTD compression.
@@ -1311,11 +1358,17 @@ pub(all) enum CompressionType {
   COMPRESS_LOPROC
   /// 0x7fffffff Last processor-specific type.
   COMPRESS_HIPROC
-} derive(Eq, Show, ToJson(style="flat"))
+} derive(Eq, Show, ToJson)
+
+///|
+pub impl Default for CompressionType with default() -> CompressionType {
+  COMPRESS_NONE
+}
 
 ///|
 pub fn CompressionType::to_int(self : CompressionType) -> Int {
   match self {
+    COMPRESS_NONE => 0
     COMPRESS_ZLIB => 1
     COMPRESS_ZSTD => 2
     COMPRESS_LOOS => 0x60000000
@@ -1328,6 +1381,7 @@ pub fn CompressionType::to_int(self : CompressionType) -> Int {
 ///|
 pub fn CompressionType::from_int(i : Int) -> CompressionType {
   match i {
+    0 => COMPRESS_NONE
     1 => COMPRESS_ZLIB
     2 => COMPRESS_ZSTD
     0x60000000 => COMPRESS_LOOS
@@ -1411,7 +1465,12 @@ pub(all) enum ProgType {
   PT_S390_PGSTE
   /// 0x7fffffff Last processor-specific type.
   PT_HIPROC
-} derive(Eq, Show, ToJson(style="flat"))
+} derive(Eq, Show, ToJson)
+
+///|
+pub impl Default for ProgType with default() -> ProgType {
+  PT_NULL
+}
 
 ///|
 pub fn ProgType::to_int(self : ProgType) -> Int {
@@ -1491,6 +1550,7 @@ pub fn ProgType::from_int(i : Int) -> ProgType {
 ///|
 /// Prog.Flag
 pub(all) enum ProgFlag {
+  PF(UInt)
   /// 0x1        Executable.
   PF_X
   /// 0x2        Writable.
@@ -1501,11 +1561,29 @@ pub(all) enum ProgFlag {
   PF_MASKOS
   /// 0xf0000000 Processor-specific.
   PF_MASKPROC
-} derive(Eq, Show, ToJson(style="flat"))
+} derive(Eq, Show, ToJson)
 
 ///|
-pub fn ProgFlag::to_int(self : ProgFlag) -> Int {
+pub impl Default for ProgFlag with default() -> ProgFlag {
+  PF(0)
+}
+
+///|
+pub fn ProgFlag::from_uint(i : UInt) -> ProgFlag {
+  match i {
+    0x1 => PF_X
+    0x2 => PF_W
+    0x4 => PF_R
+    0x0ff00000 => PF_MASKOS
+    0xf0000000 => PF_MASKPROC
+    i => PF(i)
+  }
+}
+
+///|
+pub fn ProgFlag::to_uint(self : ProgFlag) -> UInt {
   match self {
+    PF(i) => i
     PF_X => 0x1
     PF_W => 0x2
     PF_R => 0x4
@@ -1779,7 +1857,7 @@ pub(all) enum DynTag {
   DT_FILTER
   /// 0x7fffffff Last processor-specific type.
   DT_HIPROC
-} derive(Eq, Show, ToJson(style="flat"))
+} derive(Eq, Show, ToJson)
 
 ///|
 pub fn DynTag::to_int(self : DynTag) -> Int {
@@ -2058,7 +2136,7 @@ pub(all) enum SymBind {
   STB_LOPROC
   /// 15   specific semantics.
   STB_HIPROC
-} derive(Eq, Show, ToJson(style="flat"))
+} derive(Eq, Show, ToJson)
 
 ///|
 pub fn SymBind::to_int(self : SymBind) -> Int {
@@ -2119,7 +2197,7 @@ pub(all) enum SymType {
   STT_SRELC
   /// 10 Indirect code object.
   STT_GNU_IFUNC
-} derive(Eq, Show, ToJson(style="flat"))
+} derive(Eq, Show, ToJson)
 
 ///|
 pub fn SymType::to_int(self : SymType) -> Int {
@@ -2164,8 +2242,6 @@ pub fn SymType::from_int(i : Int) -> SymType {
 ///|
 /// Symbol binding and type helper functions
 
-
-
 ///|
 /// Dynamic version flags.
 pub struct DynamicVersionFlag {
@@ -2180,9 +2256,16 @@ pub fn DynamicVersionFlag::new(value : UInt) -> DynamicVersionFlag {
 
 ///|
 /// Dynamic version flag constants
-pub const VER_FLG_BASE : UInt = 0x1U    /// Version definition of the file.
-pub const VER_FLG_WEAK : UInt = 0x2U    /// Weak version identifier.
-pub const VER_FLG_INFO : UInt = 0x4U    /// Reference exists for informational purposes.
+/// Version definition of the file.
+/// Weak version identifier.
+/// Reference exists for informational purposes.
+pub const VER_FLG_BASE : UInt = 0x1U
+
+///|
+pub const VER_FLG_WEAK : UInt = 0x2U
+
+///|
+pub const VER_FLG_INFO : UInt = 0x4U
 
 ///|
 /// Relocation types for x86-64.
@@ -2273,7 +2356,7 @@ pub(all) enum R_X86_64 {
   R_X86_64_GOTPCRELX
   /// 42
   R_X86_64_REX_GOTPCRELX
-} derive(Eq, Show, ToJson(style="flat"))
+} derive(Eq, Show, ToJson)
 
 ///|
 pub fn R_X86_64::to_int(self : R_X86_64) -> Int {
@@ -2644,7 +2727,7 @@ pub(all) enum R_AARCH64 {
   /// 1031 TLS Descriptor.
   R_AARCH64_IRELATIVE
   /// 1032 STT_GNU_IFUNC relocation.
-} derive(Eq, Show, ToJson(style="flat"))
+} derive(Eq, Show, ToJson)
 
 ///|
 /// Relocation types for Alpha.
@@ -2705,7 +2788,7 @@ pub(all) enum R_ALPHA {
   R_ALPHA_JMP_SLOT
   /// 27 Adjust by program base
   R_ALPHA_RELATIVE
-} derive(Eq, Show, ToJson(style="flat"))
+} derive(Eq, Show, ToJson)
 
 ///|
 /// Relocation types for ARM.
@@ -2998,7 +3081,7 @@ pub(all) enum R_ARM {
   R_ARM_RPC24
   /// 255
   R_ARM_RBASE
-} derive(Eq, Show, ToJson(style="flat"))
+} derive(Eq, Show, ToJson)
 
 ///|
 /// Relocation types for 386.
@@ -3087,7 +3170,7 @@ pub(all) enum R_386 {
   R_386_IRELATIVE
   /// 43
   R_386_GOT32X
-} derive(Eq, Show, ToJson(style="flat"))
+} derive(Eq, Show, ToJson)
 
 ///|
 pub fn R_386::to_int(self : R_386) -> Int {
@@ -3287,7 +3370,7 @@ pub(all) enum R_MIPS {
   R_MIPS_TLS_TPREL_LO16
   /// 248 32 bit PC relative reference
   R_MIPS_PC32
-} derive(Eq, Show, ToJson(style="flat"))
+} derive(Eq, Show, ToJson)
 
 ///|
 pub fn R_MIPS::to_int(self : R_MIPS) -> Int {
