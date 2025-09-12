@@ -2391,6 +2391,632 @@ pub fn R_X86_64::from_int(i : Int) -> R_X86_64 {
 }
 
 ///|
+/// Relocation types for AArch64.
+pub(all) enum R_AARCH64 {
+  /// 0 No relocation.
+  R_AARCH64_NONE
+  /// 1 - 255 Reserved.
+  R_AARCH64_P32_ABS32
+  /// 257 ILP32 ABS32.
+  R_AARCH64_P32_COPY
+  /// 258 ILP32 copy.
+  R_AARCH64_P32_GLOB_DAT
+  /// 259 ILP32 GOT entry.
+  R_AARCH64_P32_JUMP_SLOT
+  /// 260 ILP32 PLT entry.
+  R_AARCH64_P32_RELATIVE
+  /// 261 ILP32 relative.
+  R_AARCH64_P32_TLS_DTPMOD
+  /// 262 ILP32 TLS module number.
+  R_AARCH64_P32_TLS_DTPREL
+  /// 263 ILP32 TLS byte offset.
+  R_AARCH64_P32_TLS_TPREL
+  /// 264 ILP32 TLS offset.
+  R_AARCH64_P32_TLSDESC
+  /// 265 ILP32 TLS Descriptor.
+  R_AARCH64_P32_IRELATIVE
+  /// 266 ILP32 Indirect.
+  R_AARCH64_ABS64
+  /// 257 Direct 64 bit.
+  R_AARCH64_ABS32
+  /// 258 Direct 32 bit.
+  R_AARCH64_ABS16
+  /// 259 Direct 16-bit.
+  R_AARCH64_PREL64
+  /// 260 PC-relative 64-bit.
+  R_AARCH64_PREL32
+  /// 261 PC-relative 32-bit.
+  R_AARCH64_PREL16
+  /// 262 PC-relative 16-bit.
+  R_AARCH64_MOVW_UABS_G0
+  /// 263 Dir. MOVZ imm. from bits 15:0.
+  R_AARCH64_MOVW_UABS_G0_NC
+  /// 264 Dir. MOVZ imm. from bits 15:0.
+  R_AARCH64_MOVW_UABS_G1
+  /// 265 Dir. MOVZ imm. from bits 31:16.
+  R_AARCH64_MOVW_UABS_G1_NC
+  /// 266 Dir. MOVZ imm. from bits 31:16.
+  R_AARCH64_MOVW_UABS_G2
+  /// 267 Dir. MOVZ imm. from bits 47:32.
+  R_AARCH64_MOVW_UABS_G2_NC
+  /// 268 Dir. MOVZ imm. from bits 47:32.
+  R_AARCH64_MOVW_UABS_G3
+  /// 269 Dir. MOV{K,Z} imm. from 63:48.
+  R_AARCH64_MOVW_SABS_G0
+  /// 270 Dir. MOV{N,Z} imm. from 15:0.
+  R_AARCH64_MOVW_SABS_G1
+  /// 271 Dir. MOV{N,Z} imm. from 31:16.
+  R_AARCH64_MOVW_SABS_G2
+  /// 272 Dir. MOV{N,Z} imm. from 47:32.
+  R_AARCH64_LD_PREL_LO19
+  /// 273 PC-rel. LD imm. from bits 20:2.
+  R_AARCH64_ADR_PREL_LO21
+  /// 274 PC-rel. ADR imm. from bits 20:0.
+  R_AARCH64_ADR_PREL_PG_HI21
+  /// 275 Page-rel. ADRP imm. from 32:12.
+  R_AARCH64_ADR_PREL_PG_HI21_NC
+  /// 276 Page-rel. ADRP imm. from 32:12.
+  R_AARCH64_ADD_ABS_LO12_NC
+  /// 277 Dir. ADD imm. from bits 11:0.
+  R_AARCH64_LDST8_ABS_LO12_NC
+  /// 278 Dir. LDST imm. from bits 11:0.
+  R_AARCH64_TSTBR14
+  /// 279 PC-rel. TBZ/TBNZ imm. from 15:2.
+  R_AARCH64_CONDBR19
+  /// 280 PC-rel. cond. br. imm. from 20:2.
+  R_AARCH64_JUMP26
+  /// 281 PC-rel. B imm. from bits 27:2.
+  R_AARCH64_CALL26
+  /// 282 PC-rel. BL imm. from bits 27:2.
+  R_AARCH64_LDST16_ABS_LO12_NC
+  /// 283 Dir. LDST imm. from bits 11:1.
+  R_AARCH64_LDST32_ABS_LO12_NC
+  /// 284 Dir. LDST imm. from bits 11:2.
+  R_AARCH64_LDST64_ABS_LO12_NC
+  /// 285 Dir. LDST imm. from bits 11:3.
+  R_AARCH64_MOVW_PREL_G0
+  /// 286 PC-rel. MOV{N,Z} imm. from 15:0.
+  R_AARCH64_MOVW_PREL_G0_NC
+  /// 287 PC-rel. MOV{N,Z} imm. from 15:0.
+  R_AARCH64_MOVW_PREL_G1
+  /// 288 PC-rel. MOV{N,Z} imm. from 31:16.
+  R_AARCH64_MOVW_PREL_G1_NC
+  /// 289 PC-rel. MOV{N,Z} imm. from 31:16.
+  R_AARCH64_MOVW_PREL_G2
+  /// 290 PC-rel. MOV{N,Z} imm. from 47:32.
+  R_AARCH64_MOVW_PREL_G2_NC
+  /// 291 PC-rel. MOV{N,Z} imm. from 47:32.
+  R_AARCH64_MOVW_PREL_G3
+  /// 292 PC-rel. MOV{N,Z} imm. from 63:48.
+  R_AARCH64_LDST128_ABS_LO12_NC
+  /// 293 Dir. LDST imm. from bits 11:4.
+  R_AARCH64_MOVW_GOTOFF_G0
+  /// 294 GOT-rel. off. MOV{N,Z} imm. 15:0.
+  R_AARCH64_MOVW_GOTOFF_G0_NC
+  /// 295 GOT-rel. o. MOV{N,Z} imm. 15:0.
+  R_AARCH64_MOVW_GOTOFF_G1
+  /// 296 GOT-rel. o. MOV{N,Z} imm. 31:16.
+  R_AARCH64_MOVW_GOTOFF_G1_NC
+  /// 297 GOT-rel. o. MOV{N,Z} imm. 31:16.
+  R_AARCH64_MOVW_GOTOFF_G2
+  /// 298 GOT-rel. o. MOV{N,Z} imm. 47:32.
+  R_AARCH64_MOVW_GOTOFF_G2_NC
+  /// 299 GOT-rel. o. MOV{N,Z} imm. 47:32.
+  R_AARCH64_MOVW_GOTOFF_G3
+  /// 300 GOT-rel. o. MOV{N,Z} imm. 63:48.
+  R_AARCH64_GOTREL64
+  /// 301 GOT-relative 64-bit.
+  R_AARCH64_GOTREL32
+  /// 302 GOT-relative 32-bit.
+  R_AARCH64_GOT_LD_PREL19
+  /// 303 PC-rel. GOT off. load imm. 20:2.
+  R_AARCH64_LD64_GOTOFF_LO15
+  /// 304 GOT-rel. off. LD/ST imm. 14:3.
+  R_AARCH64_ADR_GOT_PAGE
+  /// 305 P-page-rel. GOT off. ADRP 32:12.
+  R_AARCH64_LD64_GOT_LO12_NC
+  /// 306 Dir. GOT off. LD/ST imm. 11:3.
+  R_AARCH64_LD64_GOTPAGE_LO15
+  /// 307 GOT-page-rel. GOT off. LD/ST 14:3
+  R_AARCH64_TLSGD_ADR_PREL21
+  /// 512 PC-relative ADR imm. 20:0.
+  R_AARCH64_TLSGD_ADR_PAGE21
+  /// 513 page-rel. ADRP imm. 32:12.
+  R_AARCH64_TLSGD_ADD_LO12_NC
+  /// 514 direct ADD imm. from 11:0.
+  R_AARCH64_TLSGD_MOVW_G1
+  /// 515 GOT-rel. MOV{N,Z} 31:16.
+  R_AARCH64_TLSGD_MOVW_G0_NC
+  /// 516 GOT-rel. MOV{N,Z} 15:0.
+  R_AARCH64_TLSLD_ADR_PREL21
+  /// 517 PC-relative ADR imm. 20:0.
+  R_AARCH64_TLSLD_ADR_PAGE21
+  /// 518 page-rel. ADRP imm. 32:12.
+  R_AARCH64_TLSLD_ADD_LO12_NC
+  /// 519 direct ADD imm. from 11:0.
+  R_AARCH64_TLSLD_MOVW_G1
+  /// 520 GOT-rel. MOV{N,Z} 31:16.
+  R_AARCH64_TLSLD_MOVW_G0_NC
+  /// 521 GOT-rel. MOV{N,Z} 15:0.
+  R_AARCH64_TLSLD_LD_PREL19
+  /// 522 TLS PC-rel. load imm. 20:2.
+  R_AARCH64_TLSLD_MOVW_DTPREL_G2
+  /// 523 TLS DTP-rel. MOV{N,Z} 47:32.
+  R_AARCH64_TLSLD_MOVW_DTPREL_G1
+  /// 524 TLS DTP-rel. MOV{N,Z} 31:16.
+  R_AARCH64_TLSLD_MOVW_DTPREL_G1_NC
+  /// 525 TLS DTP-rel. MOV{N,Z} 31:16.
+  R_AARCH64_TLSLD_MOVW_DTPREL_G0
+  /// 526 TLS DTP-rel. MOV{N,Z} 15:0.
+  R_AARCH64_TLSLD_MOVW_DTPREL_G0_NC
+  /// 527 TLS DTP-rel. MOV{N,Z} 15:0.
+  R_AARCH64_TLSLD_ADD_DTPREL_HI12
+  /// 528 TLS DTP-rel. ADD imm. 23:12.
+  R_AARCH64_TLSLD_ADD_DTPREL_LO12
+  /// 529 TLS DTP-rel. ADD imm. 11:0.
+  R_AARCH64_TLSLD_ADD_DTPREL_LO12_NC
+  /// 530 TLS DTP-rel. ADD imm. 11:0.
+  R_AARCH64_TLSLD_LDST8_DTPREL_LO12
+  /// 531 TLS DTP-rel. LD/ST imm. 11:0.
+  R_AARCH64_TLSLD_LDST8_DTPREL_LO12_NC
+  /// 532 TLS DTP-rel. LD/ST imm. 11:0.
+  R_AARCH64_TLSLD_LDST16_DTPREL_LO12
+  /// 533 TLS DTP-rel. LD/ST imm. 11:1.
+  R_AARCH64_TLSLD_LDST16_DTPREL_LO12_NC
+  /// 534 TLS DTP-rel. LD/ST imm. 11:1.
+  R_AARCH64_TLSLD_LDST32_DTPREL_LO12
+  /// 535 TLS DTP-rel. LD/ST imm. 11:2.
+  R_AARCH64_TLSLD_LDST32_DTPREL_LO12_NC
+  /// 536 TLS DTP-rel. LD/ST imm. 11:2.
+  R_AARCH64_TLSLD_LDST64_DTPREL_LO12
+  /// 537 TLS DTP-rel. LD/ST imm. 11:3.
+  R_AARCH64_TLSLD_LDST64_DTPREL_LO12_NC
+  /// 538 TLS DTP-rel. LD/ST imm. 11:3.
+  R_AARCH64_TLSIE_MOVW_GOTTPREL_G1
+  /// 539 TLS IE GOT-rel. MOV{N,Z} 31:16.
+  R_AARCH64_TLSIE_MOVW_GOTTPREL_G0_NC
+  /// 540 TLS IE GOT-rel. MOV{N,Z} 15:0.
+  R_AARCH64_TLSIE_ADR_GOTTPREL_PAGE21
+  /// 541 TLS IE GOT-rel. ADRP 32:12.
+  R_AARCH64_TLSIE_LD64_GOTTPREL_LO12_NC
+  /// 542 TLS IE GOT-rel. LD/ST 11:3.
+  R_AARCH64_TLSIE_LD_GOTTPREL_PREL19
+  /// 543 TLS IE GOT-rel. load 20:2.
+  R_AARCH64_TLSLE_MOVW_TPREL_G2
+  /// 544 TLS LE TP-rel. MOV{N,Z} 47:32.
+  R_AARCH64_TLSLE_MOVW_TPREL_G1
+  /// 545 TLS LE TP-rel. MOV{N,Z} 31:16.
+  R_AARCH64_TLSLE_MOVW_TPREL_G1_NC
+  /// 546 TLS LE TP-rel. MOV{N,Z} 31:16.
+  R_AARCH64_TLSLE_MOVW_TPREL_G0
+  /// 547 TLS LE TP-rel. MOV{N,Z} 15:0.
+  R_AARCH64_TLSLE_MOVW_TPREL_G0_NC
+  /// 548 TLS LE TP-rel. MOV{N,Z} 15:0.
+  R_AARCH64_TLSLE_ADD_TPREL_HI12
+  /// 549 TLS LE TP-rel. ADD imm. 23:12.
+  R_AARCH64_TLSLE_ADD_TPREL_LO12
+  /// 550 TLS LE TP-rel. ADD imm. 11:0.
+  R_AARCH64_TLSLE_ADD_TPREL_LO12_NC
+  /// 551 TLS LE TP-rel. ADD imm. 11:0.
+  R_AARCH64_TLSLE_LDST8_TPREL_LO12
+  /// 552 TLS LE TP-rel. LD/ST 11:0.
+  R_AARCH64_TLSLE_LDST8_TPREL_LO12_NC
+  /// 553 TLS LE TP-rel. LD/ST 11:0.
+  R_AARCH64_TLSLE_LDST16_TPREL_LO12
+  /// 554 TLS LE TP-rel. LD/ST 11:1.
+  R_AARCH64_TLSLE_LDST16_TPREL_LO12_NC
+  /// 555 TLS LE TP-rel. LD/ST 11:1.
+  R_AARCH64_TLSLE_LDST32_TPREL_LO12
+  /// 556 TLS LE TP-rel. LD/ST 11:2.
+  R_AARCH64_TLSLE_LDST32_TPREL_LO12_NC
+  /// 557 TLS LE TP-rel. LD/ST 11:2.
+  R_AARCH64_TLSLE_LDST64_TPREL_LO12
+  /// 558 TLS LE TP-rel. LD/ST 11:3.
+  R_AARCH64_TLSLE_LDST64_TPREL_LO12_NC
+  /// 559 TLS LE TP-rel. LD/ST 11:3.
+  R_AARCH64_TLSDESC_LD_PREL19
+  /// 560 TLS DESC PC-rel. load 20:2.
+  R_AARCH64_TLSDESC_ADR_PREL21
+  /// 561 TLS DESC PC-rel. ADR 20:0.
+  R_AARCH64_TLSDESC_ADR_PAGE21
+  /// 562 TLS DESC PC-rel. ADRP 32:12.
+  R_AARCH64_TLSDESC_LD64_LO12
+  /// 563 TLS DESC LD/ST imm. 11:3.
+  R_AARCH64_TLSDESC_ADD_LO12
+  /// 564 TLS DESC ADD imm. 11:0.
+  R_AARCH64_TLSDESC_OFF_G1
+  /// 565 TLS DESC MOV{N,Z} 31:16.
+  R_AARCH64_TLSDESC_OFF_G0_NC
+  /// 566 TLS DESC MOV{N,Z} 15:0.
+  R_AARCH64_TLSDESC_LDR
+  /// 567 TLS DESC load.
+  R_AARCH64_TLSDESC_ADD
+  /// 568 TLS DESC add.
+  R_AARCH64_TLSDESC_CALL
+  /// 569 TLS DESC call.
+  R_AARCH64_TLSLE_LDST128_TPREL_LO12
+  /// 570 TLS LE TP-rel. LD/ST 11:4.
+  R_AARCH64_TLSLE_LDST128_TPREL_LO12_NC
+  /// 571 TLS LE TP-rel. LD/ST 11:4.
+  R_AARCH64_TLSLD_LDST128_DTPREL_LO12
+  /// 572 TLS DTP-rel. LD/ST imm. 11:4.
+  R_AARCH64_TLSLD_LDST128_DTPREL_LO12_NC
+  /// 573 TLS DTP-rel. LD/ST imm. 11:4.
+  R_AARCH64_COPY
+  /// 1024 Copy symbol at runtime.
+  R_AARCH64_GLOB_DAT
+  /// 1025 Create GOT entry.
+  R_AARCH64_JUMP_SLOT
+  /// 1026 Create PLT entry.
+  R_AARCH64_RELATIVE
+  /// 1027 Adjust by program base.
+  R_AARCH64_TLS_DTPMOD64
+  /// 1028 Module number, 64 bit.
+  R_AARCH64_TLS_DTPREL64
+  /// 1029 Module-relative offset, 64 bit.
+  R_AARCH64_TLS_TPREL64
+  /// 1030 TP-relative offset, 64 bit.
+  R_AARCH64_TLSDESC
+  /// 1031 TLS Descriptor.
+  R_AARCH64_IRELATIVE
+  /// 1032 STT_GNU_IFUNC relocation.
+} derive(Eq, Show, ToJson(style="flat"))
+
+///|
+/// Relocation types for Alpha.
+pub(all) enum R_ALPHA {
+  /// 0 No reloc
+  R_ALPHA_NONE
+  /// 1 Direct 32 bit
+  R_ALPHA_REFLONG
+  /// 2 Direct 64 bit
+  R_ALPHA_REFQUAD
+  /// 3 GP relative 32 bit
+  R_ALPHA_GPREL32
+  /// 4 GP relative 16 bit w/optimization
+  R_ALPHA_LITERAL
+  /// 5 Optimization hint for LITERAL
+  R_ALPHA_LITUSE
+  /// 6 Add displacement to GP
+  R_ALPHA_GPDISP
+  /// 7 PC+4 relative 23 bit shifted
+  R_ALPHA_BRADDR
+  /// 8 PC+4 relative 16 bit shifted
+  R_ALPHA_HINT
+  /// 9 PC relative 16 bit
+  R_ALPHA_SREL16
+  /// 10 PC relative 32 bit
+  R_ALPHA_SREL32
+  /// 11 PC relative 64 bit
+  R_ALPHA_SREL64
+  /// 12 OP stack push
+  R_ALPHA_OP_PUSH
+  /// 13 OP stack pop and store
+  R_ALPHA_OP_STORE
+  /// 14 OP stack subtract
+  R_ALPHA_OP_PSUB
+  /// 15 OP stack right shift
+  R_ALPHA_OP_PRSHIFT
+  /// 16
+  R_ALPHA_GPVALUE
+  /// 17
+  R_ALPHA_GPRELHIGH
+  /// 18
+  R_ALPHA_GPRELLOW
+  /// 19
+  R_ALPHA_IMMED_GP_16
+  /// 20
+  R_ALPHA_IMMED_GP_HI32
+  /// 21
+  R_ALPHA_IMMED_SCN_HI32
+  /// 22
+  R_ALPHA_IMMED_BR_HI32
+  /// 23
+  R_ALPHA_IMMED_LO32
+  /// 24 Copy symbol at runtime
+  R_ALPHA_COPY
+  /// 25 Create GOT entry
+  R_ALPHA_GLOB_DAT
+  /// 26 Create PLT entry
+  R_ALPHA_JMP_SLOT
+  /// 27 Adjust by program base
+  R_ALPHA_RELATIVE
+} derive(Eq, Show, ToJson(style="flat"))
+
+///|
+/// Relocation types for ARM.
+pub(all) enum R_ARM {
+  /// 0 No relocation.
+  R_ARM_NONE
+  /// 1
+  R_ARM_PC24
+  /// 2
+  R_ARM_ABS32
+  /// 3
+  R_ARM_REL32
+  /// 4
+  R_ARM_PC13
+  /// 5
+  R_ARM_ABS16
+  /// 6
+  R_ARM_ABS12
+  /// 7
+  R_ARM_THM_ABS5
+  /// 8
+  R_ARM_ABS8
+  /// 9
+  R_ARM_SBREL32
+  /// 10
+  R_ARM_THM_PC22
+  /// 11
+  R_ARM_THM_PC8
+  /// 12
+  R_ARM_AMP_VCALL9
+  /// 13
+  R_ARM_SWI24
+  /// 14
+  R_ARM_THM_SWI8
+  /// 15
+  R_ARM_XPC25
+  /// 16
+  R_ARM_THM_XPC22
+  /// 17
+  R_ARM_TLS_DTPMOD32
+  /// 18
+  R_ARM_TLS_DTPOFF32
+  /// 19
+  R_ARM_TLS_TPOFF32
+  /// 20 Copy data from shared object.
+  R_ARM_COPY
+  /// 21 Set GOT entry to data address.
+  R_ARM_GLOB_DAT
+  /// 22 Set GOT entry to code address.
+  R_ARM_JUMP_SLOT
+  /// 23 Add load address of shared object.
+  R_ARM_RELATIVE
+  /// 24 Add GOT-relative symbol address.
+  R_ARM_GOTOFF
+  /// 25 Add PC-relative GOT table address.
+  R_ARM_GOTPC
+  /// 26 Add PC-relative GOT offset.
+  R_ARM_GOT32
+  /// 27 Add PC-relative PLT offset.
+  R_ARM_PLT32
+  /// 28
+  R_ARM_CALL
+  /// 29
+  R_ARM_JUMP24
+  /// 30
+  R_ARM_THM_JUMP24
+  /// 31
+  R_ARM_BASE_ABS
+  /// 32
+  R_ARM_ALU_PCREL_7_0
+  /// 33
+  R_ARM_ALU_PCREL_15_8
+  /// 34
+  R_ARM_ALU_PCREL_23_15
+  /// 35
+  R_ARM_LDR_SBREL_11_10_NC
+  /// 36
+  R_ARM_ALU_SBREL_19_12_NC
+  /// 37
+  R_ARM_ALU_SBREL_27_20_CK
+  /// 38
+  R_ARM_TARGET1
+  /// 39
+  R_ARM_SBREL31
+  /// 40
+  R_ARM_V4BX
+  /// 41
+  R_ARM_TARGET2
+  /// 42
+  R_ARM_PREL31
+  /// 43
+  R_ARM_MOVW_ABS_NC
+  /// 44
+  R_ARM_MOVT_ABS
+  /// 45
+  R_ARM_MOVW_PREL_NC
+  /// 46
+  R_ARM_MOVT_PREL
+  /// 47
+  R_ARM_THM_MOVW_ABS_NC
+  /// 48
+  R_ARM_THM_MOVT_ABS
+  /// 49
+  R_ARM_THM_MOVW_PREL_NC
+  /// 50
+  R_ARM_THM_MOVT_PREL
+  /// 51
+  R_ARM_THM_JUMP19
+  /// 52
+  R_ARM_THM_JUMP6
+  /// 53
+  R_ARM_THM_ALU_PREL_11_0
+  /// 54
+  R_ARM_THM_PC12
+  /// 55
+  R_ARM_ABS32_NOI
+  /// 56
+  R_ARM_REL32_NOI
+  /// 57
+  R_ARM_ALU_PC_G0_NC
+  /// 58
+  R_ARM_ALU_PC_G0
+  /// 59
+  R_ARM_ALU_PC_G1_NC
+  /// 60
+  R_ARM_ALU_PC_G1
+  /// 61
+  R_ARM_ALU_PC_G2
+  /// 62
+  R_ARM_LDR_PC_G1
+  /// 63
+  R_ARM_LDR_PC_G2
+  /// 64
+  R_ARM_LDRS_PC_G0
+  /// 65
+  R_ARM_LDRS_PC_G1
+  /// 66
+  R_ARM_LDRS_PC_G2
+  /// 67
+  R_ARM_LDC_PC_G0
+  /// 68
+  R_ARM_LDC_PC_G1
+  /// 69
+  R_ARM_LDC_PC_G2
+  /// 70
+  R_ARM_ALU_SB_G0_NC
+  /// 71
+  R_ARM_ALU_SB_G0
+  /// 72
+  R_ARM_ALU_SB_G1_NC
+  /// 73
+  R_ARM_ALU_SB_G1
+  /// 74
+  R_ARM_ALU_SB_G2
+  /// 75
+  R_ARM_LDR_SB_G0
+  /// 76
+  R_ARM_LDR_SB_G1
+  /// 77
+  R_ARM_LDR_SB_G2
+  /// 78
+  R_ARM_LDRS_SB_G0
+  /// 79
+  R_ARM_LDRS_SB_G1
+  /// 80
+  R_ARM_LDRS_SB_G2
+  /// 81
+  R_ARM_LDC_SB_G0
+  /// 82
+  R_ARM_LDC_SB_G1
+  /// 83
+  R_ARM_LDC_SB_G2
+  /// 84
+  R_ARM_MOVW_BREL_NC
+  /// 85
+  R_ARM_MOVT_BREL
+  /// 86
+  R_ARM_MOVW_BREL
+  /// 87
+  R_ARM_THM_MOVW_BREL_NC
+  /// 88
+  R_ARM_THM_MOVT_BREL
+  /// 89
+  R_ARM_THM_MOVW_BREL
+  /// 90
+  R_ARM_TLS_GOTDESC
+  /// 91
+  R_ARM_TLS_CALL
+  /// 92
+  R_ARM_TLS_DESCSEQ
+  /// 93
+  R_ARM_THM_TLS_CALL
+  /// 94
+  R_ARM_PLT32_ABS
+  /// 95
+  R_ARM_GOT_ABS
+  /// 96
+  R_ARM_GOT_PREL
+  /// 97
+  R_ARM_GOT_BREL12
+  /// 98
+  R_ARM_GOTOFF12
+  /// 99
+  R_ARM_GOTRELAX
+  /// 100
+  R_ARM_GNU_VTENTRY
+  /// 101
+  R_ARM_GNU_VTINHERIT
+  /// 102
+  R_ARM_THM_JUMP11
+  /// 103
+  R_ARM_THM_JUMP8
+  /// 104
+  R_ARM_TLS_GD32
+  /// 105
+  R_ARM_TLS_LDM32
+  /// 106
+  R_ARM_TLS_LDO32
+  /// 107
+  R_ARM_TLS_IE32
+  /// 108
+  R_ARM_TLS_LE32
+  /// 109
+  R_ARM_TLS_LDO12
+  /// 110
+  R_ARM_TLS_LE12
+  /// 111
+  R_ARM_TLS_IE12GP
+  /// 112
+  R_ARM_PRIVATE_0
+  /// 113
+  R_ARM_PRIVATE_1
+  /// 114
+  R_ARM_PRIVATE_2
+  /// 115
+  R_ARM_PRIVATE_3
+  /// 116
+  R_ARM_PRIVATE_4
+  /// 117
+  R_ARM_PRIVATE_5
+  /// 118
+  R_ARM_PRIVATE_6
+  /// 119
+  R_ARM_PRIVATE_7
+  /// 120
+  R_ARM_PRIVATE_8
+  /// 121
+  R_ARM_PRIVATE_9
+  /// 122
+  R_ARM_PRIVATE_10
+  /// 123
+  R_ARM_PRIVATE_11
+  /// 124
+  R_ARM_PRIVATE_12
+  /// 125
+  R_ARM_PRIVATE_13
+  /// 126
+  R_ARM_PRIVATE_14
+  /// 127
+  R_ARM_PRIVATE_15
+  /// 128
+  R_ARM_ME_TOO
+  /// 129
+  R_ARM_THM_TLS_DESCSEQ16
+  /// 130
+  R_ARM_THM_TLS_DESCSEQ32
+  /// 131
+  R_ARM_THM_GOT_BREL12
+  /// 132
+  R_ARM_THM_ALU_ABS_G0_NC
+  /// 133
+  R_ARM_THM_ALU_ABS_G1_NC
+  /// 134
+  R_ARM_THM_ALU_ABS_G2_NC
+  /// 135
+  R_ARM_THM_ALU_ABS_G3
+  /// 160
+  R_ARM_IRELATIVE
+  /// 249
+  R_ARM_RXPC25
+  /// 250
+  R_ARM_RSBREL32
+  /// 251
+  R_ARM_THM_RPC22
+  /// 252
+  R_ARM_RREL32
+  /// 253
+  R_ARM_RABS32
+  /// 254
+  R_ARM_RPC24
+  /// 255
+  R_ARM_RBASE
+} derive(Eq, Show, ToJson(style="flat"))
+
+///|
 /// Relocation types for 386.
 pub(all) enum R_386 {
   /// 0 No relocation.
@@ -2573,5 +3199,219 @@ pub fn R_386::from_int(i : Int) -> R_386 {
     42 => R_386_IRELATIVE
     43 => R_386_GOT32X
     _ => R_386_NONE
+  }
+}
+
+///|
+/// Relocation types for MIPS.
+pub(all) enum R_MIPS {
+  /// 0
+  R_MIPS_NONE
+  /// 1
+  R_MIPS_16
+  /// 2
+  R_MIPS_32
+  /// 3
+  R_MIPS_REL32
+  /// 4
+  R_MIPS_26
+  /// 5 high 16 bits of symbol value
+  R_MIPS_HI16
+  /// 6 low 16 bits of symbol value
+  R_MIPS_LO16
+  /// 7 GP-relative reference  
+  R_MIPS_GPREL16
+  /// 8 Reference to literal section  
+  R_MIPS_LITERAL
+  /// 9 Reference to global offset table
+  R_MIPS_GOT16
+  /// 10 16 bit PC relative reference
+  R_MIPS_PC16
+  /// 11 16 bit call through glbl offset tbl
+  R_MIPS_CALL16
+  /// 12
+  R_MIPS_GPREL32
+  /// 16
+  R_MIPS_SHIFT5
+  /// 17
+  R_MIPS_SHIFT6
+  /// 18
+  R_MIPS_64
+  /// 19
+  R_MIPS_GOT_DISP
+  /// 20
+  R_MIPS_GOT_PAGE
+  /// 21
+  R_MIPS_GOT_OFST
+  /// 22
+  R_MIPS_GOT_HI16
+  /// 23
+  R_MIPS_GOT_LO16
+  /// 24
+  R_MIPS_SUB
+  /// 25
+  R_MIPS_INSERT_A
+  /// 26
+  R_MIPS_INSERT_B
+  /// 27
+  R_MIPS_DELETE
+  /// 28
+  R_MIPS_HIGHER
+  /// 29
+  R_MIPS_HIGHEST
+  /// 30
+  R_MIPS_CALL_HI16
+  /// 31
+  R_MIPS_CALL_LO16
+  /// 32
+  R_MIPS_SCN_DISP
+  /// 33
+  R_MIPS_REL16
+  /// 34
+  R_MIPS_ADD_IMMEDIATE
+  /// 35
+  R_MIPS_PJUMP
+  /// 36
+  R_MIPS_RELGOT
+  /// 37
+  R_MIPS_JALR
+  /// 38 Module number 32 bit
+  R_MIPS_TLS_DTPMOD32
+  /// 39 Module-relative offset 32 bit
+  R_MIPS_TLS_DTPREL32
+  /// 40 Module number 64 bit
+  R_MIPS_TLS_DTPMOD64
+  /// 41 Module-relative offset 64 bit
+  R_MIPS_TLS_DTPREL64
+  /// 42 16 bit GOT offset for GD
+  R_MIPS_TLS_GD
+  /// 43 16 bit GOT offset for LDM
+  R_MIPS_TLS_LDM
+  /// 44 Module-relative offset, high 16 bits
+  R_MIPS_TLS_DTPREL_HI16
+  /// 45 Module-relative offset, low 16 bits
+  R_MIPS_TLS_DTPREL_LO16
+  /// 46 16 bit GOT offset for IE
+  R_MIPS_TLS_GOTTPREL
+  /// 47 TP-relative offset, 32 bit
+  R_MIPS_TLS_TPREL32
+  /// 48 TP-relative offset, 64 bit
+  R_MIPS_TLS_TPREL64
+  /// 49 TP-relative offset, high 16 bits
+  R_MIPS_TLS_TPREL_HI16
+  /// 50 TP-relative offset, low 16 bits
+  R_MIPS_TLS_TPREL_LO16
+  /// 248 32 bit PC relative reference
+  R_MIPS_PC32
+} derive(Eq, Show, ToJson(style="flat"))
+
+///|
+pub fn R_MIPS::to_int(self : R_MIPS) -> Int {
+  match self {
+    R_MIPS_NONE => 0
+    R_MIPS_16 => 1
+    R_MIPS_32 => 2
+    R_MIPS_REL32 => 3
+    R_MIPS_26 => 4
+    R_MIPS_HI16 => 5
+    R_MIPS_LO16 => 6
+    R_MIPS_GPREL16 => 7
+    R_MIPS_LITERAL => 8
+    R_MIPS_GOT16 => 9
+    R_MIPS_PC16 => 10
+    R_MIPS_CALL16 => 11
+    R_MIPS_GPREL32 => 12
+    R_MIPS_SHIFT5 => 16
+    R_MIPS_SHIFT6 => 17
+    R_MIPS_64 => 18
+    R_MIPS_GOT_DISP => 19
+    R_MIPS_GOT_PAGE => 20
+    R_MIPS_GOT_OFST => 21
+    R_MIPS_GOT_HI16 => 22
+    R_MIPS_GOT_LO16 => 23
+    R_MIPS_SUB => 24
+    R_MIPS_INSERT_A => 25
+    R_MIPS_INSERT_B => 26
+    R_MIPS_DELETE => 27
+    R_MIPS_HIGHER => 28
+    R_MIPS_HIGHEST => 29
+    R_MIPS_CALL_HI16 => 30
+    R_MIPS_CALL_LO16 => 31
+    R_MIPS_SCN_DISP => 32
+    R_MIPS_REL16 => 33
+    R_MIPS_ADD_IMMEDIATE => 34
+    R_MIPS_PJUMP => 35
+    R_MIPS_RELGOT => 36
+    R_MIPS_JALR => 37
+    R_MIPS_TLS_DTPMOD32 => 38
+    R_MIPS_TLS_DTPREL32 => 39
+    R_MIPS_TLS_DTPMOD64 => 40
+    R_MIPS_TLS_DTPREL64 => 41
+    R_MIPS_TLS_GD => 42
+    R_MIPS_TLS_LDM => 43
+    R_MIPS_TLS_DTPREL_HI16 => 44
+    R_MIPS_TLS_DTPREL_LO16 => 45
+    R_MIPS_TLS_GOTTPREL => 46
+    R_MIPS_TLS_TPREL32 => 47
+    R_MIPS_TLS_TPREL64 => 48
+    R_MIPS_TLS_TPREL_HI16 => 49
+    R_MIPS_TLS_TPREL_LO16 => 50
+    R_MIPS_PC32 => 248
+  }
+}
+
+///|
+pub fn R_MIPS::from_int(i : Int) -> R_MIPS {
+  match i {
+    0 => R_MIPS_NONE
+    1 => R_MIPS_16
+    2 => R_MIPS_32
+    3 => R_MIPS_REL32
+    4 => R_MIPS_26
+    5 => R_MIPS_HI16
+    6 => R_MIPS_LO16
+    7 => R_MIPS_GPREL16
+    8 => R_MIPS_LITERAL
+    9 => R_MIPS_GOT16
+    10 => R_MIPS_PC16
+    11 => R_MIPS_CALL16
+    12 => R_MIPS_GPREL32
+    16 => R_MIPS_SHIFT5
+    17 => R_MIPS_SHIFT6
+    18 => R_MIPS_64
+    19 => R_MIPS_GOT_DISP
+    20 => R_MIPS_GOT_PAGE
+    21 => R_MIPS_GOT_OFST
+    22 => R_MIPS_GOT_HI16
+    23 => R_MIPS_GOT_LO16
+    24 => R_MIPS_SUB
+    25 => R_MIPS_INSERT_A
+    26 => R_MIPS_INSERT_B
+    27 => R_MIPS_DELETE
+    28 => R_MIPS_HIGHER
+    29 => R_MIPS_HIGHEST
+    30 => R_MIPS_CALL_HI16
+    31 => R_MIPS_CALL_LO16
+    32 => R_MIPS_SCN_DISP
+    33 => R_MIPS_REL16
+    34 => R_MIPS_ADD_IMMEDIATE
+    35 => R_MIPS_PJUMP
+    36 => R_MIPS_RELGOT
+    37 => R_MIPS_JALR
+    38 => R_MIPS_TLS_DTPMOD32
+    39 => R_MIPS_TLS_DTPREL32
+    40 => R_MIPS_TLS_DTPMOD64
+    41 => R_MIPS_TLS_DTPREL64
+    42 => R_MIPS_TLS_GD
+    43 => R_MIPS_TLS_LDM
+    44 => R_MIPS_TLS_DTPREL_HI16
+    45 => R_MIPS_TLS_DTPREL_LO16
+    46 => R_MIPS_TLS_GOTTPREL
+    47 => R_MIPS_TLS_TPREL32
+    48 => R_MIPS_TLS_TPREL64
+    49 => R_MIPS_TLS_TPREL_HI16
+    50 => R_MIPS_TLS_TPREL_LO16
+    248 => R_MIPS_PC32
+    _ => R_MIPS_NONE
   }
 }

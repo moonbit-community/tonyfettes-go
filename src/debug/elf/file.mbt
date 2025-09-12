@@ -20,7 +20,7 @@ pub struct FileHeader {
   version : Version
   osabi : OSABI
   abi_version : Byte
-  byte_order : @binary.LittleEndian // Simplified - using concrete type for now
+  byte_order : &@binary.ByteOrder
   type_ : Type
   machine : Machine
   entry : UInt64

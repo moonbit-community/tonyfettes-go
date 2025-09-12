@@ -1,9 +1,9 @@
 ///|
-priv struct FdMutex(FixedArray[UInt64])
+priv struct FdMutex(FixedArray[@atomic.AtomicUInt64])
 
 ///|
 fn FdMutex::new() -> FdMutex {
-  FdMutex([0, 0])
+  FdMutex(@atomic.make_uint64_fixedarray(2, 0))
 }
 
 ///|
@@ -93,6 +93,7 @@ fn FdMutex::decref(self : FdMutex) -> Bool {
   }
 }
 
+///|
 #borrow(sema)
 extern "c" fn runtime_semacquire(sema : FixedArray[UInt], index : Int) = "moonbit_tonyfettes_go_runtime_semacquire"
 
