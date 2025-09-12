@@ -303,3 +303,64 @@ pub fn r_type64(info : UInt64) -> UInt {
 pub fn r_info(sym : UInt, typ : UInt) -> UInt64 {
   (sym.to_uint64() << 32) | typ.to_uint64()
 }
+
+///|
+/// Helper functions for symbol info manipulation
+
+///|
+/// ST_BIND extracts binding from symbol info
+pub fn st_bind(info : Byte) -> SymBind {
+  SymBind::from_int((info >> 4).to_int())
+}
+
+///|
+/// ST_TYPE extracts type from symbol info
+pub fn st_type(info : Byte) -> SymType {
+  SymType::from_int((info & 0xF).to_int())
+}
+
+///|
+/// ST_INFO constructs symbol info from binding and type
+pub fn st_info(bind : SymBind, typ : SymType) -> Byte {
+  ((bind.to_int() << 4) | (typ.to_int() & 0xf)).to_byte()
+}
+
+///|
+/// Symbol visibility - st_other
+pub(all) enum SymVis {
+  /// 0 Default visibility (see binding).
+  STV_DEFAULT
+  /// 1 Processor specific hidden class.
+  STV_INTERNAL
+  /// 2 Sym unavailable in other modules.
+  STV_HIDDEN
+  /// 3 Not preemptible, not exported.
+  STV_PROTECTED
+} derive(Eq, Show, ToJson(style="flat"))
+
+///|
+pub fn SymVis::to_int(self : SymVis) -> Int {
+  match self {
+    STV_DEFAULT => 0
+    STV_INTERNAL => 1
+    STV_HIDDEN => 2
+    STV_PROTECTED => 3
+  }
+}
+
+///|
+pub fn SymVis::from_int(i : Int) -> SymVis {
+  match i {
+    0 => STV_DEFAULT
+    1 => STV_INTERNAL
+    2 => STV_HIDDEN
+    3 => STV_PROTECTED
+    _ => STV_DEFAULT
+  }
+}
+
+///|
+/// ST_VISIBILITY extracts visibility from symbol other field
+pub fn st_visibility(other : Byte) -> SymVis {
+  SymVis::from_int((other & 3).to_int())
+}

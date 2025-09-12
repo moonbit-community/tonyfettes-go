@@ -17,32 +17,27 @@ pub const Chunk : Int = 10 * 1024 * 1024 // 10M
 /// The error is [@io.EOF] only if no bytes were read.
 /// If an [@io.EOF] happens after reading some but not all the bytes,
 /// read_data returns [@io.UnexpectedEof].
-pub fn read_data(r : &@io.Reader, n : UInt64) -> Bytes raise {
+pub fn read_data(r : &@io.Reader, n : UInt64) -> @slice.Slice[Byte] raise {
   if n.reinterpret_as_int64() < 0L || n != n.to_int().to_uint64() {
     // n is too large to fit in int, so we can't allocate
     // a buffer large enough. Treat this as a read failure.
     raise @io.UnexpectedEof
   }
-
   if n.to_int() < Chunk {
     let buf : @slice.Slice[Byte] = @slice.make(n.to_int())
     @io.read_full(r, buf) |> ignore
-    return buf.bytesview().to_bytes()
+    return buf
   }
-
-  let buf : Array[Byte] = []
+  let buf = @buffer.new()
   let buf1 : @slice.Slice[Byte] = @slice.make(Chunk)
   let mut n = n
   while n > 0UL {
     let next = if n > Chunk.to_uint64() { Chunk } else { n.to_int() }
-    @io.read_full(r, buf1[0:next]) |> ignore
-    for i in 0..<next {
-      buf.push(buf1[i])
-    }
+    @io.read_full(r, buf1[:next]) |> ignore
+    buf.write_bytesview(buf1.bytesview())
     n -= next.to_uint64()
   }
-  // Convert Array[Byte] to Bytes
-  Bytes::from_array(buf)
+  @slice.bytes(buf.contents())
 }
 
 ///|
@@ -55,7 +50,6 @@ pub fn read_data_at(r : &@io.ReaderAt, n : UInt64, off : Int64) -> Bytes raise {
     // a buffer large enough. Treat this as a read failure.
     raise @io.UnexpectedEof
   }
-
   if n.to_int() < Chunk {
     let buf : @slice.Slice[Byte] = @slice.make(n.to_int())
     r.read_at(buf, off) |> ignore
@@ -63,7 +57,6 @@ pub fn read_data_at(r : &@io.ReaderAt, n : UInt64, off : Int64) -> Bytes raise {
     // but for our purposes that is a success.
     return buf.bytesview().to_bytes()
   }
-
   let buf : Array[Byte] = []
   let buf1 : @slice.Slice[Byte] = @slice.make(Chunk)
   let mut n = n
@@ -92,7 +85,7 @@ pub fn slice_cap_with_size(size : UInt64, c : UInt64) -> Int {
   if c.reinterpret_as_int64() < 0L || c != c.to_int().to_uint64() {
     return -1
   }
-  if size > 0UL && c > (18446744073709551615UL / size) {
+  if size > 0UL && c > 18446744073709551615UL / size {
     return -1
   }
   let mut c = c

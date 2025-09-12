@@ -35,7 +35,7 @@ pub struct File {
   priv mut closer : &@io.Closer?
   priv dyn_vers : Array[DynamicVersion]
   priv dyn_ver_needs : Array[DynamicVersionNeed]
-  priv gnu_versym : Bytes // Simplified - using Bytes instead of slice
+  priv mut gnu_versym : @slice.Slice[Byte] // Simplified - using Bytes instead of slice
 }
 
 ///|
@@ -62,7 +62,7 @@ pub struct SectionHeader {
 /// Data reads and returns the contents of the ELF section.
 /// Even if the section is stored compressed in the ELF file,
 /// Data returns uncompressed data.
-pub fn Section::data(self : Section) -> Bytes raise {
+pub fn Section::data(self : Section) -> @slice.Slice[Byte] raise {
   @saferio.read_data(self.open(), self.section_header.size)
 }
 
@@ -89,9 +89,9 @@ pub struct Section {
 ///|
 /// stringTable reads and returns the string table given by the
 /// specified link value.
-fn File::string_table(self : File, link : UInt) -> Bytes raise {
+fn File::string_table(self : File, link : UInt) -> @slice.Slice[Byte] raise {
   if link <= 0 || link >= self.sections.length().reinterpret_as_uint() {
-    raise SectionHasInvalidStringTableLink
+    fail("section has invalid string table link")
   }
   self.sections[link.reinterpret_as_int()].data()
 }
@@ -134,8 +134,14 @@ pub struct Prog {
 ///|
 /// Open returns a new ReadSeeker reading the ELF program body.
 pub fn Prog::open(self : Prog) -> &@io.ReadSeeker raise {
-  // FIXME: This is a simplified implementation
-  ...
+  match self.sr {
+    Some(sr) => @io.new_section_reader(sr, 0, 1L << (63 - 1))
+    None =>
+      raise FormatError::new(
+        off=self.prog_header.off.reinterpret_as_int64(),
+        msg="program has no data reader",
+      )
+  }
 }
 
 ///|
@@ -256,7 +262,7 @@ pub fn new_file(r : &@io.ReaderAt) -> File raise {
     closer: None,
     dyn_vers: [],
     dyn_ver_needs: [],
-    gnu_versym: Bytes::make(0, 0),
+    gnu_versym: @slice.make(0),
   }
 
   // FIXME: This is a very simplified implementation
@@ -280,7 +286,7 @@ priv suberror NotImplemented
 fn File::get_symbols(
   self : File,
   typ : SectionType,
-) -> (Array[Symbol], Bytes, Array[UInt]) raise {
+) -> (Array[Symbol], @slice.Slice[Byte], Array[UInt]) raise {
   match self.file_header.class {
     ELFCLASS64 => self.get_symbols64(typ)
     ELFCLASS32 => self.get_symbols32(typ)
@@ -297,35 +303,120 @@ pub(all) suberror NoSymbolsError
 fn File::get_symbols32(
   self : File,
   typ : SectionType,
-) -> (Array[Symbol], Bytes, Array[UInt]) raise {
-  // FIXME: Implementation needed
-  ...
+) -> (Array[Symbol], @slice.Slice[Byte], Array[UInt]) raise {
+  let symtab_section = match self.section_by_type(typ) {
+    Some(s) => s
+    None => raise NoSymbolsError
+  }
+  let data = symtab_section.data() catch {
+    err => fail("cannot load symbol section: \{err}")
+  }
+  if data.length() == 0 {
+    fail("symbol section is empty")
+  }
+  if data.length() % Sym32Size != 0 {
+    fail("length of symbol section is not a multiple of SymSize")
+  }
+  let strdata = self.string_table(symtab_section.section_header.link) catch {
+    err => fail("cannot load string table section: \{err}")
+  }
+  let symbols : Array[Symbol] = []
+  let link_indices : Array[UInt] = []
+  let mut i = 0
+  // The first entry is all zeros.
+  let mut offset = Sym32Size
+  while offset + Sym32Size <= data.length() {
+    let sym_data = data[offset:offset + Sym32Size]
+    let bo = self.file_header.byte_order
+    let name_idx = bo.uint32(sym_data[0:4])
+    let value = bo.uint32(sym_data[4:8]).to_uint64()
+    let size = bo.uint32(sym_data[8:12]).to_uint64()
+    let info = sym_data[12]
+    let other = sym_data[13]
+    let shndx = bo.uint16(sym_data[14:16])
+    let (name, _) = get_string(strdata, name_idx.reinterpret_as_int())
+    symbols.push(Symbol::{
+      name,
+      info,
+      other,
+      has_version: false,
+      version_index: VersionIndex::new(0),
+      section: SectionIndex::from_int(shndx.to_int()),
+      value,
+      size,
+      version: "",
+      library: "",
+    })
+    link_indices.push(shndx.to_uint())
+    offset = offset + Sym32Size
+    i = i + 1
+  }
+  (symbols, strdata, link_indices)
 }
 
 ///|
 fn File::get_symbols64(
   self : File,
   typ : SectionType,
-) -> (Array[Symbol], Bytes, Array[UInt]) raise {
-  // FIXME: Implementation needed
-  ...
+) -> (Array[Symbol], @slice.Slice[Byte], Array[UInt]) raise {
+  let symtab_section = match self.section_by_type(typ) {
+    Some(s) => s
+    None => raise NoSymbolsError
+  }
+  let data = symtab_section.data()
+  if data.length() % Sym64Size != 0 {
+    raise FormatError::new(
+      off=symtab_section.section_header.offset.reinterpret_as_int64(),
+      msg="length of symbol section is not a multiple of Sym64Size",
+    )
+  }
+  let strdata = self.string_table(symtab_section.section_header.link)
+
+  // The first entry is all zeros, skip it
+  let data = data[Sym64Size:]
+  let symbols : Array[Symbol] = []
+  let link_indices : Array[UInt] = []
+  let mut i = 0
+  let mut offset = Sym64Size
+  while offset + Sym64Size <= data.length() {
+    let sym_data = data[offset:offset + Sym64Size]
+    let bo = self.file_header.byte_order
+    let name_idx = bo.uint32(sym_data[0:4])
+    let info = sym_data[4]
+    let other = sym_data[5]
+    let shndx = bo.uint16(sym_data[6:8])
+    let value = bo.uint64(sym_data[8:16])
+    let size = bo.uint64(sym_data[16:24])
+    let (name, _) = get_string(strdata, name_idx.to_int())
+    symbols.push(Symbol::{
+      name,
+      info,
+      other,
+      has_version: false,
+      version_index: VersionIndex::new(0),
+      section: SectionIndex::from_int(shndx.to_int()),
+      value,
+      size,
+      version: "",
+      library: "",
+    })
+    link_indices.push(shndx.to_uint())
+    offset = offset + Sym64Size
+    i = i + 1
+  }
+  (symbols, strdata, link_indices)
 }
 
 ///|
 /// getString extracts a string from an ELF string table.
-fn get_string(section : Bytes, start : Int) -> (String, Bool) {
+fn get_string(section : @slice.Slice[Byte], start : Int) -> (String, Bool) {
   if start < 0 || start >= section.length() {
     return ("", false)
   }
-  let mut end = start
-  while end < section.length() {
+  for end in start..<section.length() {
     if section[end] == 0 {
-      // Convert bytes to string - this may not be perfectly UTF-8 safe
-      // but matches the Go implementation behavior
-      let bytes_slice = section[start:end]
-      return (bytes_slice.to_string(), true)
+      return (@utf8.decode_lossy(section[start:end]), true)
     }
-    end = end + 1
   }
   ("", false)
 }
@@ -472,6 +563,31 @@ pub struct DynamicVersionDep {
 } derive(Show, ToJson)
 
 ///|
+fn File::_dynamic_versions(self : File, str : @slice.Slice[Byte]) -> Unit raise {
+  ...
+}
+
+///|
+pub fn File::dynamic_versions(self : File) -> Array[DynamicVersion] raise {
+  ...
+}
+
+///|
+fn File::_dynamic_version_needs(
+  self : File,
+  str : @slice.Slice[Byte],
+) -> Unit raise {
+  ...
+}
+
+///|
+pub fn File::dynamic_version_needs(
+  self : File,
+) -> Array[DynamicVersionNeed] raise {
+  ...
+}
+
+///|
 priv suberror SectionHasInvalidStringTableLink
 
 ///|
@@ -486,9 +602,13 @@ impl Show for SectionHasInvalidStringTableLink with output(
 /// gnuVersionInit parses the GNU version tables
 /// for use by calls to gnuVersion.
 /// It reports whether any version tables were found.
-fn File::gnu_version_init(self : File, str : Bytes) -> Bool {
-  // FIXME: Implementation needed
-  false
+fn File::gnu_version_init(self : File, str : @slice.Slice[Byte]) -> Bool raise {
+  guard self.section_by_type(SHT_GNU_VERSYM) is Some(vs) else { return false }
+  let d = vs.data()
+  self.gnu_versym = d
+  self._dynamic_versions(str)
+  self._dynamic_version_needs(str)
+  return true
 }
 
 ///|
@@ -498,8 +618,32 @@ fn File::gnu_version(
   self : File,
   i : Int,
 ) -> (Bool, VersionIndex, String, String) {
-  // FIXME: Implementation needed
-  (false, VersionIndex::new(0), "", "")
+  let i = (i + 1) * 2
+  if i >= self.gnu_versym.length() {
+    return (false, VersionIndex::new(0), "", "")
+  }
+  let s = self.gnu_versym[i:]
+  if s.length() < 2 {
+    return (false, 0, "", "")
+  }
+  let vi = VersionIndex::new(self.file_header.byte_order.uint16(s))
+  let ndx = vi.index()
+  if ndx == 0 || ndx == 1 {
+    return (true, vi, "", "")
+  }
+  for v in self.dyn_ver_needs {
+    for n in v.needs {
+      if ndx == n.index {
+        return (true, vi, n.dep, v.name)
+      }
+    }
+  }
+  for v in self.dyn_vers {
+    if ndx == v.index {
+      return (true, vi, v.name, "")
+    }
+  }
+  return (false, VersionIndex::new(0), "", "")
 }
 
 ///|
@@ -526,22 +670,82 @@ pub fn File::dyn_string(self : File, tag : DynTag) -> Array[String] raise {
         val=tag.to_int().to_string(),
       )
   }
-
-  // FIXME: This is a placeholder implementation
-  // The real implementation would:
-  // 1. Find the SHT_DYNAMIC section
-  // 2. Parse dynamic entries
-  // 3. Find entries matching the tag
-  // 4. Look up strings in the string table
-  []
+  let ds = match self.section_by_type(SHT_DYNAMIC) {
+    Some(s) => s
+    None => return [] // not dynamic, so no libraries
+  }
+  let d = ds.data()
+  let dyn_size = if self.file_header.class is ELFCLASS64 { 16 } else { 8 }
+  if d.length() % dyn_size != 0 {
+    fail("length of dynamic section is not a multiple of dynamic entry size")
+  }
+  let str = self.string_table(ds.section_header.link)
+  let all : Array[String] = []
+  let bo = self.file_header.byte_order
+  let mut offset = 0
+  while offset + dyn_size <= d.length() {
+    let dyn_data = d[offset:offset + dyn_size]
+    let (t, v) = match self.file_header.class {
+      ELFCLASS32 => {
+        let tag_val = bo.uint32(dyn_data[0:4])
+        let val = bo.uint32(dyn_data[4:8]).to_uint64()
+        (DynTag::from_int(tag_val.reinterpret_as_int()), val)
+      }
+      ELFCLASS64 => {
+        let tag_val = bo.uint64(dyn_data[0:8])
+        let val = bo.uint64(dyn_data[8:16])
+        (DynTag::from_int(tag_val.to_int()), val)
+      }
+      _ => (DT_NULL, 0UL)
+    }
+    if t == tag {
+      let (s, ok) = get_string(str, v.to_int())
+      if ok {
+        all.push(s)
+      }
+    }
+    offset = offset + dyn_size
+  }
+  all
 }
 
 ///|
 /// DynValue returns the values listed for the given tag in the file's dynamic
 /// section.
-fn File::dyn_value(self : File, tag : DynTag) -> Array[UInt64] {
-  // FIXME: This is a placeholder implementation
-  []
+fn File::dyn_value(self : File, tag : DynTag) -> Array[UInt64] raise {
+  let ds = match self.section_by_type(SHT_DYNAMIC) {
+    Some(s) => s
+    None => return []
+  }
+  let d = ds.data()
+  let dyn_size = if self.file_header.class is ELFCLASS64 { 16 } else { 8 }
+  if d.length() % dyn_size != 0 {
+    fail("length of dynamic section is not a multiple of dynamic entry size")
+  }
+  let vals : Array[UInt64] = []
+  let bo = self.file_header.byte_order
+  let mut offset = 0
+  while offset + dyn_size <= d.length() {
+    let dyn_data = d[offset:offset + dyn_size]
+    let (t, v) = match self.file_header.class {
+      ELFCLASS32 => {
+        let tag_val = bo.uint32(dyn_data[0:4])
+        let val = bo.uint32(dyn_data[4:8]).to_uint64()
+        (DynTag::from_int(tag_val.reinterpret_as_int()), val)
+      }
+      ELFCLASS64 => {
+        let tag_val = bo.uint64(dyn_data[0:8])
+        let val = bo.uint64(dyn_data[8:16])
+        (DynTag::from_int(tag_val.to_int()), val)
+      }
+      _ => (DT_NULL, 0UL)
+    }
+    if t == tag {
+      vals.push(v)
+    }
+    offset = offset + dyn_size
+  }
+  vals
 }
 
 ///|
@@ -553,8 +757,8 @@ priv suberror UnexpectedReadFromSntNobitsSection
 ///|
 impl @io.ReaderAt for NobitsSectionReader with read_at(
   _ : NobitsSectionReader,
-  p : @slice.Slice[Byte],
-  off : Int64,
+  _ : @slice.Slice[Byte],
+  _ : Int64,
 ) -> Int raise {
   raise UnexpectedReadFromSntNobitsSection
 }

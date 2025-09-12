@@ -67,7 +67,7 @@ pub fn SectionReader::new(
 }
 
 ///|
-pub fn SectionReader::read(
+pub impl Reader for SectionReader with read(
   s : SectionReader,
   p : @slice.Slice[Byte],
 ) -> Int raise {
@@ -94,7 +94,7 @@ pub(all) enum SeekWhence {
 }
 
 ///|
-pub fn SectionReader::seek(
+pub impl Seeker for SectionReader with seek(
   s : SectionReader,
   offset : Int64,
   whence : SeekWhence,
@@ -149,7 +149,7 @@ pub fn[R : Reader] read_full(r : R, bytes : @slice.Slice[Byte]) -> Int raise {
 }
 
 ///|
-pub fn SectionReader::read_at(
+pub impl ReaderAt for SectionReader with read_at(
   s : SectionReader,
   p : @slice.Slice[Byte],
   off : Int64,

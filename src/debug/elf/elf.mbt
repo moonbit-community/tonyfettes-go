@@ -2164,23 +2164,7 @@ pub fn SymType::from_int(i : Int) -> SymType {
 ///|
 /// Symbol binding and type helper functions
 
-///|
-/// ST_BIND extracts binding from st_info
-pub fn st_bind(st_info : Byte) -> SymBind {
-  SymBind::from_int((st_info >> 4).to_int())
-}
 
-///|
-/// ST_TYPE extracts type from st_info  
-pub fn st_type(st_info : Byte) -> SymType {
-  SymType::from_int((st_info & 0xf).to_int())
-}
-
-///|
-/// ST_INFO constructs st_info from binding and type
-pub fn st_info(bind : SymBind, typ : SymType) -> Byte {
-  ((bind.to_int() << 4) | typ.to_int()).to_byte()
-}
 
 ///|
 /// Dynamic version flags.
@@ -2195,7 +2179,7 @@ pub fn DynamicVersionFlag::new(value : UInt) -> DynamicVersionFlag {
 }
 
 ///|
-/// Version flag constants
+/// Dynamic version flag constants
 pub const VER_FLG_BASE : UInt = 0x1U    /// Version definition of the file.
 pub const VER_FLG_WEAK : UInt = 0x2U    /// Weak version identifier.
 pub const VER_FLG_INFO : UInt = 0x4U    /// Reference exists for informational purposes.
