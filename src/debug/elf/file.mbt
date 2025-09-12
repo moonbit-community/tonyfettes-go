@@ -286,7 +286,7 @@ priv suberror NotImplemented
 fn File::get_symbols(
   self : File,
   typ : SectionType,
-) -> (Array[Symbol], @slice.Slice[Byte], Array[UInt]) raise {
+) -> (Array[Symbol], @slice.Slice[Byte]) raise {
   match self.file_header.class {
     ELFCLASS64 => self.get_symbols64(typ)
     ELFCLASS32 => self.get_symbols32(typ)
@@ -303,7 +303,7 @@ pub(all) suberror NoSymbolsError
 fn File::get_symbols32(
   self : File,
   typ : SectionType,
-) -> (Array[Symbol], @slice.Slice[Byte], Array[UInt]) raise {
+) -> (Array[Symbol], @slice.Slice[Byte]) raise {
   let symtab_section = match self.section_by_type(typ) {
     Some(s) => s
     None => raise NoSymbolsError
@@ -321,11 +321,8 @@ fn File::get_symbols32(
     err => fail("cannot load string table section: \{err}")
   }
   let symbols : Array[Symbol] = []
-  let link_indices : Array[UInt] = []
-  let mut i = 0
   // The first entry is all zeros.
-  let mut offset = Sym32Size
-  while offset + Sym32Size <= data.length() {
+  for offset = Sym32Size; offset < data.length(); offset = offset + Sym32Size {
     let sym_data = data[offset:offset + Sym32Size]
     let bo = self.file_header.byte_order
     let name_idx = bo.uint32(sym_data[0:4])
@@ -347,18 +344,15 @@ fn File::get_symbols32(
       version: "",
       library: "",
     })
-    link_indices.push(shndx.to_uint())
-    offset = offset + Sym32Size
-    i = i + 1
   }
-  (symbols, strdata, link_indices)
+  (symbols, strdata)
 }
 
 ///|
 fn File::get_symbols64(
   self : File,
   typ : SectionType,
-) -> (Array[Symbol], @slice.Slice[Byte], Array[UInt]) raise {
+) -> (Array[Symbol], @slice.Slice[Byte]) raise {
   let symtab_section = match self.section_by_type(typ) {
     Some(s) => s
     None => raise NoSymbolsError
@@ -373,12 +367,8 @@ fn File::get_symbols64(
   let strdata = self.string_table(symtab_section.section_header.link)
 
   // The first entry is all zeros, skip it
-  let data = data[Sym64Size:]
   let symbols : Array[Symbol] = []
-  let link_indices : Array[UInt] = []
-  let mut i = 0
-  let mut offset = Sym64Size
-  while offset + Sym64Size <= data.length() {
+  for offset = Sym64Size; offset < data.length(); offset = offset + Sym64Size {
     let sym_data = data[offset:offset + Sym64Size]
     let bo = self.file_header.byte_order
     let name_idx = bo.uint32(sym_data[0:4])
@@ -400,11 +390,8 @@ fn File::get_symbols64(
       version: "",
       library: "",
     })
-    link_indices.push(shndx.to_uint())
-    offset = offset + Sym64Size
-    i = i + 1
   }
-  (symbols, strdata, link_indices)
+  (symbols, strdata)
 }
 
 ///|
@@ -441,7 +428,7 @@ pub fn File::section(self : File, name : String) -> Section? {
 /// After retrieving the symbols as symtab, an externally supplied index x
 /// corresponds to symtab[x-1], not symtab[x].
 pub fn File::symbols(self : File) -> Array[Symbol] raise {
-  let (sym, _, _) = self.get_symbols(SHT_SYMTAB)
+  let (sym, _) = self.get_symbols(SHT_SYMTAB)
   sym
 }
 
@@ -456,7 +443,7 @@ pub fn File::symbols(self : File) -> Array[Symbol] raise {
 /// After retrieving the symbols as symtab, an externally supplied index x
 /// corresponds to symtab[x-1], not symtab[x].
 pub fn File::dynamic_symbols(self : File) -> Array[Symbol] raise {
-  let (sym, str, _) = self.get_symbols(SHT_DYNSYM)
+  let (sym, str) = self.get_symbols(SHT_DYNSYM)
   let has_versions = self.gnu_version_init(str)
   if has_versions {
     for i in 0..<sym.length() {
@@ -483,7 +470,7 @@ pub struct ImportedSymbol {
 /// satisfied by other libraries at dynamic load time.
 /// It does not return weak symbols.
 pub fn File::imported_symbols(self : File) -> Array[ImportedSymbol] raise {
-  let (sym, str, _) = self.get_symbols(SHT_DYNSYM)
+  let (sym, str) = self.get_symbols(SHT_DYNSYM)
   self.gnu_version_init(str) |> ignore
   let all : Array[ImportedSymbol] = []
   for i in 0..<sym.length() {
