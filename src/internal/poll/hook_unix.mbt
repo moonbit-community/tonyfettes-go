@@ -1,0 +1,1 @@
+pub fnalias @syscall.close as close_func

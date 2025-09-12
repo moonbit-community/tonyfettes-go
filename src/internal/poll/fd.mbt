@@ -25,6 +25,15 @@ pub impl Show for FileClosing with output(_ : FileClosing, output : &Logger) -> 
 }
 
 ///|
+fn error_closing(is_file~ : Bool) -> Error {
+  if is_file {
+    FileClosing
+  } else {
+    NetClosing
+  }
+}
+
+///|
 pub(all) suberror NoDeadline
 
 ///|

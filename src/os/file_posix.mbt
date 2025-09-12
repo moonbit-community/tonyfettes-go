@@ -22,3 +22,8 @@ fn[T] ignoring_EINTR(f : () -> T raise) -> T raise {
     }
   }
 }
+
+///|
+fn File::pread(self : File, b : @slice.Slice[Byte], off : Int64) -> Int raise {
+  self.pfd.pread(b, off)
+}

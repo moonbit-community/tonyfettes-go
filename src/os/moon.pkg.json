@@ -4,6 +4,11 @@
     "tonyfettes/go/internal/poll",
     "tonyfettes/go/syscall",
     "tonyfettes/go/internal/syscall/unix",
-    "moonbitlang/x/sys"
+    "moonbitlang/x/sys",
+    "tonyfettes/go/builtin",
+    "tonyfettes/go/internal/oserror",
+    "tonyfettes/go/runtime",
+    "tonyfettes/go/io",
+    "tonyfettes/go/slice"
   ]
 }

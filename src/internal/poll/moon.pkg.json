@@ -1,1 +1,9 @@
-{}
+{
+  "import": [
+    "tonyfettes/go/sync/atomic",
+    "tonyfettes/go/syscall",
+    "tonyfettes/go/builtin",
+    "tonyfettes/go/slice",
+    "tonyfettes/go/io"
+  ]
+}

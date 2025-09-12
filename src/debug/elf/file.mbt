@@ -185,9 +185,15 @@ impl Show for FormatError with output(self : FormatError, output : &Logger) -> U
 ///|
 /// Open opens the named file using os.Open and prepares it for use as an ELF binary.
 pub fn open(name : String) -> File raise {
-  // FIXME: Need to implement file opening functionality
-  // For now, this is a placeholder
-  raise NotImplemented
+  let f = @os.open(name)
+  let ff = new_file(f) catch {
+    err => {
+      f.close()
+      raise err
+    }
+  }
+  ff.closer = Some(f)
+  return ff
 }
 
 ///|

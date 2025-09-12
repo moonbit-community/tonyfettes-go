@@ -3,6 +3,8 @@
     "tonyfettes/go/internal/oserror",
     "tonyfettes/c",
     "tonyfettes/utf8",
-    "tonyfettes/uv"
+    "tonyfettes/uv",
+    "tonyfettes/go/builtin",
+    "tonyfettes/go/slice"
   ]
 }
