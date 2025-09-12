@@ -1,1 +1,10 @@
-{}
+{
+  "import": [
+    "tonyfettes/go/io",
+    "tonyfettes/go/slice"
+  ],
+  "test-import": [
+    "tonyfettes/go/io",
+    "tonyfettes/go/slice"
+  ]
+}

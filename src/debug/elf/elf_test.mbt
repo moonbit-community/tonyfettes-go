@@ -24,10 +24,10 @@ test "elf constants" {
 
 ///|
 test "version index operations" {
-  let vi = VersionIndex::new(0x8001U)
+  let vi = VersionIndex::new(0x8001)
   @json.inspect(vi.is_hidden(), content=true)
   @json.inspect(vi.index(), content=1)
-  let vi2 = VersionIndex::new(0x1U)
+  let vi2 = VersionIndex::new(0x1)
   @json.inspect(vi2.is_hidden(), content=false)
   @json.inspect(vi2.index(), content=1)
 }

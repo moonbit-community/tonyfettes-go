@@ -24,7 +24,9 @@ pub(all) suberror InvalidWrite
 
 pub(all) suberror NoProgress
 
-type SeekError
+pub(all) suberror SeekError {
+  InvalidOffset(Int64)
+}
 
 pub(all) suberror ShortBuffer
 
@@ -40,7 +42,7 @@ type SectionReader
 fn SectionReader::new(&ReaderAt, Int64, Int64) -> Self
 fn SectionReader::read(Self, @slice.Slice[Byte]) -> Int raise
 fn SectionReader::read_at(Self, @slice.Slice[Byte], Int64) -> Int raise
-fn SectionReader::seek(Self, Int64, SeekWhence) -> Int64 raise SeekError
+fn SectionReader::seek(Self, Int64, SeekWhence) -> Int64 raise
 fn SectionReader::size(Self) -> Int64
 
 pub(all) enum SeekWhence {
@@ -67,15 +69,13 @@ pub(open) trait Closer {
 pub(open) trait ReadCloser : Reader + Closer {
 }
 
-pub(open) trait ReadSeeker : Reader {
-  seek(Self, Int64, SeekWhence) -> Int64 raise SeekError
+pub(open) trait ReadSeeker : Reader + Seeker {
 }
 
 pub(open) trait ReadWriteCloser : Reader + Writer + Closer {
 }
 
-pub(open) trait ReadWriteSeeker : Reader + Writer {
-  seek(Self, Int64, SeekWhence) -> Int64 raise SeekError
+pub(open) trait ReadWriteSeeker : Reader + Writer + Seeker {
 }
 
 pub(open) trait ReadWriter : Reader + Writer {
@@ -97,6 +97,10 @@ pub(open) trait Resetter {
   reset(Self, &Reader) -> Unit raise
 }
 
+pub(open) trait Seeker {
+  seek(Self, Int64, SeekWhence) -> Int64 raise
+}
+
 pub(open) trait StringWriter {
   write_string(Self, String) -> Int raise
 }
@@ -104,8 +108,7 @@ pub(open) trait StringWriter {
 pub(open) trait WriteCloser : Writer + Closer {
 }
 
-pub(open) trait WriteSeeker : Writer {
-  seek(Self, Int64, SeekWhence) -> Int64 raise SeekError
+pub(open) trait WriteSeeker : Writer + Seeker {
 }
 
 pub(open) trait WriteTo {

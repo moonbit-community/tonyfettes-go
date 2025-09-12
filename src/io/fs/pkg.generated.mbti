@@ -1,0 +1,22 @@
+// Generated using `moon info`, DON'T EDIT IT
+package "tonyfettes/go/io/fs"
+
+// Values
+
+// Errors
+
+// Types and methods
+
+// Type aliases
+pub typealias @tonyfettes/go/internal/oserror.Closed as Closed
+
+pub typealias @tonyfettes/go/internal/oserror.Exist as Exist
+
+pub typealias @tonyfettes/go/internal/oserror.Invalid as Invalid
+
+pub typealias @tonyfettes/go/internal/oserror.NotExist as NotExist
+
+pub typealias @tonyfettes/go/internal/oserror.Permission as Permission
+
+// Traits
+

@@ -1,0 +1,22 @@
+// Generated using `moon info`, DON'T EDIT IT
+package "tonyfettes/go/internal/oserror"
+
+// Values
+
+// Errors
+pub(all) suberror Closed
+
+pub(all) suberror Exist
+
+pub(all) suberror Invalid
+
+pub(all) suberror NotExist
+
+pub(all) suberror Permission
+
+// Types and methods
+
+// Type aliases
+
+// Traits
+

@@ -1,0 +1,26 @@
+// Generated using `moon info`, DON'T EDIT IT
+package "tonyfettes/go/internal/saferio"
+
+import(
+  "tonyfettes/go/io"
+)
+
+// Values
+const Chunk : Int = 10485760
+
+fn read_data(&@io.Reader, UInt64) -> Bytes raise
+
+fn read_data_at(&@io.ReaderAt, UInt64, Int64) -> Bytes raise
+
+fn slice_cap(UInt64, UInt64) -> Int
+
+fn slice_cap_with_size(UInt64, UInt64) -> Int
+
+// Errors
+
+// Types and methods
+
+// Type aliases
+
+// Traits
+

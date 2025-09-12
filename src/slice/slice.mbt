@@ -2,10 +2,7 @@
 struct Slice[T](FixedArray[T],Int,Int)
 
 ///|
-pub impl[T : Eq] Eq for Slice[T] with op_equal(
-  self : Slice[T],
-  other : Slice[T],
-) -> Bool {
+pub impl[T : Eq] Eq for Slice[T] with equal(self : Slice[T], other : Slice[T]) -> Bool {
   if self.length() != other.length() {
     return false
   }
@@ -185,6 +182,18 @@ pub fn[T] Slice::iter(s : Slice[T]) -> Iter[T] {
 ///|
 pub fn Slice::bytesview(self : Slice[Byte]) -> @bytes.View {
   self.0.unsafe_reinterpret_as_bytes()[self.1:self.1 + self.2]
+}
+
+///|
+fn[T] make_arrayview(
+  buf : FixedArray[T],
+  start : Int,
+  len : Int,
+) -> ArrayView[T] = "%arrayview.make"
+
+///|
+pub fn[T] Slice::arrayview(self : Slice[T]) -> ArrayView[T] {
+  make_arrayview(self.0, self.1, self.2)
 }
 
 ///|
