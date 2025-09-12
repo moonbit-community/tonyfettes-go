@@ -4,8 +4,43 @@ package "tonyfettes/go/io/fs"
 // Values
 
 // Errors
+pub suberror PathError {
+  PathError(op~ : String, path~ : String, Error)
+}
+fn PathError::new(op~ : String, path~ : String, Error) -> Self
+fn PathError::unwrap(Self) -> Error
+impl Show for PathError
 
 // Types and methods
+pub struct FileMode(UInt)
+fn FileMode::append() -> Self
+fn FileMode::char_device() -> Self
+fn FileMode::device() -> Self
+fn FileMode::dir() -> Self
+fn FileMode::exclusive() -> Self
+fn FileMode::inner(Self) -> UInt
+fn FileMode::irregular() -> Self
+fn FileMode::is_dir(Self) -> Bool
+fn FileMode::is_setgid(Self) -> Bool
+fn FileMode::is_setuid(Self) -> Bool
+fn FileMode::is_sticky(Self) -> Bool
+fn FileMode::is_symlink(Self) -> Bool
+fn FileMode::lnot(Self) -> Self
+fn FileMode::named_pipe() -> Self
+fn FileMode::perm(Self) -> Self
+fn FileMode::setgid() -> Self
+fn FileMode::setuid() -> Self
+fn FileMode::socket() -> Self
+fn FileMode::sticky() -> Self
+fn FileMode::symlink() -> Self
+fn FileMode::temporary() -> Self
+fn FileMode::to_uint(Self) -> UInt
+fn FileMode::type_(Self) -> Self
+impl BitAnd for FileMode
+impl BitOr for FileMode
+impl BitXOr for FileMode
+impl Default for FileMode
+impl Show for FileMode
 
 // Type aliases
 pub typealias @tonyfettes/go/internal/oserror.Closed as Closed

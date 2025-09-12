@@ -23,6 +23,17 @@ impl Show for NoDeadline
 pub suberror NotPollable
 
 // Types and methods
+pub struct FD {
+  sysfd : Int
+  sys_file : SysFile
+  is_stream : Bool
+  zero_read_is_eof : Bool
+  // private fields
+}
+fn FD::new(sysfd~ : Int, is_stream? : Bool, zero_read_is_eof? : Bool) -> Self
+
+type SysFile
+fn SysFile::new() -> Self
 
 // Type aliases
 

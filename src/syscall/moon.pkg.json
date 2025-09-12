@@ -1,0 +1,8 @@
+{
+  "import": [
+    "tonyfettes/go/internal/oserror",
+    "tonyfettes/c",
+    "tonyfettes/utf8",
+    "tonyfettes/uv"
+  ]
+}

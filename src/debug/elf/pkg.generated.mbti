@@ -33,7 +33,7 @@ const VER_FLG_INFO : UInt = 0x4
 
 const VER_FLG_WEAK : UInt = 0x2
 
-fn new_file(&@io.ReaderAt) -> File raise ElfError
+fn new_file(&@io.ReaderAt) -> File raise
 
 fn open(String) -> File raise
 
@@ -56,27 +56,8 @@ fn st_info(SymBind, SymType) -> Byte
 fn st_type(Byte) -> SymType
 
 // Errors
-pub(all) suberror ElfError {
-  Format(FormatError)
-  NoSymbols
-  InvalidOffset(Int64)
-  BadMagic(Bytes)
-  UnknownClass(Class)
-  UnknownData(Data)
-  UnknownVersion(Version)
-  MismatchedVersion(Version)
-  InvalidShoff(Int64)
-  InvalidPhoff(Int64)
-  InvalidShnum(Int)
-  InvalidShstrndx(Int)
-  InvalidPhentsize(Int)
-  InvalidShentsize(Int)
-  TooManySections(Int)
-  SectionHeaderOverflow(Int)
-  InvalidSectionOffset(Int64)
-  InvalidSectionSize(Int64)
-  BadSectionNameIndex(UInt)
-  NotImplemented(String)
+pub suberror FormatError {
+  FormatError(off~ : Int64, msg~ : String, val~ : String?)
 }
 
 pub(all) suberror NoSymbolsError
@@ -287,7 +268,7 @@ impl ToJson for DynTag
 
 pub struct DynamicVersion {
   name : String
-  index : UInt
+  index : UInt16
   flags : DynamicVersionFlag
   deps : Array[String]
 }
@@ -296,7 +277,7 @@ impl ToJson for DynamicVersion
 
 pub struct DynamicVersionDep {
   flags : DynamicVersionFlag
-  index : UInt
+  index : UInt16
   dep : String
 }
 impl Show for DynamicVersionDep
@@ -324,13 +305,13 @@ pub struct File {
   // private fields
 }
 fn File::close(Self) -> Unit raise
-fn File::dyn_string(Self, DynTag) -> Array[String] raise ElfError
-fn File::dynamic_symbols(Self) -> Array[Symbol] raise ElfError
-fn File::imported_libraries(Self) -> Array[String] raise ElfError
-fn File::imported_symbols(Self) -> Array[ImportedSymbol] raise ElfError
+fn File::dyn_string(Self, DynTag) -> Array[String] raise
+fn File::dynamic_symbols(Self) -> Array[Symbol] raise
+fn File::imported_libraries(Self) -> Array[String] raise
+fn File::imported_symbols(Self) -> Array[ImportedSymbol] raise
 fn File::section(Self, String) -> Section?
 fn File::section_by_type(Self, SectionType) -> Section?
-fn File::symbols(Self) -> Array[Symbol] raise ElfError
+fn File::symbols(Self) -> Array[Symbol] raise
 
 pub struct FileHeader {
   class : Class
@@ -343,15 +324,6 @@ pub struct FileHeader {
   machine : Machine
   entry : UInt64
 }
-
-pub struct FormatError {
-  off : Int64
-  msg : String
-  val : String
-}
-fn FormatError::error_message(Self) -> String
-impl Show for FormatError
-impl ToJson for FormatError
 
 pub struct Header32 {
   ident : FixedArray[Byte]
@@ -624,10 +596,10 @@ impl ToJson for OSABI
 
 pub struct Prog {
   prog_header : ProgHeader
+  reader_at : &@io.ReaderAt?
+  // private fields
 }
-fn Prog::open(Self) -> &@io.ReadSeeker raise ElfError
-impl Show for Prog
-impl ToJson for Prog
+fn Prog::open(Self) -> &@io.ReadSeeker raise
 
 pub struct Prog32 {
   type_ : UInt
@@ -856,13 +828,11 @@ impl ToJson for Rela64
 
 pub struct Section {
   section_header : SectionHeader
-  compression_type : CompressionType
-  compression_offset : Int64
+  reader_at : &@io.ReaderAt?
+  // private fields
 }
-fn Section::data(Self) -> Bytes raise ElfError
-fn Section::open(Self) -> &@io.ReadSeeker raise ElfError
-impl Show for Section
-impl ToJson for Section
+fn Section::data(Self) -> Bytes raise
+fn Section::open(Self) -> &@io.ReadSeeker raise
 
 pub struct Section32 {
   name : UInt
@@ -1088,12 +1058,11 @@ impl Eq for Version
 impl Show for Version
 impl ToJson for Version
 
-pub struct VersionIndex {
-  value : UInt
-}
-fn VersionIndex::index(Self) -> UInt
+pub struct VersionIndex(UInt16)
+fn VersionIndex::index(Self) -> UInt16
+fn VersionIndex::inner(Self) -> UInt16
 fn VersionIndex::is_hidden(Self) -> Bool
-fn VersionIndex::new(UInt) -> Self
+fn VersionIndex::new(UInt16) -> Self
 impl Eq for VersionIndex
 impl Show for VersionIndex
 impl ToJson for VersionIndex

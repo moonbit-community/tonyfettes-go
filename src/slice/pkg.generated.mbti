@@ -19,6 +19,7 @@ fn[T] new() -> Slice[T]
 // Types and methods
 type Slice[T]
 fn[T : Default] Slice::append(Self[T], T) -> Self[T]
+fn[T] Slice::arrayview(Self[T]) -> ArrayView[T]
 fn Slice::bytesview(Self[Byte]) -> @bytes.View
 fn[T] Slice::copy(Self[T], Self[T]) -> Int
 fn[T] Slice::iter(Self[T]) -> Iter[T]

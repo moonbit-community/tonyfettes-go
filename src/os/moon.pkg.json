@@ -1,6 +1,9 @@
 {
   "import": [
     "tonyfettes/go/io/fs",
-    "tonyfettes/go/internal/poll"
+    "tonyfettes/go/internal/poll",
+    "tonyfettes/go/syscall",
+    "tonyfettes/go/internal/syscall/unix",
+    "moonbitlang/x/sys"
   ]
 }

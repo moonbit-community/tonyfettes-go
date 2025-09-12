@@ -1,7 +1,20 @@
 // Generated using `moon info`, DON'T EDIT IT
 package "tonyfettes/go/os"
 
+import(
+  "tonyfettes/go/io/fs"
+)
+
 // Values
+const O_APPEND : Int = 0x8
+
+const O_CREATE : Int = 0x200
+
+const O_RDONLY : Int = 0x0
+
+fn open(String) -> File raise
+
+fn open_file(String, Int, @fs.FileMode) -> File raise
 
 // Errors
 pub(all) suberror Closed
@@ -19,8 +32,10 @@ pub(all) suberror NotExist
 pub(all) suberror Permission
 
 // Types and methods
+type File
 
 // Type aliases
+pub typealias @fs.FileMode as FileMode
 
 // Traits
 
