@@ -1113,6 +1113,7 @@ pub fn SectionIndex::from_int(i : Int) -> SectionIndex {
 ///|
 /// Section type.
 pub(all) enum SectionType {
+  SHT(UInt)
   /// 0          inactive
   SHT_NULL
   /// 1          program defined information
@@ -1183,8 +1184,9 @@ pub impl Default for SectionType with default() -> SectionType {
 }
 
 ///|
-pub fn SectionType::to_int(self : SectionType) -> Int {
+pub fn SectionType::to_uint(self : SectionType) -> UInt {
   match self {
+    SHT(type_) => type_
     SHT_NULL => 0
     SHT_PROGBITS => 1
     SHT_SYMTAB => 2
@@ -1252,85 +1254,69 @@ pub fn SectionType::from_uint(i : UInt) -> SectionType {
     0x7fffffff => SHT_HIPROC
     0x80000000 => SHT_LOUSER
     0xffffffff => SHT_HIUSER
-    _ => SHT_NULL
+    i => SHT(i)
   }
 }
 
 ///|
 /// Section flags.
-pub(all) enum SectionFlag {
-  SHF(UInt)
-  /// 0x1        Section contains writable data.
-  SHF_WRITE
-  /// 0x2        Section occupies memory.
-  SHF_ALLOC
-  /// 0x4        Section contains instructions.
-  SHF_EXECINSTR
-  /// 0x10       Section may be merged.
-  SHF_MERGE
-  /// 0x20       Section contains strings.
-  SHF_STRINGS
-  /// 0x40       sh_info holds section index.
-  SHF_INFO_LINK
-  /// 0x80       Special ordering requirements.
-  SHF_LINK_ORDER
-  /// 0x100      OS-specific processing required.
-  SHF_OS_NONCONFORMING
-  /// 0x200      Member of section group.
-  SHF_GROUP
-  /// 0x400      Section contains TLS data.
-  SHF_TLS
-  /// 0x800      Section is compressed.
-  SHF_COMPRESSED
-  /// 0x0ff00000 OS-specific semantics.
-  SHF_MASKOS
-  /// 0xf0000000 Processor-specific semantics.
-  SHF_MASKPROC
-} derive(Eq, Show, ToJson)
+pub(all) struct SectionFlag(UInt)
+
+///|
+/// 0x1        Section contains writable data.
+const SHF_WRITE : UInt = 0x1
+
+///|
+/// 0x2        Section occupies memory.
+const SHF_ALLOC : UInt = 0x2
+
+///|
+/// 0x4        Section contains instructions.
+const SHF_EXECINSTR : UInt = 0x4
+
+///|
+/// 0x10       Section may be merged.
+const SHF_MERGE : UInt = 0x10
+
+///|
+/// 0x20       Section contains strings.
+const SHF_STRINGS : UInt = 0x20
+
+///|
+/// 0x40       sh_info holds section index.
+const SHF_INFO_LINK : UInt = 0x40
+
+///|
+/// 0x80       Special ordering requirements.
+const SHF_LINK_ORDER : UInt = 0x80
+
+///|
+/// 0x100      OS-specific processing required.
+const SHF_OS_NONCONFORMING : UInt = 0x100
+
+///|
+/// 0x200      Member of section group.
+const SHF_GROUP : UInt = 0x200
+
+///|
+/// 0x400      Section contains TLS data.
+const SHF_TLS : UInt = 0x400
+
+///|
+/// 0x800      Section is compressed.
+const SHF_COMPRESSED : UInt = 0x800
+
+///|
+/// 0x0ff00000 OS-specific semantics.
+const SHF_MASKOS : UInt = 0x0ff00000
+
+///|
+/// 0xf0000000 Processor-specific semantics.
+const SHF_MASKPROC : UInt = 0xf0000000
 
 ///|
 pub impl Default for SectionFlag with default() -> SectionFlag {
-  SHF(0)
-}
-
-///|
-pub fn SectionFlag::to_uint(self : SectionFlag) -> UInt {
-  match self {
-    SHF(flag) => flag
-    SHF_WRITE => 0x1
-    SHF_ALLOC => 0x2
-    SHF_EXECINSTR => 0x4
-    SHF_MERGE => 0x10
-    SHF_STRINGS => 0x20
-    SHF_INFO_LINK => 0x40
-    SHF_LINK_ORDER => 0x80
-    SHF_OS_NONCONFORMING => 0x100
-    SHF_GROUP => 0x200
-    SHF_TLS => 0x400
-    SHF_COMPRESSED => 0x800
-    SHF_MASKOS => 0x0ff00000
-    SHF_MASKPROC => 0xf0000000
-  }
-}
-
-///|
-pub fn SectionFlag::from_uint(i : UInt) -> SectionFlag {
-  match i {
-    0x1 => SHF_WRITE
-    0x2 => SHF_ALLOC
-    0x4 => SHF_EXECINSTR
-    0x10 => SHF_MERGE
-    0x20 => SHF_STRINGS
-    0x40 => SHF_INFO_LINK
-    0x80 => SHF_LINK_ORDER
-    0x100 => SHF_OS_NONCONFORMING
-    0x200 => SHF_GROUP
-    0x400 => SHF_TLS
-    0x800 => SHF_COMPRESSED
-    0x0ff00000 => SHF_MASKOS
-    0xf0000000 => SHF_MASKPROC
-    _ => SHF(i)
-  }
+  0
 }
 
 ///|
@@ -1338,7 +1324,17 @@ pub impl BitAnd for SectionFlag with land(
   self : SectionFlag,
   other : SectionFlag,
 ) -> SectionFlag {
-  SHF(self.to_uint() & other.to_uint())
+  SectionFlag(self.0 & other.0)
+}
+
+///|
+pub impl ToJson for SectionFlag with to_json(self : SectionFlag) -> Json {
+  self.0.to_json()
+}
+
+///|
+pub impl Show for SectionFlag with output(self : SectionFlag, logger : &Logger) -> Unit {
+  self.0.output(logger)
 }
 
 ///|
@@ -2244,27 +2240,18 @@ pub fn SymType::from_int(i : Int) -> SymType {
 
 ///|
 /// Dynamic version flags.
-pub struct DynamicVersionFlag {
-  value : UInt
-} derive(Show, ToJson, Eq)
+pub(all) struct DynamicVersionFlag(UInt16) derive(Show, ToJson, Eq)
 
 ///|
-/// Create a new DynamicVersionFlag
-pub fn DynamicVersionFlag::new(value : UInt) -> DynamicVersionFlag {
-  DynamicVersionFlag::{ value, }
-}
-
-///|
-/// Dynamic version flag constants
 /// Version definition of the file.
-/// Weak version identifier.
-/// Reference exists for informational purposes.
 pub const VER_FLG_BASE : UInt = 0x1U
 
 ///|
+/// Weak version identifier.
 pub const VER_FLG_WEAK : UInt = 0x2U
 
 ///|
+/// Reference exists for informational purposes.
 pub const VER_FLG_INFO : UInt = 0x4U
 
 ///|
@@ -3286,9 +3273,9 @@ pub(all) enum R_MIPS {
   R_MIPS_HI16
   /// 6 low 16 bits of symbol value
   R_MIPS_LO16
-  /// 7 GP-relative reference  
+  /// 7 GP-relative reference
   R_MIPS_GPREL16
-  /// 8 Reference to literal section  
+  /// 8 Reference to literal section
   R_MIPS_LITERAL
   /// 9 Reference to global offset table
   R_MIPS_GOT16

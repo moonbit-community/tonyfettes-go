@@ -39,10 +39,10 @@ test "magic constant" {
 
 ///|
 test "section types" {
-  @json.inspect(SectionType::SHT_PROGBITS.to_int(), content=1)
-  @json.inspect(SectionType::from_int(1), content="SHT_PROGBITS")
-  @json.inspect(SectionType::SHT_SYMTAB.to_int(), content=2)
-  @json.inspect(SectionType::from_int(2), content="SHT_SYMTAB")
+  @json.inspect(SectionType::SHT_PROGBITS.to_uint(), content=1)
+  @json.inspect(SectionType::from_uint(1), content="SHT_PROGBITS")
+  @json.inspect(SectionType::SHT_SYMTAB.to_uint(), content=2)
+  @json.inspect(SectionType::from_uint(2), content="SHT_SYMTAB")
 }
 
 ///|

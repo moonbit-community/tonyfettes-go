@@ -33,15 +33,60 @@ pub struct File {
   sections : Array[Section]
   mut progs : Array[Prog]
   priv mut closer : &@io.Closer?
-  priv dyn_vers : Array[DynamicVersion]
-  priv dyn_ver_needs : Array[DynamicVersionNeed]
+  priv dyn_vers : Array[DynamicVersion]?
+  priv mut dyn_ver_needs : Array[DynamicVersionNeed]?
   priv mut gnu_versym : @slice.Slice[Byte] // Simplified - using Bytes instead of slice
+}
+
+///|
+pub fn File::class(self : File) -> Class {
+  self.file_header.class
+}
+
+///|
+pub fn File::data(self : File) -> Data {
+  self.file_header.data
+}
+
+///|
+pub fn File::version(self : File) -> Version {
+  self.file_header.version
+}
+
+///|
+pub fn File::osabi(self : File) -> OSABI {
+  self.file_header.osabi
+}
+
+///|
+pub fn File::abi_version(self : File) -> Byte {
+  self.file_header.abi_version
+}
+
+///|
+pub fn File::byte_order(self : File) -> &@binary.ByteOrder {
+  self.file_header.byte_order
+}
+
+///|
+pub fn File::type_(self : File) -> Type {
+  self.file_header.type_
+}
+
+///|
+pub fn File::machine(self : File) -> Machine {
+  self.file_header.machine
+}
+
+///|
+pub fn File::entry(self : File) -> UInt64 {
+  self.file_header.entry
 }
 
 ///|
 /// A SectionHeader represents a single ELF section header.
 pub struct SectionHeader {
-  name : String
+  mut name : String
   type_ : SectionType
   flags : SectionFlag
   addr : UInt64
@@ -101,7 +146,61 @@ fn File::string_table(self : File, link : UInt) -> @slice.Slice[Byte] raise {
 /// Even if the section is stored compressed in the ELF file,
 /// the ReadSeeker reads uncompressed data.
 pub fn Section::open(self : Section) -> &@io.ReadSeeker raise {
-  ...
+  if self.section_header.type_ is SHT_NOBITS {
+    return @io.new_section_reader(
+      NobitsSectionReader::{  },
+      0,
+      self.section_header.size.reinterpret_as_int64(),
+    )
+  }
+  let mut zrd : ((@io.SectionReader) -> &@io.Reader raise)? = None
+  if (self.section_header.flags.0 & SHF_COMPRESSED) == 0 {
+    if !self.section_header.name.has_prefix(".zdebug") {
+      return @io.new_section_reader(self.sr.unwrap(), 0, 1 << (63 - 1))
+    }
+    let b = @slice.make(12)
+    let n = self.sr.unwrap().read_at(b, 0)
+    if n != 12 || b[:4].bytesview() is "ZLIB" {
+      return @io.new_section_reader(self.sr.unwrap(), 0, 1 << (63 - 1))
+    }
+    self.compression_offset = 12
+    self.compression_type = CompressionType::COMPRESS_ZLIB
+    self.section_header.size = @binary.big_endian.uint64(b[4:12])
+    zrd = Some(r => @zlib.new_reader(@bufio.new_reader(r)))
+  } else if (self.section_header.flags.0 & SHF_ALLOC) != 0 {
+    return ErrorReader::new(
+      FormatError::new(
+        off=self.section_header.offset.reinterpret_as_int64(),
+        msg="SHF_COMPRESSED applies only to non-allocable sections",
+        val=self.compression_type.to_string(),
+      ),
+    )
+  }
+  match self.compression_type {
+    COMPRESS_ZLIB => zrd = Some(r => @zlib.new_reader(@bufio.new_reader(r)))
+    _ => ()
+  }
+  guard zrd is Some(zrd) else {
+    return ErrorReader::new(
+      FormatError::new(
+        off=self.section_header.offset.reinterpret_as_int64(),
+        msg="unknown compression type",
+        val=self.compression_type.to_string(),
+      ),
+    )
+  }
+  return ReadSeekerFromReader::new(
+    reset=() => {
+      let fr = @io.new_section_reader(
+        self.sr.unwrap(),
+        self.compression_offset,
+        self.section_header.file_size.reinterpret_as_int64() -
+        self.compression_offset,
+      )
+      return zrd(fr)
+    },
+    size=self.section_header.size.reinterpret_as_int64(),
+  )
 }
 
 ///|
@@ -239,7 +338,7 @@ pub fn new_file(r : &@io.ReaderAt) -> File raise {
   if n != 16 {
     raise FormatError::new(off=0, msg="incomplete ELF header")
   }
-  guard ident.arrayview() is [0x7f, 'E', 'L', 'F', ..] else {
+  guard ident.arrayview() is [0x7f, 'E', 'L', 'F'] else {
     raise FormatError::new(
       off=0,
       msg="bad magic number",
@@ -261,8 +360,8 @@ pub fn new_file(r : &@io.ReaderAt) -> File raise {
     sections: [],
     progs: [],
     closer: None,
-    dyn_vers: [],
-    dyn_ver_needs: [],
+    dyn_vers: None,
+    dyn_ver_needs: None,
     gnu_versym: @slice.make(0),
   }
   match f.file_header.class {
@@ -562,8 +661,8 @@ pub fn new_file(r : &@io.ReaderAt) -> File raise {
     )
   }
   // Read section headers
-  f.sections = []
-  let names = []
+  f.sections.clear()
+  let names : Array[UInt] = []
   let shdata = @saferio.read_data_at(
     sr,
     shnum.to_uint64() * shentsize.to_uint64(),
@@ -574,11 +673,11 @@ pub fn new_file(r : &@io.ReaderAt) -> File raise {
     let s = Section::default()
     let sh = match f.file_header.class {
       ELFCLASS32 => {
-        names.push(bo.uint32(shdata[off + 0:off + 4]).to_string())
+        names.push(bo.uint32(shdata[off + 0:off + 4]))
         s.section_header = SectionHeader::{
           name: "",
           type_: SectionType::from_uint(bo.uint32(shdata[off + 4:off + 8])),
-          flags: SectionFlag::from_uint(bo.uint32(shdata[off + 8:off + 12])),
+          flags: SectionFlag(bo.uint32(shdata[off + 8:off + 12])),
           addr: bo.uint32(shdata[off + 12:off + 16]).to_uint64(),
           offset: bo.uint32(shdata[off + 16:off + 20]).to_uint64(),
           size: 0,
@@ -590,13 +689,11 @@ pub fn new_file(r : &@io.ReaderAt) -> File raise {
         }
       }
       ELFCLASS64 => {
-        names.push(bo.uint32(shdata[off + 0:off + 4]).to_string())
+        names.push(bo.uint32(shdata[off + 0:off + 4]))
         s.section_header = SectionHeader::{
           name: "",
           type_: SectionType::from_uint(bo.uint32(shdata[off + 4:off + 8])),
-          flags: SectionFlag::from_uint(
-            bo.uint64(shdata[off + 8:off + 16]).to_uint(),
-          ),
+          flags: SectionFlag(bo.uint64(shdata[off + 8:off + 16]).to_uint()),
           addr: bo.uint64(shdata[off + 16:off + 24]),
           offset: bo.uint64(shdata[off + 24:off + 32]),
           size: 0,
@@ -630,11 +727,11 @@ pub fn new_file(r : &@io.ReaderAt) -> File raise {
         s.section_header.file_size.reinterpret_as_int64(),
       ),
     )
-    if (s.section_header.flags & SHF_COMPRESSED) == 0 {
+    if (s.section_header.flags.0 & SHF_COMPRESSED) == 0 {
       s.reader_at = s.sr.map(sr => sr)
       s.section_header.size = s.section_header.file_size
     } else {
-      match f.file_header.class {
+      match f.class() {
         ELFCLASS32 => {
           let chdata = @slice.make(12)
           guard s.sr is Some(sr)
@@ -669,11 +766,41 @@ pub fn new_file(r : &@io.ReaderAt) -> File raise {
           s.section_header.addralign = bo.uint64(chdata[12:16])
           s.compression_offset = 16
         }
+        ELFCLASSNONE => ()
       }
     }
     f.sections.push(s)
   }
-  f
+  if f.sections.length() == 0 {
+    return f
+  }
+  // Load section header string table.
+  if shstrndx == 0 {
+    return f
+  }
+  let shstr = f.sections[shstrndx]
+  if shstr.section_header.type_ != SHT_STRTAB {
+    raise FormatError::new(
+      off=shoff +
+        (shstrndx.to_uint64() * shentsize.to_uint64()).reinterpret_as_int64(),
+      msg="invalid ELF shstrndx section type",
+      val=shstr.section_header.type_.to_string(),
+    )
+  }
+  let shstrtab = shstr.data()
+  for i, s in f.sections {
+    let (s_name, ok) = get_string(shstrtab, names[i].reinterpret_as_int())
+    s.section_header.name = s_name
+    if !ok {
+      raise FormatError::new(
+        off=shoff +
+          (i.to_uint64() * shentsize.to_uint64()).reinterpret_as_int64(),
+        msg="invalid ELF section name",
+        val=names[i].to_string(),
+      )
+    }
+  }
+  return f
 }
 
 ///|
@@ -950,27 +1077,139 @@ pub struct DynamicVersionDep {
 
 ///|
 fn File::_dynamic_versions(self : File, str : @slice.Slice[Byte]) -> Unit raise {
-  ...
+  if self.dyn_vers is Some(_) {
+    return
+  }
+  let vd = self.section_by_type(SHT_GNU_VERDEF)
+  guard vd is Some(vd) else { return }
+  let d = vd.data()
+  let dyn_vers : Array[DynamicVersion] = []
+  for i = 0; i + 20 <= d.length(); {
+    let version = self.file_header.byte_order.uint16(d[i + 2:i + 4])
+    if version != 1 {
+      raise FormatError::new(
+        off=vd.section_header.offset.reinterpret_as_int64() + i.to_int64(),
+        msg="unexpected dynamic version",
+        val=version.to_string(),
+      )
+    }
+    let flags = DynamicVersionFlag(
+      self.file_header.byte_order.uint16(d[i + 4:i + 6]),
+    )
+    let ndx = self.file_header.byte_order.uint16(d[i + 6:i + 8])
+    let cnt = self.file_header.byte_order.uint16(d[i + 8:i + 10])
+    let aux = self.file_header.byte_order.uint32(d[i + 12:i + 16])
+    let next = self.file_header.byte_order.uint32(d[i + 16:i + 20])
+    if cnt == 0 {
+      raise FormatError::new(
+        off=vd.section_header.offset.reinterpret_as_int64() + i.to_int64(),
+        msg="dynamic version has no name",
+      )
+    }
+    let mut name = ""
+    let mut dep_name = ""
+    let deps = []
+    for j = i + aux.reinterpret_as_int(), c = 0; c < cnt.to_int(); {
+      if j + 8 > d.length() {
+        break
+      }
+      let vname = self.file_header.byte_order.uint32(d[j + 0:j + 4])
+      let vnext = self.file_header.byte_order.uint32(d[j + 4:j + 8])
+      name = get_string(str, vname.reinterpret_as_int()).0
+      if c == 0 {
+        dep_name = name
+      } else {
+        deps.push(dep_name)
+      }
+      continue j + vnext.reinterpret_as_int(), c + 1
+    }
+    dyn_vers.push(DynamicVersion::{ name, index: ndx, flags, deps })
+    if next == 0 {
+      break
+    }
+    continue i + next.reinterpret_as_int()
+  }
 }
 
 ///|
+// dynamic_versions returns version information for a dynamic object.
 pub fn File::dynamic_versions(self : File) -> Array[DynamicVersion] raise {
-  ...
+  if self.dyn_vers is None {
+    let (_, str) = self.get_symbols(SHT_DYNSYM)
+    let has_versions = self.gnu_version_init(str)
+    if !has_versions {
+      fail("DynamicVersions: missing version table")
+    }
+  }
+  return self.dyn_vers.unwrap()
 }
 
 ///|
+/// _dynamic_version_needs returns version dependencies for a dynamic object.
 fn File::_dynamic_version_needs(
   self : File,
   str : @slice.Slice[Byte],
 ) -> Unit raise {
-  ...
+  if self.dyn_ver_needs is Some(_) {
+    // Already initialized.
+    return
+  }
+  let vn = self.section_by_type(SHT_GNU_VERNEED)
+  guard vn is Some(vn) else { return }
+  let d = vn.data()
+  let dyn_ver_needs : Array[DynamicVersionNeed] = []
+  for i = 0; i + 16 <= d.length(); {
+    let vers = self.file_header.byte_order.uint16(d[i:i + 2])
+    if vers != 1 {
+      raise FormatError::new(
+        off=vn.section_header.offset.reinterpret_as_int64() + i.to_int64(),
+        msg="unexpected dynamic version need",
+        val=vers.to_string(),
+      )
+    }
+    let cnt = self.file_header.byte_order.uint16(d[i + 2:i + 4])
+    let fileoff = self.file_header.byte_order.uint32(d[i + 4:i + 8])
+    let aux = self.file_header.byte_order.uint32(d[i + 8:i + 12])
+    let next = self.file_header.byte_order.uint32(d[i + 12:i + 16])
+    let (file, _) = get_string(str, fileoff.reinterpret_as_int())
+    let deps = []
+    for j = i + aux.reinterpret_as_int(), c = 0; j + 16 <= d.length() &&
+       c < cnt.to_int(); {
+      let flags = DynamicVersionFlag(
+        self.file_header.byte_order.uint16(d[j + 4:j + 6]),
+      )
+      let index = self.file_header.byte_order.uint16(d[j + 6:j + 8])
+      let nameoff = self.file_header.byte_order.uint32(d[j + 8:j + 12])
+      let next = self.file_header.byte_order.uint32(d[j + 12:j + 16])
+      let (dep_name, _) = get_string(str, nameoff.reinterpret_as_int())
+      deps.push(DynamicVersionDep::{ flags, index, dep: dep_name })
+      if next == 0 {
+        break
+      }
+      continue j + next.reinterpret_as_int(), c + 1
+    }
+    dyn_ver_needs.push(DynamicVersionNeed::{ name: file, needs: deps })
+    if next == 0 {
+      break
+    }
+    continue i + next.reinterpret_as_int()
+  }
+  self.dyn_ver_needs = Some(dyn_ver_needs)
+  return
 }
 
 ///|
 pub fn File::dynamic_version_needs(
   self : File,
 ) -> Array[DynamicVersionNeed] raise {
-  ...
+  if self.dyn_ver_needs is None {
+    let (_, str) = self.get_symbols(SHT_DYNSYM)
+    let has_versions = self.gnu_version_init(str)
+    if !has_versions {
+      fail("DynamicVersionNeeds: missing version table")
+    }
+  }
+  return self.dyn_ver_needs.unwrap()
 }
 
 ///|
@@ -1017,16 +1256,20 @@ fn File::gnu_version(
   if ndx == 0 || ndx == 1 {
     return (true, vi, "", "")
   }
-  for v in self.dyn_ver_needs {
-    for n in v.needs {
-      if ndx == n.index {
-        return (true, vi, n.dep, v.name)
+  if self.dyn_ver_needs is Some(dyn_ver_needs) {
+    for v in dyn_ver_needs {
+      for n in v.needs {
+        if ndx == n.index {
+          return (true, vi, n.dep, v.name)
+        }
       }
     }
   }
-  for v in self.dyn_vers {
-    if ndx == v.index {
-      return (true, vi, v.name, "")
+  if self.dyn_vers is Some(dyn_vers) {
+    for v in dyn_vers {
+      if ndx == v.index {
+        return (true, vi, v.name, "")
+      }
     }
   }
   return (false, VersionIndex::new(0), "", "")

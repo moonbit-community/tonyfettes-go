@@ -5,6 +5,11 @@ priv struct ErrorReader {
 }
 
 ///|
+fn ErrorReader::new(error : Error) -> ErrorReader {
+  ErrorReader::{ error, }
+}
+
+///|
 /// ErrorReader implements io.Reader
 impl @io.Reader for ErrorReader with read(self, _ : @slice.Slice[Byte]) -> Int raise {
   raise self.error
@@ -17,6 +22,15 @@ impl @io.ReaderAt for ErrorReader with read_at(
   _ : @slice.Slice[Byte],
   _ : Int64,
 ) -> Int raise {
+  raise self.error
+}
+
+///|
+impl @io.Seeker for ErrorReader with seek(
+  self : ErrorReader,
+  _ : Int64,
+  _ : @io.SeekWhence,
+) -> Int64 raise {
   raise self.error
 }
 
@@ -40,8 +54,8 @@ priv struct ReadSeekerFromReader {
 
 ///|
 fn ReadSeekerFromReader::new(
-  reset : () -> &@io.Reader raise,
-  size : Int64,
+  reset~ : () -> &@io.Reader raise,
+  size~ : Int64,
 ) -> ReadSeekerFromReader {
   ReadSeekerFromReader::{ reset, r: None, size, offset: 0L }
 }
