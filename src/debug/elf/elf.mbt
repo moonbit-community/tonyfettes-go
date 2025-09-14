@@ -1263,55 +1263,55 @@ pub fn SectionType::from_uint(i : UInt) -> SectionType {
 pub(all) struct SectionFlag(UInt)
 
 ///|
-/// 0x1        Section contains writable data.
+/// Section contains writable data.
 pub const SHF_WRITE : UInt = 0x1
 
 ///|
-/// 0x2        Section occupies memory.
+/// Section occupies memory.
 pub const SHF_ALLOC : UInt = 0x2
 
 ///|
-/// 0x4        Section contains instructions.
+/// Section contains instructions.
 pub const SHF_EXECINSTR : UInt = 0x4
 
 ///|
-/// 0x10       Section may be merged.
+/// Section may be merged.
 pub const SHF_MERGE : UInt = 0x10
 
 ///|
-/// 0x20       Section contains strings.
+/// Section contains strings.
 pub const SHF_STRINGS : UInt = 0x20
 
 ///|
-/// 0x40       sh_info holds section index.
+/// sh_info holds section index.
 pub const SHF_INFO_LINK : UInt = 0x40
 
 ///|
-/// 0x80       Special ordering requirements.
+/// Special ordering requirements.
 pub const SHF_LINK_ORDER : UInt = 0x80
 
 ///|
-/// 0x100      OS-specific processing required.
+/// OS-specific processing required.
 pub const SHF_OS_NONCONFORMING : UInt = 0x100
 
 ///|
-/// 0x200      Member of section group.
+/// Member of section group.
 pub const SHF_GROUP : UInt = 0x200
 
 ///|
-/// 0x400      Section contains TLS data.
+/// Section contains TLS data.
 pub const SHF_TLS : UInt = 0x400
 
 ///|
-/// 0x800      Section is compressed.
+/// Section is compressed.
 pub const SHF_COMPRESSED : UInt = 0x800
 
 ///|
-/// 0x0ff00000 OS-specific semantics.
+/// OS-specific semantics.
 pub const SHF_MASKOS : UInt = 0x0ff00000
 
 ///|
-/// 0xf0000000 Processor-specific semantics.
+/// Processor-specific semantics.
 pub const SHF_MASKPROC : UInt = 0xf0000000
 
 ///|
