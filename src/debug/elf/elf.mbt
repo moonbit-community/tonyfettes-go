@@ -1264,55 +1264,55 @@ pub(all) struct SectionFlag(UInt)
 
 ///|
 /// 0x1        Section contains writable data.
-const SHF_WRITE : UInt = 0x1
+pub const SHF_WRITE : UInt = 0x1
 
 ///|
 /// 0x2        Section occupies memory.
-const SHF_ALLOC : UInt = 0x2
+pub const SHF_ALLOC : UInt = 0x2
 
 ///|
 /// 0x4        Section contains instructions.
-const SHF_EXECINSTR : UInt = 0x4
+pub const SHF_EXECINSTR : UInt = 0x4
 
 ///|
 /// 0x10       Section may be merged.
-const SHF_MERGE : UInt = 0x10
+pub const SHF_MERGE : UInt = 0x10
 
 ///|
 /// 0x20       Section contains strings.
-const SHF_STRINGS : UInt = 0x20
+pub const SHF_STRINGS : UInt = 0x20
 
 ///|
 /// 0x40       sh_info holds section index.
-const SHF_INFO_LINK : UInt = 0x40
+pub const SHF_INFO_LINK : UInt = 0x40
 
 ///|
 /// 0x80       Special ordering requirements.
-const SHF_LINK_ORDER : UInt = 0x80
+pub const SHF_LINK_ORDER : UInt = 0x80
 
 ///|
 /// 0x100      OS-specific processing required.
-const SHF_OS_NONCONFORMING : UInt = 0x100
+pub const SHF_OS_NONCONFORMING : UInt = 0x100
 
 ///|
 /// 0x200      Member of section group.
-const SHF_GROUP : UInt = 0x200
+pub const SHF_GROUP : UInt = 0x200
 
 ///|
 /// 0x400      Section contains TLS data.
-const SHF_TLS : UInt = 0x400
+pub const SHF_TLS : UInt = 0x400
 
 ///|
 /// 0x800      Section is compressed.
-const SHF_COMPRESSED : UInt = 0x800
+pub const SHF_COMPRESSED : UInt = 0x800
 
 ///|
 /// 0x0ff00000 OS-specific semantics.
-const SHF_MASKOS : UInt = 0x0ff00000
+pub const SHF_MASKOS : UInt = 0x0ff00000
 
 ///|
 /// 0xf0000000 Processor-specific semantics.
-const SHF_MASKPROC : UInt = 0xf0000000
+pub const SHF_MASKPROC : UInt = 0xf0000000
 
 ///|
 pub impl Default for SectionFlag with default() -> SectionFlag {
@@ -1325,6 +1325,11 @@ pub impl BitAnd for SectionFlag with land(
   other : SectionFlag,
 ) -> SectionFlag {
   SectionFlag(self.0 & other.0)
+}
+
+///|
+pub impl BitOr for SectionFlag with lor(self : SectionFlag, other : SectionFlag) -> SectionFlag {
+  SectionFlag(self.0 | other.0)
 }
 
 ///|
