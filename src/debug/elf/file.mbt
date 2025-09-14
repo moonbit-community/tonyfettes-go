@@ -450,13 +450,13 @@ pub fn new_file(r : &@io.ReaderAt) -> File raise {
           val=version_check.to_string(),
         )
       }
-      phoff = bo.uint64(data[Header64::offsetof(Phoff):]).reinterpret_as_int64()
-      phentsize = bo.uint16(data[Header64::offsetof(Phentsize):]).to_int()
-      phnum = bo.uint16(data[Header64::offsetof(Phnum):]).to_int()
-      shoff = bo.uint64(data[Header64::offsetof(Shoff):]).reinterpret_as_int64()
-      shentsize = bo.uint16(data[Header64::offsetof(Shentsize):]).to_int()
-      shnum = bo.uint16(data[Header64::offsetof(Shnum):]).to_int()
-      shstrndx = bo.uint16(data[Header64::offsetof(Shstrndx):]).to_int()
+      phoff = int64(bo.uint64(data[Header64::offsetof(Phoff):]))
+      phentsize = int(bo.uint16(data[Header64::offsetof(Phentsize):]))
+      phnum = int(bo.uint16(data[Header64::offsetof(Phnum):]))
+      shoff = int64(bo.uint64(data[Header64::offsetof(Shoff):]))
+      shentsize = int(bo.uint16(data[Header64::offsetof(Shentsize):]))
+      shnum = int(bo.uint16(data[Header64::offsetof(Shnum):]))
+      shstrndx = int(bo.uint16(data[Header64::offsetof(Shstrndx):]))
     }
     _ => ()
   }
