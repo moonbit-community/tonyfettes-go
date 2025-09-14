@@ -15,11 +15,11 @@ test "elf constants" {
 
   // Test Machine enum
   @json.inspect(Machine::EM_X86_64.to_int(), content=62)
-  @json.inspect(Machine::from_int(62), content="EM_X86_64")
+  @json.inspect(Machine::from_uint16(62), content="EM_X86_64")
 
   // Test Type enum
-  @json.inspect(Type::ET_EXEC.to_int(), content=2)
-  @json.inspect(Type::from_int(2), content="ET_EXEC")
+  @json.inspect(Type::ET_EXEC.to_uint16(), content=2)
+  @json.inspect(Type::from_uint16(2), content="ET_EXEC")
 }
 
 ///|

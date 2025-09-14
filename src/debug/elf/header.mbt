@@ -130,13 +130,13 @@ pub const Sym32Size : Int = 16
 
 ///|
 /// ELF64 file header.
-pub struct Header64 {
+struct Header64 {
   /// File identification. [16]
-  ident : FixedArray[Byte]
+  ident : @slice.Slice[Byte]
   /// File type.
-  type_ : UInt
+  type_ : UInt16
   /// Machine architecture.
-  machine : UInt
+  machine : UInt16
   /// ELF format version.
   version : UInt
   /// Entry point.
@@ -148,18 +148,104 @@ pub struct Header64 {
   /// Architecture-specific flags.
   flags : UInt
   /// Size of ELF header in bytes.
-  ehsize : UInt
+  ehsize : UInt16
   /// Size of program header entry.
-  phentsize : UInt
+  phentsize : UInt16
   /// Number of program header entries.
-  phnum : UInt
+  phnum : UInt16
   /// Size of section header entry.
-  shentsize : UInt
+  shentsize : UInt16
   /// Number of section header entries.
-  shnum : UInt
+  shnum : UInt16
   /// Section name strings section.
-  shstrndx : UInt
-} derive(Show, ToJson)
+  shstrndx : UInt16
+}
+
+///|
+pub impl @binary.Readable for Header64 with read(
+  r : &@io.Reader,
+  order : &@binary.ByteOrder,
+) -> Header64 raise {
+  let data = @slice.make(Header64::sizeof(Header64))
+  let _ = @io.read_full(r, data)
+  Header64::{
+    ident: data[0:16],
+    type_: order.uint16(data[Header64::offsetof(Type):]),
+    machine: order.uint16(data[Header64::offsetof(Machine):]),
+    version: order.uint32(data[Header64::offsetof(Version):]),
+    entry: order.uint64(data[Header64::offsetof(Entry):]),
+    phoff: order.uint64(data[Header64::offsetof(Phoff):]),
+    shoff: order.uint64(data[Header64::offsetof(Shoff):]),
+    flags: order.uint32(data[Header64::offsetof(Flags):]),
+    ehsize: order.uint16(data[Header64::offsetof(Ehsize):]),
+    phentsize: order.uint16(data[Header64::offsetof(Phentsize):]),
+    phnum: order.uint16(data[Header64::offsetof(Phnum):]),
+    shentsize: order.uint16(data[Header64::offsetof(Shentsize):]),
+    shnum: order.uint16(data[Header64::offsetof(Shnum):]),
+    shstrndx: order.uint16(data[Header64::offsetof(Shstrndx):]),
+  }
+}
+
+///|
+pub(all) enum Header64Field {
+  Header64
+  Ident
+  Type
+  Machine
+  Version
+  Entry
+  Phoff
+  Shoff
+  Flags
+  Ehsize
+  Phentsize
+  Phnum
+  Shentsize
+  Shnum
+  Shstrndx
+}
+
+///|
+pub fn Header64::offsetof(field : Header64Field) -> Int {
+  match field {
+    Header64 => 0
+    Ident => 0
+    Type => 16
+    Machine => 18
+    Version => 20
+    Entry => 24
+    Phoff => 32
+    Shoff => 40
+    Flags => 48
+    Ehsize => 52
+    Phentsize => 54
+    Phnum => 56
+    Shentsize => 58
+    Shnum => 60
+    Shstrndx => 62
+  }
+}
+
+///|
+pub fn Header64::sizeof(field : Header64Field) -> Int {
+  match field {
+    Header64 => 64
+    Ident => 16
+    Type => 2
+    Machine => 2
+    Version => 4
+    Entry => 8
+    Phoff => 8
+    Shoff => 8
+    Flags => 4
+    Ehsize => 2
+    Phentsize => 2
+    Phnum => 2
+    Shentsize => 2
+    Shnum => 2
+    Shstrndx => 2
+  }
+}
 
 ///|
 /// ELF64 Section header.

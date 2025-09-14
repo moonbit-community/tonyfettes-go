@@ -259,7 +259,7 @@ pub(all) enum Type {
 } derive(Eq, Show, ToJson)
 
 ///|
-pub fn Type::to_int(self : Type) -> Int {
+pub fn Type::to_uint16(self : Type) -> UInt16 {
   match self {
     ET_NONE => 0
     ET_REL => 1
@@ -274,7 +274,7 @@ pub fn Type::to_int(self : Type) -> Int {
 }
 
 ///|
-pub fn Type::from_int(i : Int) -> Type {
+pub fn Type::from_uint16(i : UInt16) -> Type {
   match i {
     0 => ET_NONE
     1 => ET_REL
@@ -863,7 +863,7 @@ pub fn Machine::to_int(self : Machine) -> Int {
 }
 
 ///|
-pub fn Machine::from_int(i : Int) -> Machine {
+pub fn Machine::from_uint16(i : UInt16) -> Machine {
   match i {
     0 => EM_NONE
     1 => EM_M32

@@ -353,8 +353,8 @@ pub fn new_file(r : &@io.ReaderAt) -> File raise {
       osabi: OSABI::from_byte(ident[EI_OSABI]),
       abi_version: ident[EI_ABIVERSION],
       byte_order: @binary.little_endian, // will be set correctly below
-      type_: Type::from_int(0), // will be read from header
-      machine: Machine::from_int(0), // will be read from header
+      type_: Type::from_uint16(0), // will be read from header
+      machine: Machine::from_uint16(0), // will be read from header
       entry: 0UL, // will be read from header
     },
     sections: [],
@@ -410,8 +410,8 @@ pub fn new_file(r : &@io.ReaderAt) -> File raise {
       if n != 52 {
         raise FormatError::new(off=0, msg="incomplete ELF32 header")
       }
-      f.file_header.type_ = Type::from_int(bo.uint16(data[16:18]).to_int())
-      f.file_header.machine = Machine::from_int(bo.uint16(data[18:20]).to_int())
+      f.file_header.type_ = Type::from_uint16(bo.uint16(data[16:18]))
+      f.file_header.machine = Machine::from_uint16(bo.uint16(data[18:20]))
       f.file_header.entry = bo.uint32(data[24:28]).to_uint64()
       let v = Version::from_byte(bo.uint32(data[20:24]).to_byte())
       if v != f.file_header.version {
@@ -430,15 +430,19 @@ pub fn new_file(r : &@io.ReaderAt) -> File raise {
       shstrndx = bo.uint16(data[50:52]).to_int()
     }
     ELFCLASS64 => {
-      let data = @slice.make(64) // Header64 size
+      let data = @slice.make(Header64::sizeof(Header64))
       let n = sr.read_at(data, 0)
       if n != 64 {
         raise FormatError::new(off=0, msg="incomplete ELF64 header")
       }
-      f.file_header.type_ = Type::from_int(bo.uint16(data[16:18]).to_int())
-      f.file_header.machine = Machine::from_int(bo.uint16(data[18:20]).to_int())
-      f.file_header.entry = bo.uint64(data[24:32])
-      let version_check = bo.uint32(data[20:24])
+      f.file_header.type_ = Type::from_uint16(
+        bo.uint16(data[Header64::offsetof(Type):]),
+      )
+      f.file_header.machine = Machine::from_uint16(
+        bo.uint16(data[Header64::offsetof(Machine):]),
+      )
+      f.file_header.entry = bo.uint64(data[Header64::offsetof(Entry):])
+      let version_check = bo.uint32(data[Header64::offsetof(Version):])
       if Version::from_byte(version_check.to_byte()) != f.file_header.version {
         raise FormatError::new(
           off=0,
@@ -446,13 +450,13 @@ pub fn new_file(r : &@io.ReaderAt) -> File raise {
           val=version_check.to_string(),
         )
       }
-      phoff = bo.uint64(data[32:40]).reinterpret_as_int64()
-      phentsize = bo.uint16(data[54:56]).to_int()
-      phnum = bo.uint16(data[56:58]).to_int()
-      shoff = bo.uint64(data[40:48]).reinterpret_as_int64()
-      shentsize = bo.uint16(data[58:60]).to_int()
-      shnum = bo.uint16(data[60:62]).to_int()
-      shstrndx = bo.uint16(data[62:64]).to_int()
+      phoff = bo.uint64(data[Header64::offsetof(Phoff):]).reinterpret_as_int64()
+      phentsize = bo.uint16(data[Header64::offsetof(Phentsize):]).to_int()
+      phnum = bo.uint16(data[Header64::offsetof(Phnum):]).to_int()
+      shoff = bo.uint64(data[Header64::offsetof(Shoff):]).reinterpret_as_int64()
+      shentsize = bo.uint16(data[Header64::offsetof(Shentsize):]).to_int()
+      shnum = bo.uint16(data[Header64::offsetof(Shnum):]).to_int()
+      shstrndx = bo.uint16(data[Header64::offsetof(Shstrndx):]).to_int()
     }
     _ => ()
   }

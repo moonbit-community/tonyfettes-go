@@ -294,3 +294,18 @@ pub impl AppendByteOrder for BigEndian with append_uint64(
   nb[n + 7] = (lo & 0xff).to_byte()
   nb
 }
+
+///|
+pub(open) trait Readable {
+  read(r : &@io.Reader, order : &ByteOrder) -> Self raise
+}
+
+///|
+impl Readable for Int with read(r : &@io.Reader, order : &ByteOrder) -> Int raise {
+  let buf = @slice.make(4)
+  let n = r.read(buf)
+  if n != 4 {
+    raise BufferTooSmall
+  }
+  order.uint32(buf).reinterpret_as_int()
+}
