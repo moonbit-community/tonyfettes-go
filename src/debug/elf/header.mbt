@@ -130,7 +130,7 @@ pub const Sym32Size : Int = 16
 
 ///|
 /// ELF64 file header.
-struct Header64 {
+pub struct Header64 {
   /// File identification. [16]
   ident : @slice.Slice[Byte]
   /// File type.
