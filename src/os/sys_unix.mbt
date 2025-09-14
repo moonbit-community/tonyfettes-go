@@ -1,2 +1,0 @@
-///|
-const SupportsCloseOnExec = true

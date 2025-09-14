@@ -7,7 +7,7 @@ impl Show for BufferTooSmall with output(_ : BufferTooSmall, output : &Logger) -
 }
 
 ///|
-pub trait ByteOrder {
+pub trait ByteOrder: Show + ToJson {
   uint16(self : Self, b : @slice.Slice[Byte]) -> UInt16
   uint32(self : Self, b : @slice.Slice[Byte]) -> UInt
   uint64(self : Self, b : @slice.Slice[Byte]) -> UInt64
@@ -34,6 +34,16 @@ struct LittleEndian {}
 
 ///|
 pub let little_endian : LittleEndian = LittleEndian::{  }
+
+///|
+pub impl Show for LittleEndian with output(_ : LittleEndian, logger : &Logger) -> Unit {
+  logger.write_string("LittleEndian")
+}
+
+///|
+pub impl ToJson for LittleEndian with to_json(self : LittleEndian) -> Json {
+  "LittleEndian"
+}
 
 ///|
 pub impl ByteOrder for LittleEndian with uint16(
@@ -169,6 +179,16 @@ struct BigEndian {}
 pub let big_endian : BigEndian = BigEndian::{  }
 
 ///|
+pub impl Show for BigEndian with output(_ : BigEndian, logger : &Logger) -> Unit {
+  logger.write_string("BigEndian")
+}
+
+///|
+pub impl ToJson for BigEndian with to_json(self : BigEndian) -> Json {
+  "BigEndian"
+}
+
+///|
 pub impl ByteOrder for BigEndian with uint16(
   _ : BigEndian,
   b : @slice.Slice[Byte],
@@ -301,11 +321,71 @@ pub(open) trait Readable {
 }
 
 ///|
-impl Readable for Int with read(r : &@io.Reader, order : &ByteOrder) -> Int raise {
+pub impl Readable for Byte with read(r : &@io.Reader, _ : &ByteOrder) -> Byte raise {
+  let buf = @slice.make(1)
+  let n = r.read(buf)
+  if n != 1 {
+    raise BufferTooSmall
+  }
+  buf[0]
+}
+
+///|
+pub impl Readable for UInt16 with read(r : &@io.Reader, order : &ByteOrder) -> UInt16 raise {
+  let buf = @slice.make(2)
+  let n = r.read(buf)
+  if n != 2 {
+    raise BufferTooSmall
+  }
+  order.uint16(buf)
+}
+
+///|
+pub impl Readable for Int16 with read(r : &@io.Reader, order : &ByteOrder) -> Int16 raise {
+  let buf = @slice.make(2)
+  let n = r.read(buf)
+  if n != 2 {
+    raise BufferTooSmall
+  }
+  order.uint16(buf).to_int().to_int16()
+}
+
+///|
+pub impl Readable for Int with read(r : &@io.Reader, order : &ByteOrder) -> Int raise {
   let buf = @slice.make(4)
   let n = r.read(buf)
   if n != 4 {
     raise BufferTooSmall
   }
   order.uint32(buf).reinterpret_as_int()
+}
+
+///|
+pub impl Readable for UInt with read(r : &@io.Reader, order : &ByteOrder) -> UInt raise {
+  let buf = @slice.make(4)
+  let n = r.read(buf)
+  if n != 4 {
+    raise BufferTooSmall
+  }
+  order.uint32(buf)
+}
+
+///|
+pub impl Readable for Int64 with read(r : &@io.Reader, order : &ByteOrder) -> Int64 raise {
+  let buf = @slice.make(8)
+  let n = r.read(buf)
+  if n != 8 {
+    raise BufferTooSmall
+  }
+  order.uint64(buf).reinterpret_as_int64()
+}
+
+///|
+pub impl Readable for UInt64 with read(r : &@io.Reader, order : &ByteOrder) -> UInt64 raise {
+  let buf = @slice.make(8)
+  let n = r.read(buf)
+  if n != 8 {
+    raise BufferTooSmall
+  }
+  order.uint64(buf)
 }

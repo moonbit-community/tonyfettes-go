@@ -18,5 +18,6 @@
     "loader"
   ],
   "description": "A MoonBit library for parsing Mach-O binary files - ported from Go's debug/macho package",
-  "source": "src"
+  "source": "src",
+  "preferred-target": "native"
 }

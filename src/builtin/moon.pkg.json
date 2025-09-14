@@ -1,1 +1,5 @@
-{}
+{
+  "native-stub": [
+    "builtin.c"
+  ]
+}

@@ -1,10 +1,12 @@
 {
   "import": [
     "tonyfettes/go/internal/oserror",
-    "tonyfettes/c",
     "tonyfettes/utf8",
     "tonyfettes/uv",
     "tonyfettes/go/builtin",
     "tonyfettes/go/slice"
+  ],
+  "native-stub": [
+    "zsyscall_darwin_arm64.c"
   ]
 }

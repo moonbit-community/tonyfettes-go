@@ -1,11 +1,44 @@
 ///|
-pub const O_RDONLY : Int = @syscall.O_RDONLY
+/// open the file read-only.
+pub const O_RDONLY : Int = 0x0
 
 ///|
-pub const O_APPEND : Int = @syscall.O_APPEND
+/// open the file write-only.
+pub const O_WRONLY : Int = 0x1
 
 ///|
-pub const O_CREATE : Int = @syscall.O_CREAT
+/// open the file read-write.
+pub const O_RDWR : Int = 0x2
+
+///|
+/// append data to the file when writing.
+pub const O_APPEND : Int = 0x4
+
+///|
+/// create a new file if none exists.
+pub const O_CREATE : Int = 0x8
+
+///|
+/// used with O_CREATE, file must not exist.
+pub const O_EXCL : Int = 0x10
+
+///|
+/// open for synchronous I/O.
+pub const O_SYNC : Int = 0x20
+
+///|
+/// truncate regular writable file when opened.
+pub const O_TRUNC : Int = 0x40
+
+///|
+struct File {
+  pfd : @uv.File
+  name : String
+  append_mode : Bool
+}
+
+///|
+let uv : Result[@uv.Loop, @uv.Errno] = try? @uv.Loop::new()
 
 ///|
 pub fn open(name : String) -> File raise {
@@ -14,17 +47,29 @@ pub fn open(name : String) -> File raise {
 
 ///|
 pub fn open_file(name : String, flag : Int, perm : FileMode) -> File raise {
-  let f = open_file_no_log(name, flag, perm)
-  f.append_mode = (flag & O_APPEND) != 0
-  return f
-}
-
-///|
-priv suberror PathEscapes
-
-///|
-fn set_sticky_bit(_ : String) -> Unit {
-
+  let flags = if (flag & O_RDWR) != 0 {
+    @uv.OpenFlags::read_write(
+      append=(flag & O_APPEND) != 0,
+      create=(flag & O_CREATE) != 0,
+      truncate=(flag & O_TRUNC) != 0,
+    )
+  } else if (flag & O_WRONLY) != 0 {
+    @uv.OpenFlags::write_only(
+      append=(flag & O_APPEND) != 0,
+      create=(flag & O_CREATE) != 0,
+      truncate=(flag & O_TRUNC) != 0,
+    )
+  } else {
+    @uv.OpenFlags::read_only()
+  }
+  let pfd = uv
+    .unwrap_or_error()
+    .fs_open_sync(
+      @utf8.encode(name),
+      flags,
+      perm.to_uint().reinterpret_as_int(),
+    )
+  return File::{ pfd, name, append_mode: (flag & O_APPEND) != 0 }
 }
 
 ///|
@@ -59,7 +104,9 @@ pub impl @io.ReaderAt for File with read_at(
   let mut n = 0
   let mut off = off
   while b.length() > 0 {
-    let m = self.pread(b, off) catch {
+    let m = uv
+    .unwrap_or_error()
+    .fs_read_sync(self.pfd, [b.bytesview()], offset=off) catch {
       err => raise self.wrap_error("read", err)
     }
     n += m
@@ -67,4 +114,12 @@ pub impl @io.ReaderAt for File with read_at(
     off += m.to_int64()
   }
   return n
+}
+
+///|
+pub impl @io.Closer for File with close(self : File) -> Unit raise {
+  uv.unwrap_or_error().fs_close_sync(self.pfd) catch {
+    err => raise self.wrap_error("close", err)
+  }
+  return
 }

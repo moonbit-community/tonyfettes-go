@@ -14,7 +14,7 @@
 
 ///|
 /// A FileHeader represents an ELF file header.
-pub struct FileHeader {
+pub(all) struct FileHeader {
   class : Class
   data : Data
   mut version : Version
@@ -24,7 +24,7 @@ pub struct FileHeader {
   mut type_ : Type
   mut machine : Machine
   mut entry : UInt64
-}
+} derive(Show, ToJson)
 
 ///|
 /// A File represents an open ELF file.
@@ -516,7 +516,7 @@ pub fn new_file(r : &@io.ReaderAt) -> File raise {
           type_: ProgType::from_int(
             bo.uint32(phdata[off + 0:off + 4]).reinterpret_as_int(),
           ),
-          flags: ProgFlag::from_uint(bo.uint32(phdata[off + 24:off + 28])),
+          flags: ProgFlag(bo.uint32(phdata[off + 24:off + 28])),
           off: bo.uint32(phdata[off + 4:off + 8]).to_uint64(),
           vaddr: bo.uint32(phdata[off + 8:off + 12]).to_uint64(),
           paddr: bo.uint32(phdata[off + 12:off + 16]).to_uint64(),
@@ -529,7 +529,7 @@ pub fn new_file(r : &@io.ReaderAt) -> File raise {
           type_: ProgType::from_int(
             bo.uint32(phdata[off + 0:off + 4]).reinterpret_as_int(),
           ),
-          flags: ProgFlag::from_uint(bo.uint32(phdata[off + 4:off + 8])),
+          flags: ProgFlag(bo.uint32(phdata[off + 4:off + 8])),
           off: bo.uint64(phdata[off + 8:off + 16]),
           vaddr: bo.uint64(phdata[off + 16:off + 24]),
           paddr: bo.uint64(phdata[off + 24:off + 32]),

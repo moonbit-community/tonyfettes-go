@@ -52,15 +52,24 @@ pub fn closedir(dir : @builtin.UIntPtr) -> Unit raise {
 }
 
 ///|
+fnalias @builtin.uintptr
+
+///|
 extern "c" fn libc_pread(
   fd : Int,
-  p : @slice.Slice[Byte],
-  offset : Int64,
+  buffer : FixedArray[Byte],
+  offset : @builtin.UIntPtr,
+  length : @builtin.UIntPtr,
 ) -> Int = "moonbit_tonyfettes_go_syscall_libc_pread"
 
 ///|
 pub fn pread(fd : Int, p : @slice.Slice[Byte], off : Int64) -> Int raise {
-  let r = libc_pread(fd, p, off)
+  let r = libc_pread(
+    fd,
+    p.buffer(),
+    uintptr(p.offset().to_int64() + off),
+    uintptr(p.length()),
+  )
   if r < 0 {
     raise Errno::of_int(r)
   } else {

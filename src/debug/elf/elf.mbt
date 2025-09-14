@@ -1550,47 +1550,49 @@ pub fn ProgType::from_int(i : Int) -> ProgType {
 
 ///|
 /// Prog.Flag
-pub(all) enum ProgFlag {
-  PF(UInt)
-  /// 0x1        Executable.
-  PF_X
-  /// 0x2        Writable.
-  PF_W
-  /// 0x4        Readable.
-  PF_R
-  /// 0x0ff00000 Operating system-specific.
-  PF_MASKOS
-  /// 0xf0000000 Processor-specific.
-  PF_MASKPROC
-} derive(Eq, Show, ToJson)
+pub(all) struct ProgFlag(UInt)
+
+///|
+/// Executable.
+pub const PF_X : UInt = 0x1
+
+///|
+/// Writable.
+pub const PF_W : UInt = 0x2
+
+///|
+/// Readable.
+pub const PF_R : UInt = 0x4
+
+///|
+/// Operating system-specific.
+pub const PF_MASKOS : UInt = 0x0ff00000
+
+///|
+/// Processor-specific.
+pub const PF_MASKPROC : UInt = 0xf0000000
 
 ///|
 pub impl Default for ProgFlag with default() -> ProgFlag {
-  PF(0)
+  ProgFlag(0)
 }
 
 ///|
-pub fn ProgFlag::from_uint(i : UInt) -> ProgFlag {
-  match i {
-    0x1 => PF_X
-    0x2 => PF_W
-    0x4 => PF_R
-    0x0ff00000 => PF_MASKOS
-    0xf0000000 => PF_MASKPROC
-    i => PF(i)
-  }
+pub impl BitAnd for ProgFlag with land(self : ProgFlag, other : ProgFlag) -> ProgFlag {
+  ProgFlag(self.0 & other.0)
 }
 
 ///|
-pub fn ProgFlag::to_uint(self : ProgFlag) -> UInt {
-  match self {
-    PF(i) => i
-    PF_X => 0x1
-    PF_W => 0x2
-    PF_R => 0x4
-    PF_MASKOS => 0x0ff00000
-    PF_MASKPROC => 0xf0000000
-  }
+pub impl BitOr for ProgFlag with lor(self : ProgFlag, other : ProgFlag) -> ProgFlag {
+  ProgFlag(self.0 | other.0)
+}
+
+pub impl ToJson for ProgFlag with to_json(self : ProgFlag) -> Json {
+  self.0.to_json()
+}
+
+pub impl Show for ProgFlag with output(self : ProgFlag, logger : &Logger) -> Unit {
+  self.0.output(logger)
 }
 
 ///|

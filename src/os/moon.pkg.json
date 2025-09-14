@@ -9,6 +9,8 @@
     "tonyfettes/go/internal/oserror",
     "tonyfettes/go/runtime",
     "tonyfettes/go/io",
-    "tonyfettes/go/slice"
+    "tonyfettes/go/slice",
+    "tonyfettes/uv",
+    "tonyfettes/go/unicode/utf8"
   ]
 }

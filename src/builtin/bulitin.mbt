@@ -15,6 +15,46 @@ pub extern "c" fn UIntPtr::to_uint64(self : UIntPtr) -> UInt64 = "moonbit_tonyfe
 pub extern "c" fn UIntPtr::to_int(self : UIntPtr) -> Int = "moonbit_tonyfettes_go_builtin_uintptr_to_int"
 
 ///|
+trait ToUIntPtr {
+  to_uintptr(self : Self) -> UIntPtr
+}
+
+///|
+pub impl ToUIntPtr for Int16 with to_uintptr(self : Int16) -> UIntPtr {
+  UIntPtr::from_int(self.to_int())
+}
+
+///|
+pub impl ToUIntPtr for UInt16 with to_uintptr(self : UInt16) -> UIntPtr {
+  UIntPtr::from_int(self.to_int())
+}
+
+///|
+pub impl ToUIntPtr for Int with to_uintptr(self : Int) -> UIntPtr {
+  UIntPtr::from_int(self)
+}
+
+///|
+pub impl ToUIntPtr for UInt with to_uintptr(self : UInt) -> UIntPtr {
+  UIntPtr::from_int(self.reinterpret_as_int())
+}
+
+///|
+pub impl ToUIntPtr for Int64 with to_uintptr(self : Int64) -> UIntPtr {
+  UIntPtr::from_uint64(self.reinterpret_as_uint64())
+}
+
+///|
+pub impl ToUIntPtr for UInt64 with to_uintptr(self : UInt64) -> UIntPtr {
+  UIntPtr::from_uint64(self)
+}
+
+///|
+pub fn[T : ToUIntPtr] uintptr(v : T) -> UIntPtr {
+  v.to_uintptr()
+}
+
+///|
 trait ToInt64 {
   to_int64(self : Self) -> Int64
 }

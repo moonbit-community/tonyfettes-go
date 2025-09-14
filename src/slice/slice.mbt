@@ -1,5 +1,5 @@
 ///|
-struct Slice[T](FixedArray[T],Int,Int)
+struct Slice[T](FixedArray[T], Int, Int)
 
 ///|
 pub impl[T : Eq] Eq for Slice[T] with equal(self : Slice[T], other : Slice[T]) -> Bool {
@@ -133,21 +133,9 @@ pub impl[T : ToJson] ToJson for Slice[T] with to_json(self : Slice[T]) -> Json {
 }
 
 ///|
-#borrow(array)
-extern "c" fn fixedarray_rc(array : FixedArray[Byte]) -> Int = "moonbit_tonyfettes_go_rc"
-
-///|
-fn[T] FixedArray::rc(array : FixedArray[T]) -> Int {
-  fixedarray_rc(array.cast())
-}
-
-///|
-fn[A, B] FixedArray::cast(array : FixedArray[A]) -> FixedArray[B] = "%identity"
-
-///|
 pub fn[T : Default] Slice::append(s : Slice[T], val : T) -> Slice[T] {
   let Slice(buf, off, len) = s
-  let buf = if buf.rc() != 1 { buf.copy() } else { buf }
+  let buf = buf.copy()
   let mut cap = buf.length()
   if off + len < cap {
     buf[off + len] = val
@@ -203,4 +191,14 @@ pub fn[T] Slice::copy(dst : Slice[T], src : Slice[T]) -> Int {
     dst.0[dst.1 + i] = src.0[src.1 + i]
   }
   n
+}
+
+///|
+pub fn[T] Slice::buffer(self : Slice[T]) -> FixedArray[T] {
+  self.0
+}
+
+///|
+pub fn[T] Slice::offset(self : Slice[T]) -> Int {
+  self.1
 }

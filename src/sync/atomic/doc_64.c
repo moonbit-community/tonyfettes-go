@@ -23,3 +23,14 @@ moonbit_tonyfettes_go_sync_atomic_make_uint64_array(
     atomic_init(&array[i], 0);
   }
 }
+
+MOONBIT_FFI_EXPORT
+int32_t
+moonbit_tonyfettes_go_sync_atomic_compare_and_swap_uint64(
+  _Atomic(uint64_t) *array,
+  int32_t index,
+  uint64_t old,
+  uint64_t new
+) {
+  return atomic_compare_exchange_strong(&array[index], &old, new);
+}
