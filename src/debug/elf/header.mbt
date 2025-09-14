@@ -32,70 +32,27 @@ pub struct Header32 {
 } derive(Show, ToJson, Default)
 
 ///|
-enum Header32Metadata {
-  Ident
-  Type
-  Machine
-  Version
-  Entry
-  Phoff
-  Shoff
-  Flags
-  Ehsize
-  Phentsize
-  Phnum
-  Shentsize
-  Shnum
-  Shstrndx
-}
-
-///|
-pub fn Header32Metadata::sizeof() -> Int {
-  52
-}
-
-///|
-pub fn Header32Metadata::offset_of(self : Header32Metadata) -> Int {
-  match self {
-    Ident => 0
-    Type => 16
-    Machine => 18
-    Version => 20
-    Entry => 24
-    Phoff => 28
-    Shoff => 32
-    Flags => 36
-    Ehsize => 40
-    Phentsize => 42
-    Phnum => 44
-    Shentsize => 46
-    Shnum => 48
-    Shstrndx => 50
-  }
-}
-
-///|
 /// ELF32 Section header.
 pub struct Section32 {
   /// Section name (index into the section header string table).
-  /// Section type.
-  /// Section flags.
-  /// Address in memory image.
-  /// Offset in file.
-  /// Size in bytes.
-  /// Index of a related section.
-  /// Depends on section type.
-  /// Alignment in bytes.
-  /// Size of each entry in section.
   name : UInt
+  /// Section type.
   type_ : UInt
+  /// Section flags.
   flags : UInt
+  /// Address in memory image.
   addr : UInt
+  /// Offset in file.
   off : UInt
+  /// Size in bytes.
   size : UInt
+  /// Index of a related section.
   link : UInt
+  /// Depends on section type.
   info : UInt
+  /// Alignment in bytes.
   addralign : UInt
+  /// Size of each entry in section.
   entsize : UInt
 } derive(Show, ToJson)
 
@@ -103,20 +60,20 @@ pub struct Section32 {
 /// ELF32 Program header.
 pub struct Prog32 {
   /// Entry type.
-  /// File offset of contents.
-  /// Virtual address in memory image.
-  /// Physical address (not used).
-  /// Size of contents in file.
-  /// Size of contents in memory.
-  /// Access permission flags.
-  /// Alignment in memory and file.
   type_ : UInt
+  /// File offset of contents.
   off : UInt
+  /// Virtual address in memory image.
   vaddr : UInt
+  /// Physical address (not used).
   paddr : UInt
+  /// Size of contents in file.
   filesz : UInt
+  /// Size of contents in memory.
   memsz : UInt
+  /// Access permission flags.
   flags : UInt
+  /// Alignment in memory and file.
   align : UInt
 } derive(Show, ToJson)
 
@@ -124,8 +81,8 @@ pub struct Prog32 {
 /// ELF32 Dynamic structure. The ".dynamic" section contains an array of them.
 pub struct Dyn32 {
   /// Entry type.
-  /// Integer/Address value.
   tag : Int
+  /// Integer/Address value.
   val : UInt
 } derive(Show, ToJson)
 
@@ -141,8 +98,8 @@ pub struct Chdr32 {
 /// ELF32 Relocations that don't need an addend field.
 pub struct Rel32 {
   /// Location to be relocated.
-  /// Relocation type and symbol index.
   off : UInt
+  /// Relocation type and symbol index.
   info : UInt
 } derive(Show, ToJson)
 
@@ -150,10 +107,10 @@ pub struct Rel32 {
 /// ELF32 Relocations that need an addend field.
 pub struct Rela32 {
   /// Location to be relocated.
-  /// Relocation type and symbol index.
-  /// Addend.
   off : UInt
+  /// Relocation type and symbol index.
   info : UInt
+  /// Addend.
   addend : Int
 } derive(Show, ToJson)
 
@@ -175,32 +132,32 @@ pub const Sym32Size : Int = 16
 /// ELF64 file header.
 pub struct Header64 {
   /// File identification. [16]
-  /// File type.
-  /// Machine architecture.
-  /// ELF format version.
-  /// Entry point.
-  /// Program header file offset.
-  /// Section header file offset.
-  /// Architecture-specific flags.
-  /// Size of ELF header in bytes.
-  /// Size of program header entry.
-  /// Number of program header entries.
-  /// Size of section header entry.
-  /// Number of section header entries.
-  /// Section name strings section.
   ident : FixedArray[Byte]
+  /// File type.
   type_ : UInt
+  /// Machine architecture.
   machine : UInt
+  /// ELF format version.
   version : UInt
+  /// Entry point.
   entry : UInt64
+  /// Program header file offset.
   phoff : UInt64
+  /// Section header file offset.
   shoff : UInt64
+  /// Architecture-specific flags.
   flags : UInt
+  /// Size of ELF header in bytes.
   ehsize : UInt
+  /// Size of program header entry.
   phentsize : UInt
+  /// Number of program header entries.
   phnum : UInt
+  /// Size of section header entry.
   shentsize : UInt
+  /// Number of section header entries.
   shnum : UInt
+  /// Section name strings section.
   shstrndx : UInt
 } derive(Show, ToJson)
 
@@ -208,24 +165,24 @@ pub struct Header64 {
 /// ELF64 Section header.
 pub struct Section64 {
   /// Section name (index into the section header string table).
-  /// Section type.
-  /// Section flags.
-  /// Address in memory image.
-  /// Offset in file.
-  /// Size in bytes.
-  /// Index of a related section.
-  /// Depends on section type.
-  /// Alignment in bytes.
-  /// Size of each entry in section.
   name : UInt
+  /// Section type.
   type_ : UInt
+  /// Section flags.
   flags : UInt64
+  /// Address in memory image.
   addr : UInt64
+  /// Offset in file.
   off : UInt64
+  /// Size in bytes.
   size : UInt64
+  /// Index of a related section.
   link : UInt
+  /// Depends on section type.
   info : UInt
+  /// Alignment in bytes.
   addralign : UInt64
+  /// Size of each entry in section.
   entsize : UInt64
 } derive(Show, ToJson)
 
@@ -233,20 +190,20 @@ pub struct Section64 {
 /// ELF64 Program header.
 pub struct Prog64 {
   /// Entry type.
-  /// Access permission flags.
-  /// File offset of contents.
-  /// Virtual address in memory image.
-  /// Physical address (not used).
-  /// Size of contents in file.
-  /// Size of contents in memory.
-  /// Alignment in memory and file.
   type_ : UInt
+  /// Access permission flags.
   flags : UInt
+  /// File offset of contents.
   off : UInt64
+  /// Virtual address in memory image.
   vaddr : UInt64
+  /// Physical address (not used).
   paddr : UInt64
+  /// Size of contents in file.
   filesz : UInt64
+  /// Size of contents in memory.
   memsz : UInt64
+  /// Alignment in memory and file.
   align : UInt64
 } derive(Show, ToJson)
 
@@ -254,8 +211,8 @@ pub struct Prog64 {
 /// ELF64 Dynamic structure. The ".dynamic" section contains an array of them.
 pub struct Dyn64 {
   /// Entry type.
-  /// Integer/address value
   tag : Int64
+  /// Integer/address value
   val : UInt64
 } derive(Show, ToJson)
 
@@ -272,8 +229,8 @@ pub struct Chdr64 {
 /// ELF64 relocations that don't need an addend field.
 pub struct Rel64 {
   /// Location to be relocated.
-  /// Relocation type and symbol index.
   off : UInt64
+  /// Relocation type and symbol index.
   info : UInt64
 } derive(Show, ToJson)
 
@@ -281,10 +238,10 @@ pub struct Rel64 {
 /// ELF64 relocations that need an addend field.
 pub struct Rela64 {
   /// Location to be relocated.
-  /// Relocation type and symbol index.
-  /// Addend.
   off : UInt64
+  /// Relocation type and symbol index.
   info : UInt64
+  /// Addend.
   addend : Int64
 } derive(Show, ToJson)
 
@@ -292,16 +249,16 @@ pub struct Rela64 {
 /// ELF64 symbol table entries.
 pub struct Sym64 {
   /// String table index of name.
-  /// Type and binding information.
-  /// Reserved (not used).
-  /// Section index of symbol.
-  /// Symbol value.
-  /// Size of associated object.
   name : UInt
+  /// Type and binding information.
   info : Byte
+  /// Reserved (not used).
   other : Byte
+  /// Section index of symbol.
   shndx : UInt
+  /// Symbol value.
   value : UInt64
+  /// Size of associated object.
   size : UInt64
 } derive(Show, ToJson)
 
