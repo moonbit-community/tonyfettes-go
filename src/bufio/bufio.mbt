@@ -135,7 +135,7 @@ fn Reader::fill(self : Reader) -> Unit raise {
 }
 
 ///|
-/// Peek returns the next n bytes without advancing the reader. The bytes stop
+/// peek returns the next n bytes without advancing the reader. The bytes stop
 /// being valid at the next read call. If necessary, Peek will read more bytes
 /// into the buffer in order to make n bytes available. If Peek returns fewer
 /// than n bytes, it also returns an error explaining why the read is short.
@@ -316,6 +316,51 @@ pub fn Reader::unread_byte(self : Reader) -> Unit raise InvalidUnreadByte {
 }
 
 ///|
+/// read_rune reads a single UTF-8 encoded Unicode character and returns the
+/// char and its size in bytes. If the encoded char is invalid, it consumes one
+/// byte and returns @unicode.ReplacementChar (U+FFFD) with a size of 1.
+pub fn Reader::read_rune(self : Reader) -> (Rune, Int) raise {
+  while self.r + @utf8.UTFMax > self.w &&
+        !@utf8.full_rune(self.buf[self.r:self.w]) &&
+        self.err is None &&
+        self.w - self.r < self.buf.length() {
+    self.fill()
+  }
+  self.last_rune_size = -1
+  if self.r == self.w {
+    if self.err is Some(err) {
+      raise err
+    }
+    return ('\u{0}', 0)
+  }
+  let mut r = self.buf[self.r].to_char()
+  let mut size = 1
+  if r >= @utf8.RuneSelf {
+    let (rr, sz) = @utf8.decode_rune(self.buf[self.r:self.w])
+    r = rr
+    size = sz
+  }
+  self.r += size
+  self.last_byte = int(self.buf[self.r - 1])
+  self.last_rune_size = size
+  return (r, size)
+}
+
+///|
+/// UnreadRune unreads the last rune. If the most recent method called on
+/// the [Reader] was not a [Reader.ReadRune], [Reader.UnreadRune] returns an error. (In this
+/// regard it is stricter than [Reader.UnreadByte], which will unread the last byte
+/// from any read operation.)
+pub fn Reader::unread_rune(self : Reader) -> Unit raise InvalidUnreadRune {
+  if self.last_rune_size < 0 || self.r < self.last_rune_size {
+    raise InvalidUnreadRune
+  }
+  self.r -= self.last_rune_size
+  self.last_byte = -1
+  self.last_rune_size = -1
+}
+
+///|
 /// buffered returns the number of bytes that can be read from the current buffer.
 pub fn Reader::buffered(self : Reader) -> Int {
   self.w - self.r
@@ -426,12 +471,12 @@ pub fn Reader::read_bytes(
 /// returning a string containing the data up to and including the delimiter.
 /// If read_string encounters an error before finding a delimiter,
 /// it returns the data read before the error and the error itself (often io.EOF).
-/// read_string returns err != null if and only if the returned data does not end in
+/// read_string raises if and only if the returned data does not end in
 /// delim.
 /// For simple uses, a Scanner may be more convenient.
 pub fn Reader::read_string(self : Reader, delim : Byte) -> String raise {
   let bytes = self.read_bytes(delim) catch { e => raise e }
-  bytes.to_string()
+  @utf8.decode(bytes.bytesview())
 }
 
 ///|

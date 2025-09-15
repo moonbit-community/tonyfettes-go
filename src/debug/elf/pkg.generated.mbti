@@ -4,6 +4,7 @@ package "tonyfettes/go/debug/elf"
 import(
   "tonyfettes/go/encoding/binary"
   "tonyfettes/go/io"
+  "tonyfettes/go/slice"
 )
 
 // Values
@@ -22,6 +23,42 @@ const EI_PAD : Int = 9
 const EI_VERSION : Int = 6
 
 const ELFMAG : Bytes = \x7FELF
+
+const PF_MASKOS : UInt = 0x0ff00000
+
+const PF_MASKPROC : UInt = 0xf0000000
+
+const PF_R : UInt = 0x4
+
+const PF_W : UInt = 0x2
+
+const PF_X : UInt = 0x1
+
+const SHF_ALLOC : UInt = 0x2
+
+const SHF_COMPRESSED : UInt = 0x800
+
+const SHF_EXECINSTR : UInt = 0x4
+
+const SHF_GROUP : UInt = 0x200
+
+const SHF_INFO_LINK : UInt = 0x40
+
+const SHF_LINK_ORDER : UInt = 0x80
+
+const SHF_MASKOS : UInt = 0x0ff00000
+
+const SHF_MASKPROC : UInt = 0xf0000000
+
+const SHF_MERGE : UInt = 0x10
+
+const SHF_OS_NONCONFORMING : UInt = 0x100
+
+const SHF_STRINGS : UInt = 0x20
+
+const SHF_TLS : UInt = 0x400
+
+const SHF_WRITE : UInt = 0x1
 
 const Sym32Size : Int = 16
 
@@ -54,6 +91,8 @@ fn st_bind(Byte) -> SymBind
 fn st_info(SymBind, SymType) -> Byte
 
 fn st_type(Byte) -> SymType
+
+fn st_visibility(Byte) -> SymVis
 
 // Errors
 pub suberror FormatError {
@@ -91,6 +130,7 @@ impl Show for Class
 impl ToJson for Class
 
 pub(all) enum CompressionType {
+  COMPRESS_NONE
   COMPRESS_ZLIB
   COMPRESS_ZSTD
   COMPRESS_LOOS
@@ -100,6 +140,7 @@ pub(all) enum CompressionType {
 }
 fn CompressionType::from_int(Int) -> Self
 fn CompressionType::to_int(Self) -> Int
+impl Default for CompressionType
 impl Eq for CompressionType
 impl Show for CompressionType
 impl ToJson for CompressionType
@@ -283,10 +324,8 @@ pub struct DynamicVersionDep {
 impl Show for DynamicVersionDep
 impl ToJson for DynamicVersionDep
 
-pub struct DynamicVersionFlag {
-  value : UInt
-}
-fn DynamicVersionFlag::new(UInt) -> Self
+pub(all) struct DynamicVersionFlag(UInt16)
+fn DynamicVersionFlag::inner(Self) -> UInt16
 impl Eq for DynamicVersionFlag
 impl Show for DynamicVersionFlag
 impl ToJson for DynamicVersionFlag
@@ -301,29 +340,42 @@ impl ToJson for DynamicVersionNeed
 pub struct File {
   file_header : FileHeader
   sections : Array[Section]
-  progs : Array[Prog]
+  mut progs : Array[Prog]
   // private fields
 }
+fn File::abi_version(Self) -> Byte
+fn File::byte_order(Self) -> &@binary.ByteOrder
+fn File::class(Self) -> Class
 fn File::close(Self) -> Unit raise
+fn File::data(Self) -> Data
 fn File::dyn_string(Self, DynTag) -> Array[String] raise
 fn File::dynamic_symbols(Self) -> Array[Symbol] raise
+fn File::dynamic_version_needs(Self) -> Array[DynamicVersionNeed] raise
+fn File::dynamic_versions(Self) -> Array[DynamicVersion] raise
+fn File::entry(Self) -> UInt64
 fn File::imported_libraries(Self) -> Array[String] raise
 fn File::imported_symbols(Self) -> Array[ImportedSymbol] raise
+fn File::machine(Self) -> Machine
+fn File::osabi(Self) -> OSABI
 fn File::section(Self, String) -> Section?
 fn File::section_by_type(Self, SectionType) -> Section?
 fn File::symbols(Self) -> Array[Symbol] raise
+fn File::type_(Self) -> Type
+fn File::version(Self) -> Version
 
-pub struct FileHeader {
+pub(all) struct FileHeader {
   class : Class
   data : Data
-  version : Version
-  osabi : OSABI
-  abi_version : Byte
-  byte_order : @binary.LittleEndian
-  type_ : Type
-  machine : Machine
-  entry : UInt64
+  mut version : Version
+  mut osabi : OSABI
+  mut abi_version : Byte
+  mut byte_order : &@binary.ByteOrder
+  mut type_ : Type
+  mut machine : Machine
+  mut entry : UInt64
 }
+impl Show for FileHeader
+impl ToJson for FileHeader
 
 pub struct Header32 {
   ident : FixedArray[Byte]
@@ -341,27 +393,47 @@ pub struct Header32 {
   shnum : UInt
   shstrndx : UInt
 }
+impl Default for Header32
 impl Show for Header32
 impl ToJson for Header32
 
 pub struct Header64 {
-  ident : FixedArray[Byte]
-  type_ : UInt
-  machine : UInt
+  ident : @slice.Slice[Byte]
+  type_ : UInt16
+  machine : UInt16
   version : UInt
   entry : UInt64
   phoff : UInt64
   shoff : UInt64
   flags : UInt
-  ehsize : UInt
-  phentsize : UInt
-  phnum : UInt
-  shentsize : UInt
-  shnum : UInt
-  shstrndx : UInt
+  ehsize : UInt16
+  phentsize : UInt16
+  phnum : UInt16
+  shentsize : UInt16
+  shnum : UInt16
+  shstrndx : UInt16
 }
-impl Show for Header64
-impl ToJson for Header64
+fn Header64::offsetof(Header64Field) -> Int
+fn Header64::sizeof(Header64Field) -> Int
+impl @binary.Readable for Header64
+
+pub(all) enum Header64Field {
+  Header64
+  Ident
+  Type
+  Machine
+  Version
+  Entry
+  Phoff
+  Shoff
+  Flags
+  Ehsize
+  Phentsize
+  Phnum
+  Shentsize
+  Shnum
+  Shstrndx
+}
 
 pub struct ImportedSymbol {
   name : String
@@ -560,7 +632,7 @@ pub(all) enum Machine {
   EM_ALPHA_STD
   EM_ALPHA
 }
-fn Machine::from_int(Int) -> Self
+fn Machine::from_uint16(UInt16) -> Self
 fn Machine::to_int(Self) -> Int
 impl Eq for Machine
 impl Show for Machine
@@ -588,18 +660,20 @@ pub(all) enum OSABI {
   ELFOSABI_ARM
   ELFOSABI_STANDALONE
 }
-fn OSABI::from_int(Int) -> Self
-fn OSABI::to_int(Self) -> Int
+fn OSABI::from_byte(Byte) -> Self
+fn OSABI::to_byte(Self) -> Byte
+impl Default for OSABI
 impl Eq for OSABI
 impl Show for OSABI
 impl ToJson for OSABI
 
 pub struct Prog {
-  prog_header : ProgHeader
-  reader_at : &@io.ReaderAt?
+  mut prog_header : ProgHeader
+  mut reader_at : &@io.ReaderAt?
   // private fields
 }
 fn Prog::open(Self) -> &@io.ReadSeeker raise
+impl Default for Prog
 
 pub struct Prog32 {
   type_ : UInt
@@ -627,15 +701,11 @@ pub struct Prog64 {
 impl Show for Prog64
 impl ToJson for Prog64
 
-pub(all) enum ProgFlag {
-  PF_X
-  PF_W
-  PF_R
-  PF_MASKOS
-  PF_MASKPROC
-}
-fn ProgFlag::to_int(Self) -> Int
-impl Eq for ProgFlag
+pub(all) struct ProgFlag(UInt)
+fn ProgFlag::inner(Self) -> UInt
+impl BitAnd for ProgFlag
+impl BitOr for ProgFlag
+impl Default for ProgFlag
 impl Show for ProgFlag
 impl ToJson for ProgFlag
 
@@ -649,6 +719,7 @@ pub struct ProgHeader {
   memsz : UInt64
   align : UInt64
 }
+impl Default for ProgHeader
 impl Show for ProgHeader
 impl ToJson for ProgHeader
 
@@ -691,6 +762,7 @@ pub(all) enum ProgType {
 }
 fn ProgType::from_int(Int) -> Self
 fn ProgType::to_int(Self) -> Int
+impl Default for ProgType
 impl Eq for ProgType
 impl Show for ProgType
 impl ToJson for ProgType
@@ -744,6 +816,386 @@ fn R_386::to_int(Self) -> Int
 impl Eq for R_386
 impl Show for R_386
 impl ToJson for R_386
+
+pub(all) enum R_AARCH64 {
+  R_AARCH64_NONE
+  R_AARCH64_P32_ABS32
+  R_AARCH64_P32_COPY
+  R_AARCH64_P32_GLOB_DAT
+  R_AARCH64_P32_JUMP_SLOT
+  R_AARCH64_P32_RELATIVE
+  R_AARCH64_P32_TLS_DTPMOD
+  R_AARCH64_P32_TLS_DTPREL
+  R_AARCH64_P32_TLS_TPREL
+  R_AARCH64_P32_TLSDESC
+  R_AARCH64_P32_IRELATIVE
+  R_AARCH64_ABS64
+  R_AARCH64_ABS32
+  R_AARCH64_ABS16
+  R_AARCH64_PREL64
+  R_AARCH64_PREL32
+  R_AARCH64_PREL16
+  R_AARCH64_MOVW_UABS_G0
+  R_AARCH64_MOVW_UABS_G0_NC
+  R_AARCH64_MOVW_UABS_G1
+  R_AARCH64_MOVW_UABS_G1_NC
+  R_AARCH64_MOVW_UABS_G2
+  R_AARCH64_MOVW_UABS_G2_NC
+  R_AARCH64_MOVW_UABS_G3
+  R_AARCH64_MOVW_SABS_G0
+  R_AARCH64_MOVW_SABS_G1
+  R_AARCH64_MOVW_SABS_G2
+  R_AARCH64_LD_PREL_LO19
+  R_AARCH64_ADR_PREL_LO21
+  R_AARCH64_ADR_PREL_PG_HI21
+  R_AARCH64_ADR_PREL_PG_HI21_NC
+  R_AARCH64_ADD_ABS_LO12_NC
+  R_AARCH64_LDST8_ABS_LO12_NC
+  R_AARCH64_TSTBR14
+  R_AARCH64_CONDBR19
+  R_AARCH64_JUMP26
+  R_AARCH64_CALL26
+  R_AARCH64_LDST16_ABS_LO12_NC
+  R_AARCH64_LDST32_ABS_LO12_NC
+  R_AARCH64_LDST64_ABS_LO12_NC
+  R_AARCH64_MOVW_PREL_G0
+  R_AARCH64_MOVW_PREL_G0_NC
+  R_AARCH64_MOVW_PREL_G1
+  R_AARCH64_MOVW_PREL_G1_NC
+  R_AARCH64_MOVW_PREL_G2
+  R_AARCH64_MOVW_PREL_G2_NC
+  R_AARCH64_MOVW_PREL_G3
+  R_AARCH64_LDST128_ABS_LO12_NC
+  R_AARCH64_MOVW_GOTOFF_G0
+  R_AARCH64_MOVW_GOTOFF_G0_NC
+  R_AARCH64_MOVW_GOTOFF_G1
+  R_AARCH64_MOVW_GOTOFF_G1_NC
+  R_AARCH64_MOVW_GOTOFF_G2
+  R_AARCH64_MOVW_GOTOFF_G2_NC
+  R_AARCH64_MOVW_GOTOFF_G3
+  R_AARCH64_GOTREL64
+  R_AARCH64_GOTREL32
+  R_AARCH64_GOT_LD_PREL19
+  R_AARCH64_LD64_GOTOFF_LO15
+  R_AARCH64_ADR_GOT_PAGE
+  R_AARCH64_LD64_GOT_LO12_NC
+  R_AARCH64_LD64_GOTPAGE_LO15
+  R_AARCH64_TLSGD_ADR_PREL21
+  R_AARCH64_TLSGD_ADR_PAGE21
+  R_AARCH64_TLSGD_ADD_LO12_NC
+  R_AARCH64_TLSGD_MOVW_G1
+  R_AARCH64_TLSGD_MOVW_G0_NC
+  R_AARCH64_TLSLD_ADR_PREL21
+  R_AARCH64_TLSLD_ADR_PAGE21
+  R_AARCH64_TLSLD_ADD_LO12_NC
+  R_AARCH64_TLSLD_MOVW_G1
+  R_AARCH64_TLSLD_MOVW_G0_NC
+  R_AARCH64_TLSLD_LD_PREL19
+  R_AARCH64_TLSLD_MOVW_DTPREL_G2
+  R_AARCH64_TLSLD_MOVW_DTPREL_G1
+  R_AARCH64_TLSLD_MOVW_DTPREL_G1_NC
+  R_AARCH64_TLSLD_MOVW_DTPREL_G0
+  R_AARCH64_TLSLD_MOVW_DTPREL_G0_NC
+  R_AARCH64_TLSLD_ADD_DTPREL_HI12
+  R_AARCH64_TLSLD_ADD_DTPREL_LO12
+  R_AARCH64_TLSLD_ADD_DTPREL_LO12_NC
+  R_AARCH64_TLSLD_LDST8_DTPREL_LO12
+  R_AARCH64_TLSLD_LDST8_DTPREL_LO12_NC
+  R_AARCH64_TLSLD_LDST16_DTPREL_LO12
+  R_AARCH64_TLSLD_LDST16_DTPREL_LO12_NC
+  R_AARCH64_TLSLD_LDST32_DTPREL_LO12
+  R_AARCH64_TLSLD_LDST32_DTPREL_LO12_NC
+  R_AARCH64_TLSLD_LDST64_DTPREL_LO12
+  R_AARCH64_TLSLD_LDST64_DTPREL_LO12_NC
+  R_AARCH64_TLSIE_MOVW_GOTTPREL_G1
+  R_AARCH64_TLSIE_MOVW_GOTTPREL_G0_NC
+  R_AARCH64_TLSIE_ADR_GOTTPREL_PAGE21
+  R_AARCH64_TLSIE_LD64_GOTTPREL_LO12_NC
+  R_AARCH64_TLSIE_LD_GOTTPREL_PREL19
+  R_AARCH64_TLSLE_MOVW_TPREL_G2
+  R_AARCH64_TLSLE_MOVW_TPREL_G1
+  R_AARCH64_TLSLE_MOVW_TPREL_G1_NC
+  R_AARCH64_TLSLE_MOVW_TPREL_G0
+  R_AARCH64_TLSLE_MOVW_TPREL_G0_NC
+  R_AARCH64_TLSLE_ADD_TPREL_HI12
+  R_AARCH64_TLSLE_ADD_TPREL_LO12
+  R_AARCH64_TLSLE_ADD_TPREL_LO12_NC
+  R_AARCH64_TLSLE_LDST8_TPREL_LO12
+  R_AARCH64_TLSLE_LDST8_TPREL_LO12_NC
+  R_AARCH64_TLSLE_LDST16_TPREL_LO12
+  R_AARCH64_TLSLE_LDST16_TPREL_LO12_NC
+  R_AARCH64_TLSLE_LDST32_TPREL_LO12
+  R_AARCH64_TLSLE_LDST32_TPREL_LO12_NC
+  R_AARCH64_TLSLE_LDST64_TPREL_LO12
+  R_AARCH64_TLSLE_LDST64_TPREL_LO12_NC
+  R_AARCH64_TLSDESC_LD_PREL19
+  R_AARCH64_TLSDESC_ADR_PREL21
+  R_AARCH64_TLSDESC_ADR_PAGE21
+  R_AARCH64_TLSDESC_LD64_LO12
+  R_AARCH64_TLSDESC_ADD_LO12
+  R_AARCH64_TLSDESC_OFF_G1
+  R_AARCH64_TLSDESC_OFF_G0_NC
+  R_AARCH64_TLSDESC_LDR
+  R_AARCH64_TLSDESC_ADD
+  R_AARCH64_TLSDESC_CALL
+  R_AARCH64_TLSLE_LDST128_TPREL_LO12
+  R_AARCH64_TLSLE_LDST128_TPREL_LO12_NC
+  R_AARCH64_TLSLD_LDST128_DTPREL_LO12
+  R_AARCH64_TLSLD_LDST128_DTPREL_LO12_NC
+  R_AARCH64_COPY
+  R_AARCH64_GLOB_DAT
+  R_AARCH64_JUMP_SLOT
+  R_AARCH64_RELATIVE
+  R_AARCH64_TLS_DTPMOD64
+  R_AARCH64_TLS_DTPREL64
+  R_AARCH64_TLS_TPREL64
+  R_AARCH64_TLSDESC
+  R_AARCH64_IRELATIVE
+}
+impl Eq for R_AARCH64
+impl Show for R_AARCH64
+impl ToJson for R_AARCH64
+
+pub(all) enum R_ALPHA {
+  R_ALPHA_NONE
+  R_ALPHA_REFLONG
+  R_ALPHA_REFQUAD
+  R_ALPHA_GPREL32
+  R_ALPHA_LITERAL
+  R_ALPHA_LITUSE
+  R_ALPHA_GPDISP
+  R_ALPHA_BRADDR
+  R_ALPHA_HINT
+  R_ALPHA_SREL16
+  R_ALPHA_SREL32
+  R_ALPHA_SREL64
+  R_ALPHA_OP_PUSH
+  R_ALPHA_OP_STORE
+  R_ALPHA_OP_PSUB
+  R_ALPHA_OP_PRSHIFT
+  R_ALPHA_GPVALUE
+  R_ALPHA_GPRELHIGH
+  R_ALPHA_GPRELLOW
+  R_ALPHA_IMMED_GP_16
+  R_ALPHA_IMMED_GP_HI32
+  R_ALPHA_IMMED_SCN_HI32
+  R_ALPHA_IMMED_BR_HI32
+  R_ALPHA_IMMED_LO32
+  R_ALPHA_COPY
+  R_ALPHA_GLOB_DAT
+  R_ALPHA_JMP_SLOT
+  R_ALPHA_RELATIVE
+}
+impl Eq for R_ALPHA
+impl Show for R_ALPHA
+impl ToJson for R_ALPHA
+
+pub(all) enum R_ARM {
+  R_ARM_NONE
+  R_ARM_PC24
+  R_ARM_ABS32
+  R_ARM_REL32
+  R_ARM_PC13
+  R_ARM_ABS16
+  R_ARM_ABS12
+  R_ARM_THM_ABS5
+  R_ARM_ABS8
+  R_ARM_SBREL32
+  R_ARM_THM_PC22
+  R_ARM_THM_PC8
+  R_ARM_AMP_VCALL9
+  R_ARM_SWI24
+  R_ARM_THM_SWI8
+  R_ARM_XPC25
+  R_ARM_THM_XPC22
+  R_ARM_TLS_DTPMOD32
+  R_ARM_TLS_DTPOFF32
+  R_ARM_TLS_TPOFF32
+  R_ARM_COPY
+  R_ARM_GLOB_DAT
+  R_ARM_JUMP_SLOT
+  R_ARM_RELATIVE
+  R_ARM_GOTOFF
+  R_ARM_GOTPC
+  R_ARM_GOT32
+  R_ARM_PLT32
+  R_ARM_CALL
+  R_ARM_JUMP24
+  R_ARM_THM_JUMP24
+  R_ARM_BASE_ABS
+  R_ARM_ALU_PCREL_7_0
+  R_ARM_ALU_PCREL_15_8
+  R_ARM_ALU_PCREL_23_15
+  R_ARM_LDR_SBREL_11_10_NC
+  R_ARM_ALU_SBREL_19_12_NC
+  R_ARM_ALU_SBREL_27_20_CK
+  R_ARM_TARGET1
+  R_ARM_SBREL31
+  R_ARM_V4BX
+  R_ARM_TARGET2
+  R_ARM_PREL31
+  R_ARM_MOVW_ABS_NC
+  R_ARM_MOVT_ABS
+  R_ARM_MOVW_PREL_NC
+  R_ARM_MOVT_PREL
+  R_ARM_THM_MOVW_ABS_NC
+  R_ARM_THM_MOVT_ABS
+  R_ARM_THM_MOVW_PREL_NC
+  R_ARM_THM_MOVT_PREL
+  R_ARM_THM_JUMP19
+  R_ARM_THM_JUMP6
+  R_ARM_THM_ALU_PREL_11_0
+  R_ARM_THM_PC12
+  R_ARM_ABS32_NOI
+  R_ARM_REL32_NOI
+  R_ARM_ALU_PC_G0_NC
+  R_ARM_ALU_PC_G0
+  R_ARM_ALU_PC_G1_NC
+  R_ARM_ALU_PC_G1
+  R_ARM_ALU_PC_G2
+  R_ARM_LDR_PC_G1
+  R_ARM_LDR_PC_G2
+  R_ARM_LDRS_PC_G0
+  R_ARM_LDRS_PC_G1
+  R_ARM_LDRS_PC_G2
+  R_ARM_LDC_PC_G0
+  R_ARM_LDC_PC_G1
+  R_ARM_LDC_PC_G2
+  R_ARM_ALU_SB_G0_NC
+  R_ARM_ALU_SB_G0
+  R_ARM_ALU_SB_G1_NC
+  R_ARM_ALU_SB_G1
+  R_ARM_ALU_SB_G2
+  R_ARM_LDR_SB_G0
+  R_ARM_LDR_SB_G1
+  R_ARM_LDR_SB_G2
+  R_ARM_LDRS_SB_G0
+  R_ARM_LDRS_SB_G1
+  R_ARM_LDRS_SB_G2
+  R_ARM_LDC_SB_G0
+  R_ARM_LDC_SB_G1
+  R_ARM_LDC_SB_G2
+  R_ARM_MOVW_BREL_NC
+  R_ARM_MOVT_BREL
+  R_ARM_MOVW_BREL
+  R_ARM_THM_MOVW_BREL_NC
+  R_ARM_THM_MOVT_BREL
+  R_ARM_THM_MOVW_BREL
+  R_ARM_TLS_GOTDESC
+  R_ARM_TLS_CALL
+  R_ARM_TLS_DESCSEQ
+  R_ARM_THM_TLS_CALL
+  R_ARM_PLT32_ABS
+  R_ARM_GOT_ABS
+  R_ARM_GOT_PREL
+  R_ARM_GOT_BREL12
+  R_ARM_GOTOFF12
+  R_ARM_GOTRELAX
+  R_ARM_GNU_VTENTRY
+  R_ARM_GNU_VTINHERIT
+  R_ARM_THM_JUMP11
+  R_ARM_THM_JUMP8
+  R_ARM_TLS_GD32
+  R_ARM_TLS_LDM32
+  R_ARM_TLS_LDO32
+  R_ARM_TLS_IE32
+  R_ARM_TLS_LE32
+  R_ARM_TLS_LDO12
+  R_ARM_TLS_LE12
+  R_ARM_TLS_IE12GP
+  R_ARM_PRIVATE_0
+  R_ARM_PRIVATE_1
+  R_ARM_PRIVATE_2
+  R_ARM_PRIVATE_3
+  R_ARM_PRIVATE_4
+  R_ARM_PRIVATE_5
+  R_ARM_PRIVATE_6
+  R_ARM_PRIVATE_7
+  R_ARM_PRIVATE_8
+  R_ARM_PRIVATE_9
+  R_ARM_PRIVATE_10
+  R_ARM_PRIVATE_11
+  R_ARM_PRIVATE_12
+  R_ARM_PRIVATE_13
+  R_ARM_PRIVATE_14
+  R_ARM_PRIVATE_15
+  R_ARM_ME_TOO
+  R_ARM_THM_TLS_DESCSEQ16
+  R_ARM_THM_TLS_DESCSEQ32
+  R_ARM_THM_GOT_BREL12
+  R_ARM_THM_ALU_ABS_G0_NC
+  R_ARM_THM_ALU_ABS_G1_NC
+  R_ARM_THM_ALU_ABS_G2_NC
+  R_ARM_THM_ALU_ABS_G3
+  R_ARM_IRELATIVE
+  R_ARM_RXPC25
+  R_ARM_RSBREL32
+  R_ARM_THM_RPC22
+  R_ARM_RREL32
+  R_ARM_RABS32
+  R_ARM_RPC24
+  R_ARM_RBASE
+}
+impl Eq for R_ARM
+impl Show for R_ARM
+impl ToJson for R_ARM
+
+pub(all) enum R_MIPS {
+  R_MIPS_NONE
+  R_MIPS_16
+  R_MIPS_32
+  R_MIPS_REL32
+  R_MIPS_26
+  R_MIPS_HI16
+  R_MIPS_LO16
+  R_MIPS_GPREL16
+  R_MIPS_LITERAL
+  R_MIPS_GOT16
+  R_MIPS_PC16
+  R_MIPS_CALL16
+  R_MIPS_GPREL32
+  R_MIPS_SHIFT5
+  R_MIPS_SHIFT6
+  R_MIPS_64
+  R_MIPS_GOT_DISP
+  R_MIPS_GOT_PAGE
+  R_MIPS_GOT_OFST
+  R_MIPS_GOT_HI16
+  R_MIPS_GOT_LO16
+  R_MIPS_SUB
+  R_MIPS_INSERT_A
+  R_MIPS_INSERT_B
+  R_MIPS_DELETE
+  R_MIPS_HIGHER
+  R_MIPS_HIGHEST
+  R_MIPS_CALL_HI16
+  R_MIPS_CALL_LO16
+  R_MIPS_SCN_DISP
+  R_MIPS_REL16
+  R_MIPS_ADD_IMMEDIATE
+  R_MIPS_PJUMP
+  R_MIPS_RELGOT
+  R_MIPS_JALR
+  R_MIPS_TLS_DTPMOD32
+  R_MIPS_TLS_DTPREL32
+  R_MIPS_TLS_DTPMOD64
+  R_MIPS_TLS_DTPREL64
+  R_MIPS_TLS_GD
+  R_MIPS_TLS_LDM
+  R_MIPS_TLS_DTPREL_HI16
+  R_MIPS_TLS_DTPREL_LO16
+  R_MIPS_TLS_GOTTPREL
+  R_MIPS_TLS_TPREL32
+  R_MIPS_TLS_TPREL64
+  R_MIPS_TLS_TPREL_HI16
+  R_MIPS_TLS_TPREL_LO16
+  R_MIPS_PC32
+}
+fn R_MIPS::from_int(Int) -> Self
+fn R_MIPS::to_int(Self) -> Int
+impl Eq for R_MIPS
+impl Show for R_MIPS
+impl ToJson for R_MIPS
 
 pub(all) enum R_X86_64 {
   R_X86_64_NONE
@@ -827,12 +1279,13 @@ impl Show for Rela64
 impl ToJson for Rela64
 
 pub struct Section {
-  section_header : SectionHeader
-  reader_at : &@io.ReaderAt?
+  mut section_header : SectionHeader
+  mut reader_at : &@io.ReaderAt?
   // private fields
 }
-fn Section::data(Self) -> Bytes raise
+fn Section::data(Self) -> @slice.Slice[Byte] raise
 fn Section::open(Self) -> &@io.ReadSeeker raise
+impl Default for Section
 
 pub struct Section32 {
   name : UInt
@@ -864,39 +1317,28 @@ pub struct Section64 {
 impl Show for Section64
 impl ToJson for Section64
 
-pub(all) enum SectionFlag {
-  SHF_WRITE
-  SHF_ALLOC
-  SHF_EXECINSTR
-  SHF_MERGE
-  SHF_STRINGS
-  SHF_INFO_LINK
-  SHF_LINK_ORDER
-  SHF_OS_NONCONFORMING
-  SHF_GROUP
-  SHF_TLS
-  SHF_COMPRESSED
-  SHF_MASKOS
-  SHF_MASKPROC
-}
-fn SectionFlag::to_int(Self) -> Int
-impl Eq for SectionFlag
+pub(all) struct SectionFlag(UInt)
+fn SectionFlag::inner(Self) -> UInt
+impl BitAnd for SectionFlag
+impl BitOr for SectionFlag
+impl Default for SectionFlag
 impl Show for SectionFlag
 impl ToJson for SectionFlag
 
 pub struct SectionHeader {
-  name : String
+  mut name : String
   type_ : SectionType
   flags : SectionFlag
   addr : UInt64
   offset : UInt64
-  size : UInt64
+  mut size : UInt64
   link : UInt
   info : UInt
-  addralign : UInt64
+  mut addralign : UInt64
   entsize : UInt64
   file_size : UInt64
 }
+impl Default for SectionHeader
 impl Show for SectionHeader
 impl ToJson for SectionHeader
 
@@ -919,6 +1361,7 @@ impl Show for SectionIndex
 impl ToJson for SectionIndex
 
 pub(all) enum SectionType {
+  SHT(UInt)
   SHT_NULL
   SHT_PROGBITS
   SHT_SYMTAB
@@ -951,8 +1394,9 @@ pub(all) enum SectionType {
   SHT_LOUSER
   SHT_HIUSER
 }
-fn SectionType::from_int(Int) -> Self
-fn SectionType::to_int(Self) -> Int
+fn SectionType::from_uint(UInt) -> Self
+fn SectionType::to_uint(Self) -> UInt
+impl Default for SectionType
 impl Eq for SectionType
 impl Show for SectionType
 impl ToJson for SectionType
@@ -1016,6 +1460,18 @@ impl Eq for SymType
 impl Show for SymType
 impl ToJson for SymType
 
+pub(all) enum SymVis {
+  STV_DEFAULT
+  STV_INTERNAL
+  STV_HIDDEN
+  STV_PROTECTED
+}
+fn SymVis::from_int(Int) -> Self
+fn SymVis::to_int(Self) -> Int
+impl Eq for SymVis
+impl Show for SymVis
+impl ToJson for SymVis
+
 pub struct Symbol {
   name : String
   info : Byte
@@ -1042,8 +1498,8 @@ pub(all) enum Type {
   ET_LOPROC
   ET_HIPROC
 }
-fn Type::from_int(Int) -> Self
-fn Type::to_int(Self) -> Int
+fn Type::from_uint16(UInt16) -> Self
+fn Type::to_uint16(Self) -> UInt16
 impl Eq for Type
 impl Show for Type
 impl ToJson for Type

@@ -60,6 +60,7 @@ fn Reader::buffered(Self) -> Int
 fn Reader::discard(Self, Int) -> Int raise
 fn Reader::peek(Self, Int) -> Array[Byte] raise
 fn Reader::read_bytes(Self, Byte) -> @slice.Slice[Byte] raise
+fn Reader::read_rune(Self) -> (Char, Int) raise
 fn Reader::read_slice(Self, Byte) -> @slice.Slice[Byte] raise
 fn Reader::read_string(Self, Byte) -> String raise
 fn Reader::reset(Self, &@io.Reader) -> Unit

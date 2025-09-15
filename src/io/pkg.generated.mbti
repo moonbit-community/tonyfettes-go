@@ -40,10 +40,10 @@ impl Reader for LimitedReader
 
 type SectionReader
 fn SectionReader::new(&ReaderAt, Int64, Int64) -> Self
-fn SectionReader::read(Self, @slice.Slice[Byte]) -> Int raise
-fn SectionReader::read_at(Self, @slice.Slice[Byte], Int64) -> Int raise
-fn SectionReader::seek(Self, Int64, SeekWhence) -> Int64 raise
 fn SectionReader::size(Self) -> Int64
+impl Reader for SectionReader
+impl ReaderAt for SectionReader
+impl Seeker for SectionReader
 
 pub(all) enum SeekWhence {
   Start

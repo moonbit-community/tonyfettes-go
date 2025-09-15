@@ -77,9 +77,6 @@ fn File::wrap_error(self : File, op : String, err : Error) -> Error {
   if err is @io.EOF {
     return err
   }
-  if err is @poll.FileClosing {
-    return @oserror.Closed
-  }
   return @fs.PathError::new(op~, path=self.name, err)
 }
 

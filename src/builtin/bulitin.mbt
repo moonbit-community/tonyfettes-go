@@ -100,6 +100,16 @@ trait ToInt {
 }
 
 ///|
+pub impl ToInt for Byte with to_int(self : Byte) -> Int {
+  self.to_int()
+}
+
+///|
+pub impl ToInt for Char with to_int(self : Char) -> Int {
+  self.to_int()
+}
+
+///|
 pub impl ToInt for UIntPtr with to_int(self : UIntPtr) -> Int {
   self.to_int()
 }
@@ -132,4 +142,22 @@ pub impl ToInt for UInt64 with to_int(self : UInt64) -> Int {
 ///|
 pub fn[T : ToInt] int(v : T) -> Int {
   v.to_int()
+}
+
+///|
+pub typealias Char as Rune
+
+///|
+pub(open) trait Len {
+  len(self : Self) -> Int
+}
+
+///|
+pub impl Len for Bytes with len(self : Bytes) -> Int {
+  self.length()
+}
+
+///|
+pub fn[T : Len] len(v : T) -> Int {
+  T::len(v)
 }

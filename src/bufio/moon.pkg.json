@@ -2,6 +2,11 @@
   "import": [
     "tonyfettes/go/io",
     "tonyfettes/go/slice",
-    "tonyfettes/go/bytes"
+    "tonyfettes/go/bytes",
+    "tonyfettes/go/builtin",
+    "tonyfettes/go/unicode/utf8"
+  ],
+  "test-import": [
+    "tonyfettes/go/strings"
   ]
 }

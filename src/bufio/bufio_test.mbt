@@ -1,6 +1,60 @@
 ///|
+/// Reads from a reader and rot13s the result.
+priv struct Rot13Reader {
+  r : &@io.Reader
+}
+
+///|
+fn new_rot13_reader(r : &@io.Reader) -> Rot13Reader {
+  Rot13Reader::{ r, }
+}
+
+///|
+impl @io.Reader for Rot13Reader with read(
+  self : Rot13Reader,
+  p : @slice.Slice[Byte],
+) -> Int raise {
+  let n = self.r.read(p)
+  for i in 0..<n {
+    let c = p[i] | 0x20 // lowercase byte
+    if c is ('a'..='m') {
+      p[i] += 13
+    } else if c is ('n'..='z') {
+      p[i] -= 13
+    }
+  }
+  return n
+}
+
+///|
+fn read_bytes(buf : @bufio.Reader) -> String raise {
+  let b : FixedArray[Byte] = FixedArray::make(1000, 0)
+  let mut nb = 0
+  for {
+    let c = buf.read_byte() catch {
+      @io.EOF => break
+      err => raise err
+    }
+    b[nb] = c
+    nb += 1
+  }
+  return @utf8.decode(b.unsafe_reinterpret_as_bytes()[0:nb])
+}
+
+///|
+test "TestReaderSimple" {
+  let data = "hello world"
+  let b = @bufio.new_reader(@strings.new_reader(data))
+  let s = read_bytes(b)
+  @json.inspect(s == "hello world", content=true)
+  let b = new_reader(new_rot13_reader(@strings.new_reader(data)))
+  let s = read_bytes(b)
+  @json.inspect(s == "uryyb jbeyq", content=true)
+}
+
+///|
 /// Simple test reader that provides a fixed byte sequence
-struct TestReader {
+priv struct TestReader {
   data : Bytes
   mut pos : Int
 }
@@ -30,7 +84,7 @@ impl @io.Reader for TestReader with read(self, p) {
 /// Simple test writer that accumulates written bytes
 
 ///|
-struct TestWriter {
+priv struct TestWriter {
   mut data : @slice.Slice[Byte]
 }
 
@@ -66,12 +120,7 @@ test "reader basic functionality" {
   let buf : @slice.Slice[Byte] = @slice.make(5)
   let n = reader.read(buf)
   inspect(n, content="5")
-  inspect(
-    buf,
-    content=(
-      "[b'\\x48', b'\\x65', b'\\x6C', b'\\x6C', b'\\x6F']"
-    ),
-  )
+  inspect(buf, content="[b'\\x48', b'\\x65', b'\\x6C', b'\\x6C', b'\\x6F']")
 }
 
 ///|
@@ -80,23 +129,13 @@ test "Reader::peek" {
   let tr = TestReader::new(test_data)
   let reader = new_reader(tr)
   let peeked = reader.peek(5)
-  inspect(
-    peeked,
-    content=(
-      "[b'\\x48', b'\\x65', b'\\x6C', b'\\x6C', b'\\x6F']"
-    ),
-  )
+  inspect(peeked, content="[b'\\x48', b'\\x65', b'\\x6C', b'\\x6C', b'\\x6F']")
 
   // Data should still be available for reading
   let buf : @slice.Slice[Byte] = @slice.make(5)
   let n = reader.read(buf)
   inspect(n, content="5")
-  inspect(
-    buf,
-    content=(
-      "[b'\\x48', b'\\x65', b'\\x6C', b'\\x6C', b'\\x6F']"
-    ),
-  )
+  inspect(buf, content="[b'\\x48', b'\\x65', b'\\x6C', b'\\x6C', b'\\x6F']")
 }
 
 ///|
@@ -107,16 +146,12 @@ test "reader read_slice functionality" {
   let line1 = reader.read_slice(b'\n')
   inspect(
     line1,
-    content=(
-      "[b'\\x6C', b'\\x69', b'\\x6E', b'\\x65', b'\\x31', b'\\x0A']"
-    ),
+    content="[b'\\x6C', b'\\x69', b'\\x6E', b'\\x65', b'\\x31', b'\\x0A']",
   )
   let line2 = reader.read_slice(b'\n')
   inspect(
     line2,
-    content=(
-      "[b'\\x6C', b'\\x69', b'\\x6E', b'\\x65', b'\\x32', b'\\x0D', b'\\x0A']"
-    ),
+    content="[b'\\x6C', b'\\x69', b'\\x6E', b'\\x65', b'\\x32', b'\\x0D', b'\\x0A']",
   )
 }
 
@@ -128,16 +163,12 @@ test "reader read_bytes functionality" {
   let bytes1 = reader.read_bytes(b'|')
   inspect(
     bytes1,
-    content=(
-      "[b'\\x48', b'\\x65', b'\\x6C', b'\\x6C', b'\\x6F', b'\\x7C']"
-    ),
+    content="[b'\\x48', b'\\x65', b'\\x6C', b'\\x6C', b'\\x6F', b'\\x7C']",
   )
   let bytes2 = reader.read_bytes(b'|')
   inspect(
     bytes2,
-    content=(
-      "[b'\\x57', b'\\x6F', b'\\x72', b'\\x6C', b'\\x64', b'\\x7C']"
-    ),
+    content="[b'\\x57', b'\\x6F', b'\\x72', b'\\x6C', b'\\x64', b'\\x7C']",
   )
   let bytes3 = reader.read_bytes(b'|')
   inspect(
@@ -168,16 +199,11 @@ test "writer basic functionality" {
   let writer = new_writer(tw)
   let test_data : @slice.Slice[Byte] = @slice.bytes("Hello, World!")
   let n = writer.write(test_data)
-  inspect(n, content="13")
-
-  // Flush to make sure data is written
+  @json.inspect(n, content=13)
   writer.flush()
-  inspect(
-    tw.bytes(),
-    content=(
-      "[b'\\x48', b'\\x65', b'\\x6C', b'\\x6C', b'\\x6F', b'\\x2C', b'\\x20', b'\\x57', b'\\x6F', b'\\x72', b'\\x6C', b'\\x64', b'\\x21']"
-    ),
-  )
+  @json.inspect(tw.bytes(), content=[
+    72, 101, 108, 108, 111, 44, 32, 87, 111, 114, 108, 100, 33,
+  ])
 }
 
 ///|
@@ -205,12 +231,7 @@ test "writer write_byte functionality" {
   writer.write_byte(b'H')
   writer.write_byte(b'i')
   writer.flush()
-  inspect(
-    tw.bytes(),
-    content=(
-      "[b'\\x48', b'\\x69']"
-    ),
-  )
+  inspect(tw.bytes(), content="[b'\\x48', b'\\x69']")
 }
 
 ///|
@@ -237,21 +258,15 @@ test "scanner basic functionality" {
   inspect(lines.length(), content="3")
   inspect(
     lines[0],
-    content=(
-      "[b'\\x6C', b'\\x69', b'\\x6E', b'\\x65', b'\\x31', b'\\x0A']"
-    ),
+    content="[b'\\x6C', b'\\x69', b'\\x6E', b'\\x65', b'\\x31', b'\\x0A']",
   )
   inspect(
     lines[1],
-    content=(
-      "[b'\\x6C', b'\\x69', b'\\x6E', b'\\x65', b'\\x32', b'\\x0A']"
-    ),
+    content="[b'\\x6C', b'\\x69', b'\\x6E', b'\\x65', b'\\x32', b'\\x0A']",
   )
   inspect(
     lines[2],
-    content=(
-      "[b'\\x6C', b'\\x69', b'\\x6E', b'\\x65', b'\\x33', b'\\x0A']"
-    ),
+    content="[b'\\x6C', b'\\x69', b'\\x6E', b'\\x65', b'\\x33', b'\\x0A']",
   )
 }
 
@@ -268,21 +283,15 @@ test "scanner with custom split function" {
   inspect(words.length(), content="3")
   inspect(
     words[0],
-    content=(
-      "[b'\\x77', b'\\x6F', b'\\x72', b'\\x64', b'\\x31']"
-    ),
+    content="[b'\\x77', b'\\x6F', b'\\x72', b'\\x64', b'\\x31']",
   )
   inspect(
     words[1],
-    content=(
-      "[b'\\x77', b'\\x6F', b'\\x72', b'\\x64', b'\\x32']"
-    ),
+    content="[b'\\x77', b'\\x6F', b'\\x72', b'\\x64', b'\\x32']",
   )
   inspect(
     words[2],
-    content=(
-      "[b'\\x77', b'\\x6F', b'\\x72', b'\\x64', b'\\x33']"
-    ),
+    content="[b'\\x77', b'\\x6F', b'\\x72', b'\\x64', b'\\x33']",
   )
 }
 
@@ -302,8 +311,6 @@ test "read_writer functionality" {
   rw.writer.flush()
   inspect(
     tw.bytes(),
-    content=(
-      "[b'\\x48', b'\\x65', b'\\x6C', b'\\x6C', b'\\x6F']"
-    ),
+    content="[b'\\x48', b'\\x65', b'\\x6C', b'\\x6C', b'\\x6F']",
   )
 }

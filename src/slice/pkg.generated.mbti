@@ -1,10 +1,6 @@
 // Generated using `moon info`, DON'T EDIT IT
 package "tonyfettes/go/slice"
 
-import(
-  "moonbitlang/core/bytes"
-)
-
 // Values
 fn[T] array(FixedArray[T], start? : Int, end? : Int) -> Slice[T]
 
@@ -20,10 +16,12 @@ fn[T] new() -> Slice[T]
 type Slice[T]
 fn[T : Default] Slice::append(Self[T], T) -> Self[T]
 fn[T] Slice::arrayview(Self[T]) -> ArrayView[T]
-fn Slice::bytesview(Self[Byte]) -> @bytes.View
+fn[T] Slice::buffer(Self[T]) -> FixedArray[T]
+fn Slice::bytesview(Self[Byte]) -> BytesView
 fn[T] Slice::copy(Self[T], Self[T]) -> Int
 fn[T] Slice::iter(Self[T]) -> Iter[T]
 fn[T] Slice::length(Self[T]) -> Int
+fn[T] Slice::offset(Self[T]) -> Int
 fn[T] Slice::op_as_view(Self[T], start? : Int, end? : Int) -> Self[T]
 fn[T] Slice::op_get(Self[T], Int) -> T
 fn[T] Slice::op_set(Self[T], Int, T) -> Unit

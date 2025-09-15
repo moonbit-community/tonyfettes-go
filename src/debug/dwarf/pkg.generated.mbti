@@ -2,7 +2,6 @@
 package "tonyfettes/go/debug/dwarf"
 
 import(
-  "moonbitlang/core/string"
   "tonyfettes/go/slice"
 )
 
@@ -325,7 +324,7 @@ pub struct LineEntry {
 impl Show for LineEntry
 
 pub struct LineFile {
-  name : @string.View
+  name : StringView
   mtime : UInt64
   length : Int
 }
@@ -346,7 +345,7 @@ pub struct LineReader {
   mut line_range : Int
   mut opcode_base : Int
   mut opcode_lengths : Array[Int]
-  mut directories : Array[@string.View]
+  mut directories : Array[StringView]
   mut file_entries : Array[LineFile?]
   mut program_offset : UInt
   mut end_offset : UInt

@@ -194,6 +194,17 @@ pub fn[T] Slice::copy(dst : Slice[T], src : Slice[T]) -> Int {
 }
 
 ///|
+pub fn Slice::copy_from_bytesview(dst : Slice[Byte], src : @bytes.View) -> Int {
+  let dst_len = dst.length()
+  let src_len = src.length()
+  let n = if dst_len < src_len { dst_len } else { src_len }
+  for i in 0..<n {
+    dst.0[dst.1 + i] = src[i]
+  }
+  n
+}
+
+///|
 pub fn[T] Slice::buffer(self : Slice[T]) -> FixedArray[T] {
   self.0
 }

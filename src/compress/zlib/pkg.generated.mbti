@@ -2,7 +2,6 @@
 package "tonyfettes/go/compress/zlib"
 
 import(
-  "moonbitlang/core/bytes"
   "tonyfettes/go/compress/flate"
   "tonyfettes/go/io"
   "tonyfettes/go/slice"
@@ -27,11 +26,11 @@ fn checksum_bytes(@slice.Slice[Byte]) -> UInt
 
 fn checksum_bytesview(@slice.Slice[Byte]) -> UInt
 
-fn get_uint16_be(@bytes.View, Int) -> UInt
+fn get_uint16_be(BytesView, Int) -> UInt
 
 fn get_uint16_be_array(FixedArray[Byte], Int) -> UInt
 
-fn get_uint32_be(@bytes.View, Int) -> UInt
+fn get_uint32_be(BytesView, Int) -> UInt
 
 fn get_uint32_be_array(FixedArray[Byte], Int) -> UInt
 

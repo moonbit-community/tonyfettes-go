@@ -1,0 +1,50 @@
+// Generated using `moon info`, DON'T EDIT IT
+package "tonyfettes/go/builtin"
+
+// Values
+fn[T : ToInt] int(T) -> Int
+
+fn[T : ToInt64] int64(T) -> Int64
+
+fn[T : ToUIntPtr] uintptr(T) -> UIntPtr
+
+// Errors
+
+// Types and methods
+#external
+pub type UIntPtr
+fn UIntPtr::from_int(Int) -> Self
+fn UIntPtr::from_uint64(UInt64) -> Self
+fn UIntPtr::to_int(Self) -> Int
+fn UIntPtr::to_uint64(Self) -> UInt64
+impl ToInt for UIntPtr
+impl ToInt64 for UIntPtr
+
+// Type aliases
+pub typealias Char as Rune
+
+// Traits
+trait ToInt
+impl ToInt for Byte
+impl ToInt for Char
+impl ToInt for Int16
+impl ToInt for Int64
+impl ToInt for UInt
+impl ToInt for UInt16
+impl ToInt for UInt64
+
+trait ToInt64
+impl ToInt64 for Int
+impl ToInt64 for Int16
+impl ToInt64 for UInt
+impl ToInt64 for UInt16
+impl ToInt64 for UInt64
+
+trait ToUIntPtr
+impl ToUIntPtr for Int
+impl ToUIntPtr for Int16
+impl ToUIntPtr for Int64
+impl ToUIntPtr for UInt
+impl ToUIntPtr for UInt16
+impl ToUIntPtr for UInt64
+

@@ -277,3 +277,420 @@ pub fn encode(string : @string.View) -> Bytes {
   }
   buffer.contents()
 }
+
+///|
+pub const RuneError : @builtin.Rune = '\u{FFFD}'
+
+///|
+pub const RuneSelf : @builtin.Rune = '\u{80}'
+
+///|
+pub const MaxRune : @builtin.Rune = '\u{10FFFF}'
+
+///|
+pub const UTFMax : Int = 4
+
+///|
+const Maskx : Byte = 0b00111111
+
+///|
+const Mask2 : Byte = 0b00011111
+
+///|
+const Mask3 : Byte = 0b00001111
+
+///|
+const Mask4 : Byte = 0b00000111
+
+///|
+const Locb : Byte = 0b10000000
+
+///|
+const Hicb : Byte = 0b11000000
+
+///|
+const Xx : Byte = 0xF1
+
+///|
+const As : Byte = 0xF0
+
+///|
+const S1 : Byte = 0x02
+
+///|
+const S2 : Byte = 0x13
+
+///|
+const S3 : Byte = 0x03
+
+///|
+const S4 : Byte = 0x23
+
+///|
+const S5 : Byte = 0x34
+
+///|
+const S6 : Byte = 0x04
+
+///|
+const S7 : Byte = 0x44
+
+///|
+let first : FixedArray[Byte] = [
+  As,
+  As,
+  As,
+  As,
+  As,
+  As,
+  As,
+  As,
+  As,
+  As,
+  As,
+  As,
+  As,
+  As,
+  As,
+  As,
+  As,
+  As,
+  As,
+  As,
+  As,
+  As,
+  As,
+  As,
+  As,
+  As,
+  As,
+  As,
+  As,
+  As,
+  As,
+  As,
+  As,
+  As,
+  As,
+  As,
+  As,
+  As,
+  As,
+  As,
+  As,
+  As,
+  As,
+  As,
+  As,
+  As,
+  As,
+  As,
+  As,
+  As,
+  As,
+  As,
+  As,
+  As,
+  As,
+  As,
+  As,
+  As,
+  As,
+  As,
+  As,
+  As,
+  As,
+  As,
+  As,
+  As,
+  As,
+  As,
+  As,
+  As,
+  As,
+  As,
+  As,
+  As,
+  As,
+  As,
+  As,
+  As,
+  As,
+  As,
+  As,
+  As,
+  As,
+  As,
+  As,
+  As,
+  As,
+  As,
+  As,
+  As,
+  As,
+  As,
+  As,
+  As,
+  As,
+  As,
+  As,
+  As,
+  As,
+  As,
+  As,
+  As,
+  As,
+  As,
+  As,
+  As,
+  As,
+  As,
+  As,
+  As,
+  As,
+  As,
+  As,
+  As,
+  As,
+  As,
+  As,
+  As,
+  As,
+  As,
+  As,
+  As,
+  As,
+  As,
+  As,
+  As,
+  As,
+  As,
+  Xx,
+  Xx,
+  Xx,
+  Xx,
+  Xx,
+  Xx,
+  Xx,
+  Xx,
+  Xx,
+  Xx,
+  Xx,
+  Xx,
+  Xx,
+  Xx,
+  Xx,
+  Xx,
+  Xx,
+  Xx,
+  Xx,
+  Xx,
+  Xx,
+  Xx,
+  Xx,
+  Xx,
+  Xx,
+  Xx,
+  Xx,
+  Xx,
+  Xx,
+  Xx,
+  Xx,
+  Xx,
+  Xx,
+  Xx,
+  Xx,
+  Xx,
+  Xx,
+  Xx,
+  Xx,
+  Xx,
+  Xx,
+  Xx,
+  Xx,
+  Xx,
+  Xx,
+  Xx,
+  Xx,
+  Xx,
+  Xx,
+  Xx,
+  Xx,
+  Xx,
+  Xx,
+  Xx,
+  Xx,
+  Xx,
+  Xx,
+  Xx,
+  Xx,
+  Xx,
+  Xx,
+  Xx,
+  Xx,
+  Xx,
+  Xx,
+  Xx,
+  S1,
+  S1,
+  S1,
+  S1,
+  S1,
+  S1,
+  S1,
+  S1,
+  S1,
+  S1,
+  S1,
+  S1,
+  S1,
+  S1,
+  S1,
+  S1,
+  S1,
+  S1,
+  S1,
+  S1,
+  S1,
+  S1,
+  S1,
+  S1,
+  S1,
+  S1,
+  S1,
+  S1,
+  S1,
+  S1,
+  S2,
+  S3,
+  S3,
+  S3,
+  S3,
+  S3,
+  S3,
+  S3,
+  S3,
+  S3,
+  S3,
+  S3,
+  S3,
+  S4,
+  S3,
+  S3,
+  S5,
+  S6,
+  S6,
+  S6,
+  S7,
+  Xx,
+  Xx,
+  Xx,
+  Xx,
+  Xx,
+  Xx,
+  Xx,
+  Xx,
+  Xx,
+  Xx,
+  Xx,
+]
+
+///|
+/// AcceptRange gives the range of valid values for the second byte in a UTF-8
+/// sequence.
+priv struct AcceptRange {
+  lo : Byte
+  hi : Byte
+}
+
+///|
+let accept_ranges : FixedArray[AcceptRange] = [
+  { lo: Locb, hi: Hicb },
+  { lo: 0xA0, hi: Hicb },
+  { lo: Locb, hi: 0x9F },
+  { lo: 0x90, hi: Hicb },
+  { lo: Locb, hi: 0x8F },
+]
+
+///|
+/// full_rune reports whether the bytes in p begin with a full UTF-8 encoding of a rune.
+/// An invalid encoding is considered a full Rune since it will convert as a width-1 error rune.
+pub fn full_rune(p : @slice.Slice[Byte]) -> Bool {
+  let n = p.length()
+  if n == 0 {
+    return false
+  }
+  let x = first[p[0].to_int()]
+  if n >= int(x & 0x7) {
+    return true
+  }
+  let accept = accept_ranges[(x >> 4).to_int() - 1]
+  if n > 1 && (p[1] < accept.lo || p[1] > accept.hi) {
+    return true
+  } else if n > 2 && (p[2] & 0xC0) != Locb {
+    return true
+  }
+  return false
+}
+
+///|
+/// decode_rune unpacks the first UTF-8 encoding in p and returns the rune and
+/// its width in bytes. If p is empty it returns ([RuneError], 0). Otherwise, if
+/// the encoding is invalid, it returns (RuneError, 1). Both are impossible
+/// results for correct, non-empty UTF-8.
+///
+/// An encoding is invalid if it is incorrect UTF-8, encodes a rune that is
+/// out of range, or is not the shortest possible UTF-8 encoding for the
+/// value. No other validation is performed.
+pub fn decode_rune(p : @slice.Slice[Byte]) -> (Char, Int) {
+  let n = p.length()
+  if n < 1 {
+    return (RuneError, 0)
+  }
+  let p0 = int(p[0])
+  let x = first[p0]
+  if x >= As {
+    // The following code simulates an additional check for x == xx and
+    // handling the ASCII and invalid cases accordingly. This mask-and-or
+    // approach prevents an additional branch.
+    let mask = x.to_int() << 31 >> 31
+    let rune_error = int(RuneError)
+    return (((p0 & mask.lnot()) | (rune_error & mask)).unsafe_to_char(), 1)
+  }
+  let sz = int(x & 0x7)
+  let accept = accept_ranges[(x >> 4).to_int()]
+  if n < sz {
+    return (RuneError, 1)
+  }
+  let b1 = p[1]
+  if b1 < accept.lo || b1 > accept.hi {
+    return (RuneError, 1)
+  }
+  // FIXME(tonyfettes): The following comment should do nothing in MoonBit.
+  // <= instead of == to help the compiler eliminate some bounds checks
+  if sz <= 2 {
+    let mask2 = int(Mask2)
+    return ((((p0 & mask2) << 6) | int(b1 & Maskx)).unsafe_to_char(), 2)
+  }
+  let b2 = p[2]
+  if b2 < Locb || Hicb < b2 {
+    return (RuneError, 1)
+  }
+  if sz <= 3 {
+    return (
+      (((p0 & int(Mask3)) << 12) | (int(b1 & Maskx) << 6) | int(b2 & Maskx)).unsafe_to_char(),
+      3,
+    )
+  }
+  let b3 = p[3]
+  if b3 < Locb || Hicb < b3 {
+    return (RuneError, 1)
+  }
+  return (
+    (((p0 & int(Mask4)) << 18) |
+    (int(b1 & Maskx) << 12) |
+    (int(b2 & Maskx) << 6) |
+    int(b3 & Maskx)).unsafe_to_char(),
+    4,
+  )
+}

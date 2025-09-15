@@ -3,14 +3,25 @@ package "tonyfettes/go/os"
 
 import(
   "tonyfettes/go/io/fs"
+  "tonyfettes/go/slice"
 )
 
 // Values
-const O_APPEND : Int = 0x8
+const O_APPEND : Int = 0x4
 
-const O_CREATE : Int = 0x200
+const O_CREATE : Int = 0x8
+
+const O_EXCL : Int = 0x10
 
 const O_RDONLY : Int = 0x0
+
+const O_RDWR : Int = 0x2
+
+const O_SYNC : Int = 0x20
+
+const O_TRUNC : Int = 0x40
+
+const O_WRONLY : Int = 0x1
 
 fn open(String) -> File raise
 
@@ -33,6 +44,8 @@ pub(all) suberror Permission
 
 // Types and methods
 type File
+impl @tonyfettes/go/io.Closer for File
+impl @tonyfettes/go/io.ReaderAt for File
 
 // Type aliases
 pub typealias @fs.FileMode as FileMode

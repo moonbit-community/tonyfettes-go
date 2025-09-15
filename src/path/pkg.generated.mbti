@@ -1,24 +1,20 @@
 // Generated using `moon info`, DON'T EDIT IT
 package "tonyfettes/go/path"
 
-import(
-  "moonbitlang/core/string"
-)
-
 // Values
-fn base(@string.View) -> @string.View raise
+fn base(StringView) -> StringView raise
 
-fn clean(@string.View) -> @string.View
+fn clean(StringView) -> StringView
 
-fn dir(@string.View) -> @string.View raise
+fn dir(StringView) -> StringView raise
 
-fn ext(@string.View) -> @string.View raise
+fn ext(StringView) -> StringView raise
 
-fn is_abs(@string.View) -> Bool
+fn is_abs(StringView) -> Bool
 
-fn join(Array[@string.View]) -> @string.View
+fn join(Array[StringView]) -> StringView
 
-fn split(@string.View) -> (@string.View, @string.View) raise
+fn split(StringView) -> (StringView, StringView) raise
 
 // Errors
 

@@ -2,6 +2,7 @@
 package "tonyfettes/go/encoding/binary"
 
 import(
+  "tonyfettes/go/io"
   "tonyfettes/go/slice"
 )
 
@@ -10,14 +11,20 @@ let big_endian : BigEndian
 
 let little_endian : LittleEndian
 
+let native_endian : LittleEndian
+
 // Errors
 
 // Types and methods
 type BigEndian
+impl Show for BigEndian
+impl ToJson for BigEndian
 impl AppendByteOrder for BigEndian
 impl ByteOrder for BigEndian
 
 type LittleEndian
+impl Show for LittleEndian
+impl ToJson for LittleEndian
 impl AppendByteOrder for LittleEndian
 impl ByteOrder for LittleEndian
 
@@ -30,7 +37,7 @@ pub trait AppendByteOrder {
   append_uint64(Self, @slice.Slice[Byte], UInt64) -> @slice.Slice[Byte]
 }
 
-pub trait ByteOrder {
+pub trait ByteOrder : Show + ToJson {
   uint16(Self, @slice.Slice[Byte]) -> UInt16
   uint32(Self, @slice.Slice[Byte]) -> UInt
   uint64(Self, @slice.Slice[Byte]) -> UInt64
@@ -38,4 +45,15 @@ pub trait ByteOrder {
   put_uint32(Self, @slice.Slice[Byte], UInt) -> Unit
   put_uint64(Self, @slice.Slice[Byte], UInt64) -> Unit
 }
+
+pub(open) trait Readable {
+  read(&@io.Reader, &ByteOrder) -> Self raise
+}
+impl Readable for Byte
+impl Readable for Int
+impl Readable for Int16
+impl Readable for Int64
+impl Readable for UInt
+impl Readable for UInt16
+impl Readable for UInt64
 

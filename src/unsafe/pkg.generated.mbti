@@ -1,0 +1,23 @@
+// Generated using `moon info`, DON'T EDIT IT
+package "tonyfettes/go/unsafe"
+
+// Values
+fn[T : Offsetof] offsetof(T) -> Int
+
+fn[T : SizeOf] sizeof(T) -> Int
+
+// Errors
+
+// Types and methods
+
+// Type aliases
+
+// Traits
+pub(open) trait Offsetof {
+  offsetof(Self) -> Int
+}
+
+pub(open) trait SizeOf {
+  sizeof() -> Int
+}
+
