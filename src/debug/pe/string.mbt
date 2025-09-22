@@ -24,7 +24,7 @@ fn cstring(b : @slice.Slice[Byte]) -> String {
 
 ///|
 /// StringTable is a COFF string table.
-pub typealias StringTable = @slice.Slice[Byte]
+pub typealias @slice.Slice[Byte] as StringTable
 
 ///|
 /// COFF symbol table entry size in bytes

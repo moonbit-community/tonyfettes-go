@@ -2,6 +2,7 @@
 /// Adler-32 checksum implementation
 /// As defined in RFC 1950
 
+///|
 /// adler32 mod values
 let mod_adler : UInt = 65521
 

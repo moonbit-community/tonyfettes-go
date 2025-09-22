@@ -5,7 +5,7 @@
 ///|
 /// SectionHeader32 represents real PE COFF section header.
 struct SectionHeader32 {
-  name : FixedArray[Byte]  // [8]uint8
+  name : FixedArray[Byte] // [8]uint8
   virtual_size : Int64
   virtual_address : Int64
   size_of_raw_data : Int64
@@ -21,7 +21,10 @@ struct SectionHeader32 {
 /// fullName finds real name of section sh. Normally name is stored
 /// in sh.Name, but if it is longer then 8 characters, it is stored
 /// in COFF string table st instead.
-fn SectionHeader32::full_name(self : SectionHeader32, st : StringTable) -> String {
+fn SectionHeader32::full_name(
+  self : SectionHeader32,
+  st : StringTable,
+) -> String {
   if self.name[0] != ('/' : Byte) {
     cstring(@slice.array(self.name))
   } else {
@@ -110,10 +113,24 @@ pub fn Section::open(self : Section) -> String {
 ///|
 /// Section characteristics flags.
 pub const IMAGE_SCN_CNT_CODE : Int64 = 0x00000020
+
+///|
 pub const IMAGE_SCN_CNT_INITIALIZED_DATA : Int64 = 0x00000040
+
+///|
 pub const IMAGE_SCN_CNT_UNINITIALIZED_DATA : Int64 = 0x00000080
+
+///|
 pub const IMAGE_SCN_LNK_COMDAT : Int64 = 0x00001000
+
+///|
 pub const IMAGE_SCN_MEM_DISCARDABLE : Int64 = 0x02000000
+
+///|
 pub const IMAGE_SCN_MEM_EXECUTE : Int64 = 0x20000000
+
+///|
 pub const IMAGE_SCN_MEM_READ : Int64 = 0x40000000
+
+///|
 pub const IMAGE_SCN_MEM_WRITE : Int64 = 0x80000000

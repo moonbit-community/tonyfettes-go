@@ -97,7 +97,10 @@ fn Segment64::parse(
 }
 
 ///|
-fn Section32::parse(data : @slice.Slice[Byte], byte_order : ByteOrder) -> Section raise {
+fn Section32::parse(
+  data : @slice.Slice[Byte],
+  byte_order : ByteOrder,
+) -> Section raise {
   if data.length() < 68 {
     raise ParseError::MissingData(offset=0L, expected="Section32 (68 bytes)")
   }
@@ -125,7 +128,10 @@ fn Section32::parse(data : @slice.Slice[Byte], byte_order : ByteOrder) -> Sectio
 }
 
 ///|
-fn Section64::parse(data : @slice.Slice[Byte], byte_order : ByteOrder) -> Section raise {
+fn Section64::parse(
+  data : @slice.Slice[Byte],
+  byte_order : ByteOrder,
+) -> Section raise {
   if data.length() < 80 {
     raise ParseError::MissingData(offset=0L, expected="Section64 (80 bytes)")
   }
@@ -153,7 +159,10 @@ fn Section64::parse(data : @slice.Slice[Byte], byte_order : ByteOrder) -> Sectio
 }
 
 ///|
-fn SymtabCmd::parse(data : @slice.Slice[Byte], byte_order : ByteOrder) -> Symtab raise {
+fn SymtabCmd::parse(
+  data : @slice.Slice[Byte],
+  byte_order : ByteOrder,
+) -> Symtab raise {
   if data.length() < 24 {
     raise ParseError::MissingData(offset=0L, expected="SymtabCmd (24 bytes)")
   }
@@ -165,7 +174,10 @@ fn SymtabCmd::parse(data : @slice.Slice[Byte], byte_order : ByteOrder) -> Symtab
 }
 
 ///|
-fn DysymtabCmd::parse(data : @slice.Slice[Byte], byte_order : ByteOrder) -> Dysymtab raise {
+fn DysymtabCmd::parse(
+  data : @slice.Slice[Byte],
+  byte_order : ByteOrder,
+) -> Dysymtab raise {
   if data.length() < 80 {
     raise ParseError::MissingData(offset=0L, expected="DysymtabCmd (80 bytes)")
   }
@@ -212,7 +224,10 @@ fn DysymtabCmd::parse(data : @slice.Slice[Byte], byte_order : ByteOrder) -> Dysy
 }
 
 ///|
-fn DylibCmd::parse(data : @slice.Slice[Byte], byte_order : ByteOrder) -> Dylib raise {
+fn DylibCmd::parse(
+  data : @slice.Slice[Byte],
+  byte_order : ByteOrder,
+) -> Dylib raise {
   if data.length() < 24 {
     raise ParseError::MissingData(offset=0L, expected="DylibCmd (24 bytes)")
   }
@@ -232,7 +247,10 @@ fn DylibCmd::parse(data : @slice.Slice[Byte], byte_order : ByteOrder) -> Dylib r
 }
 
 ///|
-fn RpathCmd::parse(data : @slice.Slice[Byte], byte_order : ByteOrder) -> Rpath raise {
+fn RpathCmd::parse(
+  data : @slice.Slice[Byte],
+  byte_order : ByteOrder,
+) -> Rpath raise {
   if data.length() < 12 {
     raise ParseError::MissingData(offset=0L, expected="RpathCmd (12 bytes)")
   }

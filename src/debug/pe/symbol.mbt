@@ -5,12 +5,12 @@
 ///|
 /// COFFSymbol represents single COFF symbol table record.
 pub(all) struct COFFSymbol {
-  name : FixedArray[Byte]  // [8]uint8
-  value : Int64  // uint32 in Go
-  section_number : Int  // int16 in Go
-  type_ : Int  // uint16 in Go
-  storage_class : Int  // uint8 in Go
-  number_of_aux_symbols : Int  // uint8 in Go
+  name : FixedArray[Byte] // [8]uint8
+  value : Int64 // uint32 in Go
+  section_number : Int // int16 in Go
+  type_ : Int // uint16 in Go
+  storage_class : Int // uint8 in Go
+  number_of_aux_symbols : Int // uint8 in Go
 } derive(Show, Eq, ToJson)
 
 ///|
@@ -48,12 +48,15 @@ fn read_coff_symbols(fh : FileHeader, r : &@io.ReadSeeker) -> Array[COFFSymbol] 
 ///|
 /// isSymNameOffset checks symbol name if it is encoded as offset into string table.
 fn is_sym_name_offset(name : FixedArray[Byte]) -> (Bool, Int64) {
-  if name[0] == (0 : Byte) && name[1] == (0 : Byte) && name[2] == (0 : Byte) && name[3] == (0 : Byte) {
+  if name[0] == (0 : Byte) &&
+    name[1] == (0 : Byte) &&
+    name[2] == (0 : Byte) &&
+    name[3] == (0 : Byte) {
     // Extract 32-bit offset from last 4 bytes
-    let offset = (name[4].to_int().to_int64()) |
-                 (name[5].to_int().to_int64() << 8) |
-                 (name[6].to_int().to_int64() << 16) |
-                 (name[7].to_int().to_int64() << 24)
+    let offset = name[4].to_int().to_int64() |
+      (name[5].to_int().to_int64() << 8) |
+      (name[6].to_int().to_int64() << 16) |
+      (name[7].to_int().to_int64() << 24)
     (true, offset)
   } else {
     (false, 0)
@@ -74,7 +77,10 @@ pub fn COFFSymbol::full_name(self : COFFSymbol, st : StringTable) -> String {
 }
 
 ///|
-fn remove_aux_symbols(allsyms : Array[COFFSymbol], st : StringTable) -> Array[Symbol] {
+fn remove_aux_symbols(
+  allsyms : Array[COFFSymbol],
+  st : StringTable,
+) -> Array[Symbol] {
   if allsyms.length() == 0 {
     []
   } else {
@@ -88,7 +94,7 @@ fn remove_aux_symbols(allsyms : Array[COFFSymbol], st : StringTable) -> Array[Sy
       let name = sym.full_name(st)
       aux = sym.number_of_aux_symbols
       let s = Symbol::{
-        name: name,
+        name,
         value: sym.value,
         section_number: sym.section_number,
         type_: sym.type_,
@@ -105,10 +111,10 @@ fn remove_aux_symbols(allsyms : Array[COFFSymbol], st : StringTable) -> Array[Sy
 /// by Go string. Symbol also does not have NumberOfAuxSymbols.
 pub(all) struct Symbol {
   name : String
-  value : Int64  // uint32 in Go
-  section_number : Int  // int16 in Go
-  type_ : Int  // uint16 in Go
-  storage_class : Int  // uint8 in Go
+  value : Int64 // uint32 in Go
+  section_number : Int // int16 in Go
+  type_ : Int // uint16 in Go
+  storage_class : Int // uint8 in Go
 } derive(Show, Eq, ToJson)
 
 ///|
@@ -121,20 +127,30 @@ pub(all) struct Symbol {
 /// https://docs.microsoft.com/en-us/windows/win32/debug/pe-format#auxiliary-format-5-section-definitions
 /// for more on what's going on here.
 pub struct COFFSymbolAuxFormat5 {
-  size : Int64  // uint32 in Go
-  num_relocs : Int  // uint16 in Go
-  num_line_numbers : Int  // uint16 in Go
-  checksum : Int64  // uint32 in Go
-  sec_num : Int  // uint16 in Go
-  selection : Int  // uint8 in Go
+  size : Int64 // uint32 in Go
+  num_relocs : Int // uint16 in Go
+  num_line_numbers : Int // uint16 in Go
+  checksum : Int64 // uint32 in Go
+  sec_num : Int // uint16 in Go
+  selection : Int // uint8 in Go
 } derive(Show, Eq, ToJson)
 
 ///|
 /// These constants make up the possible values for the 'Selection'
 /// field in an AuxFormat5.
 pub const IMAGE_COMDAT_SELECT_NODUPLICATES : Int = 1
+
+///|
 pub const IMAGE_COMDAT_SELECT_ANY : Int = 2
+
+///|
 pub const IMAGE_COMDAT_SELECT_SAME_SIZE : Int = 3
+
+///|
 pub const IMAGE_COMDAT_SELECT_EXACT_MATCH : Int = 4
+
+///|
 pub const IMAGE_COMDAT_SELECT_ASSOCIATIVE : Int = 5
+
+///|
 pub const IMAGE_COMDAT_SELECT_LARGEST : Int = 6

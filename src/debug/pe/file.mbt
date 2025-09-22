@@ -18,9 +18,9 @@
 /// A File represents an open PE file.
 pub struct File {
   file_header : FileHeader
-  optional_header : OptionalHeaderVariant  // of type *OptionalHeader32 or *OptionalHeader64
+  optional_header : OptionalHeaderVariant // of type *OptionalHeader32 or *OptionalHeader64
   sections : Array[Section]
-  symbols : Array[Symbol]    // COFF symbols with auxiliary symbol records removed
+  symbols : Array[Symbol] // COFF symbols with auxiliary symbol records removed
   coff_symbols : Array[COFFSymbol] // all COFF symbols (including auxiliary symbol records)
   string_table : StringTable
   // FIXME: Store closer information when proper IO traits are available
@@ -97,7 +97,11 @@ pub fn new_file(r : &@io.ReaderAt) -> File {
 struct NobitsSectionReader {}
 
 ///|
-fn NobitsSectionReader::read_at(self : NobitsSectionReader, p : @slice.Slice[Byte], off : Int64) -> (Int, Bool) {
+fn NobitsSectionReader::read_at(
+  self : NobitsSectionReader,
+  p : @slice.Slice[Byte],
+  off : Int64,
+) -> (Int, Bool) {
   // Always return error for uninitialized data sections
   ignore(self)
   ignore(p)
@@ -201,7 +205,11 @@ fn read_optional_header(r : &@io.ReadSeeker, sz : Int) -> OptionalHeaderVariant 
 /// readDataDirectories accepts an io.ReadSeeker pointing to data directories in the PE file,
 /// its size and number of data directories as seen in optional header.
 /// It parses the given size of bytes and returns given number of data directories.
-fn read_data_directories(r : &@io.ReadSeeker, sz : Int, n : Int64) -> Array[DataDirectory] {
+fn read_data_directories(
+  r : &@io.ReadSeeker,
+  sz : Int,
+  n : Int64,
+) -> Array[DataDirectory] {
   // FIXME: Implement proper data directory reading
   // For now, return empty array
   ignore(r)

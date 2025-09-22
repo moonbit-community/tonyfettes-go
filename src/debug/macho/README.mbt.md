@@ -17,6 +17,7 @@ A comprehensive MoonBit library for parsing Mach-O binary files, ported from Go'
 ### Basic File Parsing
 
 ```moonbit
+///|
 test "parsing a mach-o file" {
   // Create sample Mach-O header data (32-bit executable)
   let data : Bytes = "\xce\xfa\xed\xfe" + // magic_32 (little endian)
@@ -37,25 +38,23 @@ test "parsing a mach-o file" {
 ### Working with Constants and Enums
 
 ```moonbit
+///|
 test "working with mach-o constants" {
   // File type detection
   let obj_type = @macho.Type::from_uint(1_U)
   inspect(obj_type, content="Object")
-
   let exec_type = @macho.Type::from_uint(2_U)
   inspect(exec_type, content="Exec")
 
   // CPU architecture detection
   let x86_cpu = @macho.Cpu::from_uint(7_U)
   inspect(x86_cpu, content="I386")
-
   let arm64_cpu = @macho.Cpu::from_uint(16777228_U)
   inspect(arm64_cpu, content="Arm64")
 
   // Load command types
   let segment_cmd = @macho.LoadCmd::from_uint(1_U)
   inspect(segment_cmd, content="Segment")
-
   let symtab_cmd = @macho.LoadCmd::from_uint(2_U)
   inspect(symtab_cmd, content="Symtab")
 }
@@ -64,6 +63,7 @@ test "working with mach-o constants" {
 ### Working with DWARF Debug Information
 
 ```moonbit
+///|
 test "extracting dwarf debug information" {
   // Parse a Mach-O file with debug symbols
   // In practice, you would read the file_data using @fs.read_to_string or similar

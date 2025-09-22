@@ -83,7 +83,10 @@ fn ThreadState::parse(
 
 ///|
 /// Parse 32-bit x86 register state
-fn Regs386::parse(data : @slice.Slice[Byte], byte_order : ByteOrder) -> Regs386 raise {
+fn Regs386::parse(
+  data : @slice.Slice[Byte],
+  byte_order : ByteOrder,
+) -> Regs386 raise {
   // x86 thread state should be 64 bytes (16 registers * 4 bytes each)
   let expected_size = 64
   if data.length() < expected_size {
@@ -114,7 +117,10 @@ fn Regs386::parse(data : @slice.Slice[Byte], byte_order : ByteOrder) -> Regs386 
 
 ///|
 /// Parse 64-bit AMD64 register state
-fn RegsAMD64::parse(data : @slice.Slice[Byte], byte_order : ByteOrder) -> RegsAMD64 raise {
+fn RegsAMD64::parse(
+  data : @slice.Slice[Byte],
+  byte_order : ByteOrder,
+) -> RegsAMD64 raise {
   // AMD64 thread state should be 168 bytes (21 registers * 8 bytes each)
   let expected_size = 168
   if data.length() < expected_size {

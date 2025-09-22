@@ -85,13 +85,17 @@ The translation maintains:
 ### Usage Example
 
 ```moonbit
+///|
 test "basic PE usage" {
   // Open a PE file (placeholder implementation)
   let pe_file = @pe.open("program.exe")
-  
+
   // Check file header
-  @json.inspect(pe_file.file_header.machine == @pe.IMAGE_FILE_MACHINE_AMD64, content=false)
-  
+  @json.inspect(
+    pe_file.file_header.machine == @pe.IMAGE_FILE_MACHINE_AMD64,
+    content=false,
+  )
+
   // Look for a section
   match pe_file.section(".text") {
     Some(section) => {
@@ -101,7 +105,7 @@ test "basic PE usage" {
     }
     None => @json.inspect(true, content=true)
   }
-  
+
   // Get imported symbols
   let symbols = pe_file.imported_symbols()
   @json.inspect(symbols.length() >= 0, content=true)

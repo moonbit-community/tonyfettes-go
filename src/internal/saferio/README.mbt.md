@@ -14,6 +14,7 @@ bytes if n is large. This avoids crashing the program by allocating all n bytes
 in cases where n is incorrect.
 
 ```moonbit
+///|
 test "read_data documentation example" {
   // This is a conceptual example - actual implementation would need a Reader
   let chunk_size = @saferio.Chunk
@@ -27,6 +28,7 @@ test "read_data documentation example" {
 allocating all n bytes if n is large.
 
 ```moonbit
+///|
 test "read_data_at documentation example" {
   // This is a conceptual example - actual implementation would need a ReaderAt
   let chunk_size = @saferio.Chunk
@@ -41,6 +43,7 @@ the slice is allocated with the capacity, it should be built using append. This
 will avoid allocating too much memory if the capacity is large and incorrect.
 
 ```moonbit
+///|
 test "slice_cap_with_size documentation example" {
   let cap = @saferio.slice_cap_with_size(1UL, 100UL)
   @json.inspect(cap, content=100)
@@ -50,7 +53,7 @@ test "slice_cap_with_size documentation example" {
   @json.inspect(large_cap, content=10485760)
 
   // Invalid sizes return -1
-  let invalid_cap = @saferio.slice_cap_with_size(1UL, (1UL << 63))
+  let invalid_cap = @saferio.slice_cap_with_size(1UL, 1UL << 63)
   @json.inspect(invalid_cap, content=-1)
 }
 ```
@@ -61,8 +64,9 @@ test "slice_cap_with_size documentation example" {
 limitations with reflection, the size parameter must be passed explicitly.
 
 ```moonbit
+///|
 test "slice_cap documentation example" {
-  let cap = @saferio.slice_cap(100UL, 1UL)  // 100 elements of 1 byte each
+  let cap = @saferio.slice_cap(100UL, 1UL) // 100 elements of 1 byte each
   @json.inspect(cap, content=100)
 
   // Test with 8-byte elements (like Int64)
@@ -79,8 +83,9 @@ test "slice_cap documentation example" {
 allocate without concern (10MB).
 
 ```moonbit
+///|
 test "chunk constant example" {
   let chunk = @saferio.Chunk
-  @json.inspect(chunk, content=10485760)  // 10 * 1024 * 1024
+  @json.inspect(chunk, content=10485760) // 10 * 1024 * 1024
 }
 ```

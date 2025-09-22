@@ -414,7 +414,9 @@ fn test_read_line(input : @slice.Slice[Byte]) -> Unit raise {
       done += len(line)
     }
     if done != len(TestOutput) {
-      fail("Read only \{done} bytes at stride \{stride}: want \{len(TestOutput)}")
+      fail(
+        "Read only \{done} bytes at stride \{stride}: want \{len(TestOutput)}",
+      )
     }
   }
 }

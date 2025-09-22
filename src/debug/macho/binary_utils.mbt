@@ -1,5 +1,9 @@
 ///|
-fn read_uint(data : @slice.Slice[Byte], offset : Int, byte_order : ByteOrder) -> UInt raise {
+fn read_uint(
+  data : @slice.Slice[Byte],
+  offset : Int,
+  byte_order : ByteOrder,
+) -> UInt raise {
   if offset + 4 > data.length() {
     raise BufferOverflowError::ReadOverflow(
       offset~,
@@ -73,7 +77,10 @@ fn determine_byte_order(magic : UInt) -> ByteOrder? {
 }
 
 ///|
-fn read_cstring(data : @slice.Slice[Byte], offset : Int) -> @slice.Slice[Byte] raise {
+fn read_cstring(
+  data : @slice.Slice[Byte],
+  offset : Int,
+) -> @slice.Slice[Byte] raise {
   if offset >= data.length() {
     raise BufferOverflowError::ReadOverflow(
       offset~,

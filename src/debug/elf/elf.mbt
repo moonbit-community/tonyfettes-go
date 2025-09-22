@@ -1587,10 +1587,12 @@ pub impl BitOr for ProgFlag with lor(self : ProgFlag, other : ProgFlag) -> ProgF
   ProgFlag(self.0 | other.0)
 }
 
+///|
 pub impl ToJson for ProgFlag with to_json(self : ProgFlag) -> Json {
   self.0.to_json()
 }
 
+///|
 pub impl Show for ProgFlag with output(self : ProgFlag, logger : &Logger) -> Unit {
   self.0.output(logger)
 }
