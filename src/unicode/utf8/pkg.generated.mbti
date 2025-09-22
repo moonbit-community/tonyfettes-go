@@ -28,6 +28,7 @@ fn new(Bytes) -> Utf8 raise Malformed
 
 // Errors
 pub suberror Malformed BytesView
+impl ToJson for Malformed
 
 // Types and methods
 type Utf8

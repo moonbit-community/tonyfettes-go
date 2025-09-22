@@ -400,12 +400,9 @@ fn test_read_line(input : @slice.Slice[Byte]) -> Unit raise {
     let reader = TestReader::{ data: input, stride }
     let l = new_reader_size(reader, len(input) + 1)
     for {
-      let (line, is_prefix) = l.read_line() catch {
+      let line = l.read_line() catch {
         @io.EOF => break
         err => fail("Got unknown error: \{err}")
-      }
-      if is_prefix {
-        fail("read_line returned is_prefix=true")
       }
       if TestOutput[done:done + len(line)] is want &&
         @slice.bytesview(want) != line {
@@ -425,4 +422,12 @@ fn test_read_line(input : @slice.Slice[Byte]) -> Unit raise {
 test "read_line" {
   test_read_line(@slice.bytes(TestInput))
   test_read_line(@slice.bytes(TestInputRN))
+}
+
+///|
+test "line_too_long" {
+  let data = []
+  for i in 0..<(MinReadBufferSize * 5 / 2) {
+    data.push(('0'.to_int() + i % 10).to_byte())
+  }
 }

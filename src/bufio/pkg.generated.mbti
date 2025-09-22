@@ -33,16 +33,24 @@ pub(all) suberror AdvanceTooFar
 pub(all) suberror BadReadCount
 
 pub(all) suberror BufferFull
+impl Show for BufferFull
+impl ToJson for BufferFull
 
 pub(all) suberror FinalToken
 
 pub(all) suberror InvalidUnreadByte
+impl Show for InvalidUnreadByte
+impl ToJson for InvalidUnreadByte
 
 pub(all) suberror InvalidUnreadRune
+impl Show for InvalidUnreadRune
+impl ToJson for InvalidUnreadRune
 
 pub(all) suberror NegativeAdvance
 
 pub(all) suberror NegativeCount
+impl Show for NegativeCount
+impl ToJson for NegativeCount
 
 pub(all) suberror TooLong
 
@@ -58,14 +66,16 @@ impl @io.Writer for ReadWriter
 type Reader
 fn Reader::buffered(Self) -> Int
 fn Reader::discard(Self, Int) -> Int raise
-fn Reader::peek(Self, Int) -> Array[Byte] raise
+fn Reader::peek(Self, Int) -> @slice.Slice[Byte] raise
 fn Reader::read_bytes(Self, Byte) -> @slice.Slice[Byte] raise
+fn Reader::read_line(Self) -> @slice.Slice[Byte] raise
 fn Reader::read_rune(Self) -> (Char, Int) raise
 fn Reader::read_slice(Self, Byte) -> @slice.Slice[Byte] raise
 fn Reader::read_string(Self, Byte) -> String raise
 fn Reader::reset(Self, &@io.Reader) -> Unit
 fn Reader::size(Self) -> Int
 fn Reader::unread_byte(Self) -> Unit raise InvalidUnreadByte
+fn Reader::unread_rune(Self) -> Unit raise InvalidUnreadRune
 impl @io.ByteReader for Reader
 impl @io.Reader for Reader
 
@@ -75,7 +85,7 @@ fn Scanner::bytes(Self) -> @slice.Slice[Byte]
 fn Scanner::err(Self) -> Bool
 fn Scanner::scan(Self) -> Bool
 fn Scanner::split(Self, (@slice.Slice[Byte], Bool) -> (Int, @slice.Slice[Byte]?)) -> Unit
-fn Scanner::text(Self) -> String
+fn Scanner::text(Self) -> String raise
 
 type Writer
 fn Writer::available(Self) -> Int

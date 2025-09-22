@@ -6,6 +6,8 @@ fn[T : ToInt] int(T) -> Int
 
 fn[T : ToInt64] int64(T) -> Int64
 
+fn[T : Len] len(T) -> Int
+
 fn[T : ToUIntPtr] uintptr(T) -> UIntPtr
 
 // Errors
@@ -24,6 +26,12 @@ impl ToInt64 for UIntPtr
 pub typealias Char as Rune
 
 // Traits
+pub(open) trait Len {
+  len(Self) -> Int
+}
+impl Len for Bytes
+impl Len for BytesView
+
 trait ToInt
 impl ToInt for Byte
 impl ToInt for Char

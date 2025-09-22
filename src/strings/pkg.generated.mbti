@@ -1,0 +1,21 @@
+// Generated using `moon info`, DON'T EDIT IT
+package "tonyfettes/go/strings"
+
+import(
+  "tonyfettes/go/slice"
+)
+
+// Values
+fn new_reader(String) -> Reader
+
+// Errors
+
+// Types and methods
+type Reader
+impl @tonyfettes/go/builtin.Len for Reader
+impl @tonyfettes/go/io.Reader for Reader
+
+// Type aliases
+
+// Traits
+

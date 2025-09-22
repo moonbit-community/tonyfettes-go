@@ -93,9 +93,9 @@ impl @io.Reader for ReadSeekerFromReader with read(self, p) {
 /// ReadSeekerFromReader implements io.ReadSeeker
 impl @io.Seeker for ReadSeekerFromReader with seek(r, offset, whence) {
   let new_offset = match whence {
-    @io.Start => offset
-    @io.Current => r.offset + offset
-    @io.End => r.size + offset
+    @io.SeekStart => offset
+    @io.SeekCurrent => r.offset + offset
+    @io.SeekEnd => r.size + offset
   }
   if new_offset == r.offset {
     return new_offset

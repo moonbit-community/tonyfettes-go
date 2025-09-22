@@ -17,10 +17,10 @@ fn[R : Reader] read_at_least(R, @slice.Slice[Byte], Int) -> Int raise
 
 fn[R : Reader] read_full(R, @slice.Slice[Byte]) -> Int raise
 
+fn[StringWriter : StringWriter] write_string(StringWriter, String) -> Int raise
+
 // Errors
 pub(all) suberror EOF
-
-pub(all) suberror InvalidWrite
 
 pub(all) suberror NoProgress
 
@@ -46,9 +46,9 @@ impl ReaderAt for SectionReader
 impl Seeker for SectionReader
 
 pub(all) enum SeekWhence {
-  Start
-  Current
-  End
+  SeekStart
+  SeekCurrent
+  SeekEnd
 }
 
 // Type aliases
@@ -56,6 +56,10 @@ pub(all) enum SeekWhence {
 // Traits
 pub(open) trait ByteReader {
   read_byte(Self) -> Byte raise
+}
+
+pub(open) trait ByteScanner : ByteReader {
+  unread_byte(Self) -> Unit raise
 }
 
 pub(open) trait ByteWriter {
@@ -67,6 +71,9 @@ pub(open) trait Closer {
 }
 
 pub(open) trait ReadCloser : Reader + Closer {
+}
+
+pub(open) trait ReadSeekCloser : Reader + Seeker + Closer {
 }
 
 pub(open) trait ReadSeeker : Reader + Seeker {
@@ -90,11 +97,19 @@ pub(open) trait ReaderAt {
 }
 
 pub(open) trait ReaderFrom {
-  read_from(&Reader) -> Int64 raise
+  read_from(Self, &Reader) -> Int64 raise
 }
 
 pub(open) trait Resetter {
   reset(Self, &Reader) -> Unit raise
+}
+
+pub(open) trait RuneReader {
+  read_rune(Self) -> (Char, Int) raise
+}
+
+pub(open) trait RuneScanner : RuneReader {
+  unread_rune(Self) -> Unit raise
 }
 
 pub(open) trait Seeker {
@@ -111,10 +126,6 @@ pub(open) trait WriteCloser : Writer + Closer {
 pub(open) trait WriteSeeker : Writer + Seeker {
 }
 
-pub(open) trait WriteTo {
-  write_to(&Writer) -> Int64 raise
-}
-
 pub(open) trait Writer {
   write(Self, @slice.Slice[Byte]) -> Int raise
 }
@@ -122,5 +133,9 @@ impl Writer for @buffer.Buffer
 
 pub(open) trait WriterAt {
   write_at(Self, @slice.Slice[Byte], Int64) -> Int raise
+}
+
+pub(open) trait WriterTo {
+  write_to(Self, &Writer) -> Int64 raise
 }
 

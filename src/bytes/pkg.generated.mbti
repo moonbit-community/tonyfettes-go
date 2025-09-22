@@ -2,6 +2,7 @@
 package "tonyfettes/go/bytes"
 
 import(
+  "tonyfettes/go/io"
   "tonyfettes/go/slice"
 )
 
@@ -12,13 +13,30 @@ fn index_byte(@slice.Slice[Byte], Byte) -> Int
 
 fn new_buffer(@slice.Slice[Byte]) -> Buffer
 
+fn new_reader(@slice.Slice[Byte]) -> Reader
+
 // Errors
+type NegativeOffset
+impl Show for NegativeOffset
 
 // Types and methods
 type Buffer
 fn Buffer::reset(Self) -> Unit
-impl @tonyfettes/go/io.ByteReader for Buffer
-impl @tonyfettes/go/io.Reader for Buffer
+impl @io.ByteReader for Buffer
+impl @io.Reader for Buffer
+
+type Reader
+fn Reader::reset(Self) -> Unit
+fn Reader::size(Self) -> Int64
+impl @tonyfettes/go/builtin.Len for Reader
+impl @io.ByteReader for Reader
+impl @io.ByteScanner for Reader
+impl @io.Reader for Reader
+impl @io.ReaderAt for Reader
+impl @io.RuneReader for Reader
+impl @io.RuneScanner for Reader
+impl @io.Seeker for Reader
+impl @io.WriterTo for Reader
 
 // Type aliases
 

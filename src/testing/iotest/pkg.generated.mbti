@@ -1,0 +1,26 @@
+// Generated using `moon info`, DON'T EDIT IT
+package "tonyfettes/go/testing/iotest"
+
+import(
+  "tonyfettes/go/io"
+  "tonyfettes/go/slice"
+)
+
+// Values
+fn half_reader(&@io.Reader) -> &@io.Reader
+
+fn one_byte_reader(&@io.Reader) -> &@io.Reader
+
+fn timeout_reader(&@io.Reader) -> &@io.Reader
+
+// Errors
+pub suberror Timeout
+
+// Types and methods
+type TimeoutReader
+impl @io.Reader for TimeoutReader
+
+// Type aliases
+
+// Traits
+

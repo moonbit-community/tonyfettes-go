@@ -42,7 +42,7 @@ pub impl Show for InvalidUnreadRune with output(
 }
 
 ///|
-pub(all) suberror BufferFull @slice.Slice[Byte] derive(ToJson)
+pub(all) suberror BufferFull derive(ToJson)
 
 ///|
 pub impl Show for BufferFull with output(_ : BufferFull, logger : &Logger) -> Unit {
@@ -181,14 +181,15 @@ fn Reader::read_err(self : Reader) -> Error? {
 }
 
 ///|
-/// peek returns the next n bytes without advancing the reader. The bytes stop
-/// being valid at the next read call. If necessary, Peek will read more bytes
-/// into the buffer in order to make n bytes available. If Peek returns fewer
-/// than n bytes, it also returns an error explaining why the read is short.
-/// The error is BufferFull if n is larger than b's buffer size.
+/// `peek` returns the next `n` bytes without advancing the reader. The bytes
+/// stop being valid at the next read call. If necessary, `peek` will read more
+/// bytes into the buffer in order to make `n` bytes available. If `peek`
+/// returns fewer than `n` bytes, it also returns an error explaining why the
+/// read is short. The error is `BufferFull` if `n` is larger than Reader's
+/// buffer size.
 ///
-/// Calling Peek prevents a Reader.unread_byte or Reader.unread_rune call from succeeding
-/// until the next read operation.
+/// Calling `peek` prevents a `Reader::unread_byte` or `Reader::unread_rune`
+/// call from succeeding until the next read operation.
 pub fn Reader::peek(self : Reader, n : Int) -> @slice.Slice[Byte] raise {
   if n < 0 {
     raise NegativeCount
@@ -201,7 +202,7 @@ pub fn Reader::peek(self : Reader, n : Int) -> @slice.Slice[Byte] raise {
     self.fill()
   }
   if n > self.buf.length() {
-    raise BufferFull(self.buf[self.r:self.w])
+    raise BufferFull
   }
   // 0 <= n <= len(self.buf)
   let mut n = n
@@ -209,7 +210,7 @@ pub fn Reader::peek(self : Reader, n : Int) -> @slice.Slice[Byte] raise {
     // not enough data in buffer
     n = avail
     match self.read_err() {
-      None => raise BufferFull(self.buf[self.r:self.r + n])
+      None => raise BufferFull
       Some(err) => raise err
     }
   }
@@ -415,23 +416,23 @@ pub fn Reader::buffered(self : Reader) -> Int {
 }
 
 ///|
-/// `read_slice` reads until the first occurrence of delim in the input,
+/// `read_slice` reads until the first occurrence of `delim` in the input,
 /// returning a slice pointing at the bytes in the buffer.
 /// The bytes stop being valid at the next read.
 /// If `read_slice` encounters an error before finding a delimiter,
-/// it returns all the data in the buffer and the error itself (often `io.EOF`).
-/// `read_slice` fails with error `BufferFull` if the buffer fills without a delim.
+/// it raises the error itself (often `@io.EOF`).
+/// `read_slice` returns all the data if the buffer fills without a
+/// `delim`.
 /// Because the data returned from `read_slice` will be overwritten
 /// by the next I/O operation, most clients should use
 /// `Reader::read_bytes` or `read_string` instead.
-/// `read_slice` returns err != null if and only if line does not end in delim.
+/// `read_slice` raises error if and only if line is empty.
 pub fn Reader::read_slice(
   self : Reader,
   delim : Byte,
 ) -> @slice.Slice[Byte] raise {
   let mut s = 0 // search start index
   let mut line = @slice.new()
-  let mut err = None
   for {
     // Search buffer.
     let mut i = @bytes.index_byte(self.buf[self.r + s:self.w], delim)
@@ -444,15 +445,20 @@ pub fn Reader::read_slice(
 
     // Pending error?
     if self.err is Some(err) {
-      self.err = None
-      raise err
+      if self.buffered() == 0 {
+        self.err = None
+        raise err
+      } else {
+        line = self.buf[self.r:self.w]
+        self.r = self.w
+        break
+      }
     }
 
     // Buffer full?
     if self.buffered() >= self.buf.length() {
       self.r = self.w
       line = self.buf
-      err = Some(BufferFull(line))
       break
     }
     s = self.w - self.r // do not rescan area we scanned before
@@ -464,11 +470,7 @@ pub fn Reader::read_slice(
     self.last_byte = line[line.length() - 1].to_int()
     self.last_rune_size = -1
   }
-  if err is Some(err) {
-    raise err
-  } else {
-    return line
-  }
+  return line
 }
 
 ///|
@@ -488,27 +490,24 @@ pub fn Reader::read_slice(
 /// Calling [Reader.UnreadByte] after `read_line` will always unread the last byte read
 /// (possibly a character belonging to the line end) even if that byte is not
 /// part of the line returned by `read_line`.
-pub fn Reader::read_line(
-  self : Reader,
-) -> (
-  // line
-  @slice.Slice[Byte],
-  // is_prefix
-  Bool,
-) raise {
-  let mut line = self.read_slice('\n') catch {
-    BufferFull(line) => {
-      let mut line = line
-      if len(line) > 0 && line[len(line) - 1] == '\r' {
-        if self.r == 0 {
-          abort("tonyfettes/go/bufio: tried to rewind past start of buffer")
-        }
-        self.r -= 1
-        line = line[:len(line) - 1]
+pub fn Reader::read_line(self : Reader) -> @slice.Slice[Byte] raise {
+  let mut line = self.read_slice('\n')
+  if !(line.bytesview() is [.., '\n']) {
+    // Handles the case where "\r\n" straddles the buffer
+    if len(line) > 0 && line[len(line) - 1] == '\r' {
+      // Put the '\r' back on the buf and drop it from the line.
+      // Let the next call to `read_line` check for "\r\n".
+      if self.r == 0 {
+        // should be unreachable
+        abort("tonyfettes/go/bufio: tried to rewind past start of buffer")
       }
-      return (line, true)
+      self.r -= 1
+      line = line[:len(line) - 1]
     }
-    err => raise err
+    return line
+  }
+  if len(line) == 0 {
+    return line
   }
   if line[len(line) - 1] == '\n' {
     let mut drop = 1
@@ -517,7 +516,7 @@ pub fn Reader::read_line(
     }
     line = line[:len(line) - drop]
   }
-  return (line, false)
+  return line
 }
 
 ///|
@@ -537,14 +536,16 @@ fn Reader::collect_fragments(
   for {
     try {
       let frag = self.read_slice(delim)
+      if !(frag.bytesview() is [.., '\n']) {
+        // Make a copy of the buffer
+        full_buffers.push(@bytes.clone(frag))
+        total_len += len(frag)
+        continue
+      }
+      // got final fragment
       total_len += len(frag)
       return (full_buffers, frag, total_len)
     } catch {
-      BufferFull(frag) => {
-        let buf = @bytes.clone(frag)
-        full_buffers.push(buf)
-        total_len += len(buf)
-      }
       err =>
         // In case of error, return any full buffers we have,
         // The final fragment is empty because read_slice failed.

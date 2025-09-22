@@ -211,6 +211,7 @@ pub fn[T] Slice::arrayview(self : Slice[T]) -> ArrayView[T] {
 }
 
 ///|
+#as_free_fn
 pub fn[T] Slice::copy(dst : Slice[T], src : Slice[T]) -> Int {
   let n = if dst.length() < src.length() { dst.length() } else { src.length() }
   for i in 0..<n {

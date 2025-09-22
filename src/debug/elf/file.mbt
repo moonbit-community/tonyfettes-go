@@ -569,7 +569,7 @@ pub fn new_file(r : &@io.ReaderAt) -> File raise {
   // header table entries is contained in the sh_size field of the section
   // header at index 0.
   if shoff > 0 && shnum == 0 {
-    ignore(sr.seek(shoff, @io.Start)) catch {
+    ignore(sr.seek(shoff, @io.SeekStart)) catch {
       _ => ()
     }
     let mut typ : UInt = 0

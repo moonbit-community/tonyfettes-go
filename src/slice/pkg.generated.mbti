@@ -6,6 +6,8 @@ fn[T] array(FixedArray[T], start? : Int, end? : Int) -> Slice[T]
 
 fn bytes(Bytes, start? : Int, end? : Int) -> Slice[Byte]
 
+fn bytesview(BytesView) -> Slice[Byte]
+
 fn[T : Default] make(Int) -> Slice[T]
 
 fn[T] new() -> Slice[T]
@@ -18,8 +20,11 @@ fn[T : Default] Slice::append(Self[T], T) -> Self[T]
 fn[T] Slice::arrayview(Self[T]) -> ArrayView[T]
 fn[T] Slice::buffer(Self[T]) -> FixedArray[T]
 fn Slice::bytesview(Self[Byte]) -> BytesView
+#as_free_fn
 fn[T] Slice::copy(Self[T], Self[T]) -> Int
+fn Slice::copy_from_bytesview(Self[Byte], BytesView) -> Int
 fn[T] Slice::iter(Self[T]) -> Iter[T]
+fn[T] Slice::iter2(Self[T]) -> Iter2[Int, T]
 fn[T] Slice::length(Self[T]) -> Int
 fn[T] Slice::offset(Self[T]) -> Int
 fn[T] Slice::op_as_view(Self[T], start? : Int, end? : Int) -> Self[T]
@@ -29,6 +34,7 @@ impl[T] Default for Slice[T]
 impl[T : Eq] Eq for Slice[T]
 impl[T : Show] Show for Slice[T]
 impl[T : ToJson] ToJson for Slice[T]
+impl[T] @tonyfettes/go/builtin.Len for Slice[T]
 
 // Type aliases
 
