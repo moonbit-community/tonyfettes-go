@@ -41,6 +41,15 @@ pub fn bytes(bytes : Bytes, start? : Int = 0, end? : Int) -> Slice[Byte] {
 }
 
 ///|
+pub fn bytesview(bytesview : @bytes.View) -> Slice[Byte] {
+  bytes(
+    bytesview.data(),
+    start=bytesview.start_offset(),
+    end=bytesview.start_offset() + bytesview.length(),
+  )
+}
+
+///|
 pub fn[T : Default] make(size : Int) -> Slice[T] {
   if size < 0 {
     abort("slice: negative size")

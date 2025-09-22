@@ -1,4 +1,7 @@
 ///|
+fnalias @builtin.len
+
+///|
 /// Reads from a reader and rot13s the result.
 priv struct Rot13Reader {
   r : &@io.Reader
@@ -353,4 +356,71 @@ test "peek-then-unread_rune" {
   @json.inspect(try? r.read_rune(), content={
     "Err": "tonyfettes/go/io.EOF.EOF",
   })
+}
+
+///|
+const TestOutput : Bytes = "0123456789abcdefghijklmnopqrstuvwxy"
+
+///|
+const TestInput : Bytes = "012\n345\n678\n9ab\ncde\nfgh\nijk\nlmn\nopq\nrst\nuvw\nxy"
+
+///|
+const TestInputRN : Bytes = "012\r\n345\r\n678\r\n9ab\r\ncde\r\nfgh\r\nijk\r\nlmn\r\nopq\r\nrst\r\nuvw\r\nxy\r\n\n\r\n"
+
+///|
+priv struct TestReader {
+  mut data : @slice.Slice[Byte]
+  stride : Int
+}
+
+///|
+impl @io.Reader for TestReader with read(
+  self : TestReader,
+  buf : @slice.Slice[Byte],
+) -> Int raise {
+  if len(self.data) == 0 {
+    raise @io.EOF
+  }
+  let mut n = self.stride
+  if n > len(self.data) {
+    n = len(self.data)
+  }
+  if n > len(buf) {
+    n = len(buf)
+  }
+  let n = buf.copy(self.data)
+  self.data = self.data[n:]
+  n
+}
+
+///|
+fn test_read_line(input : @slice.Slice[Byte]) -> Unit raise {
+  for stride = 1; stride < 2; stride = stride + 1 {
+    let mut done = 0
+    let reader = TestReader::{ data: input, stride }
+    let l = new_reader_size(reader, len(input) + 1)
+    for {
+      let (line, is_prefix) = l.read_line() catch {
+        @io.EOF => break
+        err => fail("Got unknown error: \{err}")
+      }
+      if is_prefix {
+        fail("read_line returned is_prefix=true")
+      }
+      if TestOutput[done:done + len(line)] is want &&
+        @slice.bytesview(want) != line {
+        fail("Bad line at stride \{stride}: got=\{line} want=\{want}")
+      }
+      done += len(line)
+    }
+    if done != len(TestOutput) {
+      fail("Read only \{done} bytes at stride \{stride}: want \{len(TestOutput)}")
+    }
+  }
+}
+
+///|
+test "read_line" {
+  test_read_line(@slice.bytes(TestInput))
+  test_read_line(@slice.bytes(TestInputRN))
 }

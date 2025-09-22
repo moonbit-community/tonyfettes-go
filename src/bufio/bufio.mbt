@@ -136,7 +136,7 @@ fn Reader::reset_with_buf(
 priv suberror NegativeRead
 
 ///|
-impl Show for NegativeRead with output(self : NegativeRead, logger : &Logger) -> Unit {
+impl Show for NegativeRead with output(_ : NegativeRead, logger : &Logger) -> Unit {
   logger.write_string("bufio: reader returned negative count from read")
 }
 
@@ -472,7 +472,56 @@ pub fn Reader::read_slice(
 }
 
 ///|
-/// collectFragments reads until the first occurrence of delim in the input. It
+/// `read_line` is a low-level line-reading primitive. Most callers should use
+/// `Reader.ReadBytes`('\n') or `Reader.ReadString`('\n') instead or use a `Scanner`.
+///
+/// `read_line` tries to return a single line, not including the end-of-line bytes.
+/// If the line was too long for the buffer then isPrefix is set and the
+/// beginning of the line is returned. The rest of the line will be returned
+/// from future calls. isPrefix will be false when returning the last fragment
+/// of the line. The returned buffer is only valid until the next call to
+/// `read_line`. `read_line` either returns a non-nil line or it returns an error,
+/// never both.
+///
+/// The text returned from `read_line` does not include the line end ("\r\n" or "\n").
+/// No indication or error is given if the input ends without a final line end.
+/// Calling [Reader.UnreadByte] after `read_line` will always unread the last byte read
+/// (possibly a character belonging to the line end) even if that byte is not
+/// part of the line returned by `read_line`.
+pub fn Reader::read_line(
+  self : Reader,
+) -> (
+  // line
+  @slice.Slice[Byte],
+  // is_prefix
+  Bool,
+) raise {
+  let mut line = self.read_slice('\n') catch {
+    BufferFull(line) => {
+      let mut line = line
+      if len(line) > 0 && line[len(line) - 1] == '\r' {
+        if self.r == 0 {
+          abort("tonyfettes/go/bufio: tried to rewind past start of buffer")
+        }
+        self.r -= 1
+        line = line[:len(line) - 1]
+      }
+      return (line, true)
+    }
+    err => raise err
+  }
+  if line[len(line) - 1] == '\n' {
+    let mut drop = 1
+    if len(line) > 1 && line[len(line) - 2] == '\r' {
+      drop = 2
+    }
+    line = line[:len(line) - drop]
+  }
+  return (line, false)
+}
+
+///|
+/// collect_fragments reads until the first occurrence of delim in the input. It
 /// returns (slice of full buffers, remaining bytes before delim, total number
 /// of bytes in the combined first two elements, error).
 /// The complete result is equal to
