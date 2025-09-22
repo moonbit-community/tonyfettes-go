@@ -20,21 +20,42 @@ let max_consecutive_empty_reads = 100
 /// Error types
 
 ///|
-pub(all) suberror InvalidUnreadByte derive(Show, ToJson)
+pub(all) suberror InvalidUnreadByte derive(ToJson)
 
 ///|
-pub(all) suberror InvalidUnreadRune derive(Show, ToJson)
+pub impl Show for InvalidUnreadByte with output(
+  _ : InvalidUnreadByte,
+  logger : &Logger,
+) -> Unit {
+  logger.write_string("tonyfettes/go/bufio: invalid use of UnreadByte")
+}
+
+///|
+pub(all) suberror InvalidUnreadRune derive(ToJson)
+
+///|
+pub impl Show for InvalidUnreadRune with output(
+  _ : InvalidUnreadRune,
+  logger : &Logger,
+) -> Unit {
+  logger.write_string("tonyfettes/go/bufio: invalid use of UnreadRune")
+}
 
 ///|
 pub(all) suberror BufferFull @slice.Slice[Byte] derive(ToJson)
 
 ///|
 pub impl Show for BufferFull with output(_ : BufferFull, logger : &Logger) -> Unit {
-  logger.write_string("bufio: buffer full")
+  logger.write_string("tonyfettes/go/bufio: buffer full")
 }
 
 ///|
-pub(all) suberror NegativeCount derive(Show, ToJson)
+pub(all) suberror NegativeCount derive(ToJson)
+
+///|
+pub impl Show for NegativeCount with output(_ : NegativeCount, logger : &Logger) -> Unit {
+  logger.write_string("tonyfettes/go/bufio: negative count")
+}
 
 ///|
 /// Reader implements buffering for an io.Reader object.

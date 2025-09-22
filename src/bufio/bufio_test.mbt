@@ -211,7 +211,7 @@ fn StringReader::new(data : Array[String]) -> StringReader {
 impl @io.Reader for StringReader with read(self, p) {
   if self.step < self.data.length() {
     let s = self.data[self.step]
-    let bytes = s.to_bytes()
+    let bytes = @encoding/utf8.encode(s)
     let n = if bytes.length() > p.length() {
       p.length()
     } else {
@@ -243,7 +243,7 @@ fn read_rune_segments(segments : Array[String]) -> String raise {
     got += rune.to_string()
   }
   if got != want {
-    abort("segments=\{segments} got=\{got} want=\{want}")
+    fail("segments=\{segments} got=\{got} want=\{want}")
   }
   got
 }
@@ -260,17 +260,14 @@ let segment_list : Array[Array[String]] = [
 ]
 
 ///|
-test "TestReadRune" {
+test "read_rune" {
   for s in segment_list {
-    let _ = read_rune_segments(s) catch {
-      e => abort("Error reading rune segments \{s}: \{e}")
-    }
-
+    ignore(read_rune_segments(s))
   }
 }
 
 ///|
-test "TestUnreadRune" {
+test "unread_rune" {
   let segments = ["Hello, world:", "日本語"]
   let r = new_reader(StringReader::new(segments))
   let mut got = ""
@@ -304,7 +301,7 @@ test "TestUnreadRune" {
 }
 
 ///|
-test "TestBufferFull" {
+test "BufferFull" {
   let long_string = "And now, hello, world! It is the time for all good men to come to the aid of their party"
   let buf = @bufio.new_reader_size(
     @strings.new_reader(long_string),
@@ -317,4 +314,43 @@ test "TestBufferFull" {
     ],
   })
   @json.inspect(@utf8.decode(buf.read_slice('!').bytesview()), content="world!")
+}
+
+///|
+test "peek" {
+  let p : @slice.Slice[Byte] = @slice.make(10)
+  let buf = @bufio.new_reader_size(
+    @strings.new_reader("abcdefghijklmnop"),
+    MinReadBufferSize,
+  )
+  @json.inspect(buf.peek(1), content=[97])
+  @json.inspect(buf.peek(4), content=[97, 98, 99, 100])
+  @json.inspect(try? buf.peek(-1), content={ "Err": "NegativeCount" })
+  @json.inspect(try? buf.peek(32), content={
+    "Err": [
+      "BufferFull",
+      [
+        97, 98, 99, 100, 101, 102, 103, 104, 105, 106, 107, 108, 109, 110, 111, 112,
+      ],
+    ],
+  })
+  @json.inspect(buf.read(p[0:3]), content=3)
+  @json.inspect(buf.peek(1), content=[100])
+  @json.inspect(buf.peek(2), content=[100, 101])
+  @json.inspect(buf.read(p[0:3]), content=3)
+  @json.inspect(buf.peek(4), content=[103, 104, 105, 106])
+  @json.inspect(buf.read(p[0:]), content=10)
+  @json.inspect(buf.peek(0), content=[])
+  @json.inspect(try? buf.peek(1), content={ "Err": "tonyfettes/go/io.EOF.EOF" })
+}
+
+///|
+test "peek-then-unread_rune" {
+  let r = new_reader(@strings.new_reader("x"))
+  @json.inspect(r.read_rune(), content=["x", 1])
+  @json.inspect(try? r.peek(1), content={ "Err": "tonyfettes/go/io.EOF.EOF" })
+  @json.inspect(try? r.unread_rune(), content={ "Err": "InvalidUnreadRune" })
+  @json.inspect(try? r.read_rune(), content={
+    "Err": "tonyfettes/go/io.EOF.EOF",
+  })
 }

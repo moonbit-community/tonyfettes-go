@@ -635,10 +635,10 @@ pub fn full_rune(p : @slice.Slice[Byte]) -> Bool {
   if n >= int(x & 0x7) {
     return true
   }
-  let accept = accept_ranges[(x >> 4).to_int() - 1]
-  if n > 1 && (p[1] < accept.lo || p[1] > accept.hi) {
+  let accept = accept_ranges[(x >> 4).to_int()]
+  if n > 1 && (p[1] < accept.lo || accept.hi < p[1]) {
     return true
-  } else if n > 2 && (p[2] & 0xC0) != Locb {
+  } else if n > 2 && (p[2] < Locb || Hicb < p[2]) {
     return true
   }
   return false
