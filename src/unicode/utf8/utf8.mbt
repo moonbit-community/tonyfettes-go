@@ -5,6 +5,17 @@ struct Utf8(Bytes)
 pub suberror Malformed @bytes.View
 
 ///|
+pub impl ToJson for Malformed with to_json(self : Malformed) -> Json {
+  let Malformed(bytes) = self
+  {
+    "@tonyfettes/go/unicode/utf8.Malformed": bytes
+    .to_bytes()
+    .to_array()
+    .to_json(),
+  }
+}
+
+///|
 fn validate(bytes : @bytes.View) -> Unit raise Malformed {
   let start_offset = bytes.start_offset()
   loop bytes {

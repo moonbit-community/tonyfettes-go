@@ -1,0 +1,1 @@
+fnalias @builtin.len

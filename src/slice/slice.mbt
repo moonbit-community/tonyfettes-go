@@ -63,6 +63,11 @@ pub fn[T] Slice::length(self : Slice[T]) -> Int {
 }
 
 ///|
+pub impl[T] @builtin.Len for Slice[T] with len(self : Slice[T]) -> Int {
+  self.length()
+}
+
+///|
 pub impl[T] Default for Slice[T] with default() -> Slice[T] {
   Slice([], 0, 0)
 }
@@ -158,7 +163,19 @@ pub fn[T : Default] Slice::append(s : Slice[T], val : T) -> Slice[T] {
 ///|
 pub fn[T] Slice::iter(s : Slice[T]) -> Iter[T] {
   Iter::new(each => for i in s.1..<(s.1 + s.2) {
-    match each(s.0[i]) {
+    match each(s.0.unsafe_get(i)) {
+      IterEnd => break IterEnd
+      IterContinue => continue
+    }
+  } else {
+    IterContinue
+  })
+}
+
+///|
+pub fn[T] Slice::iter2(s : Slice[T]) -> Iter2[Int, T] {
+  Iter2::new(each => for i in 0..<s.2 {
+    match each(i, s.0.unsafe_get(i + s.1)) {
       IterEnd => break IterEnd
       IterContinue => continue
     }
