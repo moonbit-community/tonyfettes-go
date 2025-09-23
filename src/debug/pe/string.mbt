@@ -27,11 +27,8 @@ fn cstring(b : @slice.Slice[Byte]) -> String {
 pub typealias @slice.Slice[Byte] as StringTable
 
 ///|
-fn read_string_table(fh : FileHeader, r : String) -> StringTable {
-  // Simplified implementation for now
-  ignore(fh)
-  ignore(r)
-  @slice.new()
+fn read_string_table(fh : FileHeader, r : &@io.ReadSeeker) -> StringTable raise {
+  ...
 }
 
 ///|

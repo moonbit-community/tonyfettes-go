@@ -6,16 +6,36 @@
 /// SectionHeader32 represents real PE COFF section header.
 struct SectionHeader32 {
   name : FixedArray[Byte] // [8]uint8
-  virtual_size : Int64
-  virtual_address : Int64
-  size_of_raw_data : Int64
-  pointer_to_raw_data : Int64
-  pointer_to_relocations : Int64
-  pointer_to_line_numbers : Int64
-  number_of_relocations : Int
-  number_of_line_numbers : Int
-  characteristics : Int64
-} derive(Show, Eq, ToJson)
+  virtual_size : UInt
+  virtual_address : UInt
+  size_of_raw_data : UInt
+  pointer_to_raw_data : UInt
+  pointer_to_relocations : UInt
+  pointer_to_line_numbers : UInt
+  number_of_relocations : UInt16
+  number_of_line_numbers : UInt16
+  characteristics : UInt
+} derive(Show, Eq, ToJson, Default)
+
+///|
+pub impl @binary.Readable for SectionHeader32 with read(
+  r : &@io.Reader,
+  order : &@binary.ByteOrder,
+  _ : SectionHeader32,
+) -> SectionHeader32 raise {
+  SectionHeader32::{
+    name: @binary.read(r, order, FixedArray::make(8, (0 : Byte))),
+    virtual_size: @binary.read(r, order, 0),
+    virtual_address: @binary.read(r, order, 0),
+    size_of_raw_data: @binary.read(r, order, 0),
+    pointer_to_raw_data: @binary.read(r, order, 0),
+    pointer_to_relocations: @binary.read(r, order, 0),
+    pointer_to_line_numbers: @binary.read(r, order, 0),
+    number_of_relocations: @binary.read(r, order, 0),
+    number_of_line_numbers: @binary.read(r, order, 0),
+    characteristics: @binary.read(r, order, 0),
+  }
+}
 
 ///|
 /// fullName finds real name of section sh. Normally name is stored
@@ -64,11 +84,8 @@ pub struct Reloc {
 } derive(Show, Eq, ToJson)
 
 ///|
-fn read_relocs(sh : SectionHeader, r : String) -> Array[Reloc] {
-  // Simplified implementation for now
-  ignore(sh)
-  ignore(r)
-  []
+fn read_relocs(sh : SectionHeader, r : &@io.ReadSeeker) -> Array[Reloc] {
+  ...
 }
 
 ///|
@@ -76,30 +93,30 @@ fn read_relocs(sh : SectionHeader, r : String) -> Array[Reloc] {
 /// field replaced by Go string.
 pub(all) struct SectionHeader {
   name : String
-  virtual_size : Int64
-  virtual_address : Int64
-  size : Int64
-  offset : Int64
-  pointer_to_relocations : Int64
-  pointer_to_line_numbers : Int64
-  number_of_relocations : Int
-  number_of_line_numbers : Int
-  characteristics : Int64
+  virtual_size : UInt
+  virtual_address : UInt
+  size : UInt
+  offset : UInt
+  pointer_to_relocations : UInt
+  pointer_to_line_numbers : UInt
+  number_of_relocations : UInt16
+  number_of_line_numbers : UInt16
+  characteristics : UInt
 } derive(Show, Eq, ToJson)
 
 ///|
 /// Section provides access to PE COFF section.
 pub struct Section {
   section_header : SectionHeader
-  relocs : Array[Reloc]
+  mut relocs : Array[Reloc]
   // Embed ReaderAt for ReadAt method.
   // Do not embed SectionReader directly
   // to avoid having Read and Seek.
   // If a client wants Read and Seek it must use
   // Open() to avoid fighting over the seek offset
-  // with other clients.
-  // FIXME: Use proper reader types once available
-} derive(Show, ToJson)
+  reader_at : &@io.ReaderAt
+  sr : @io.SectionReader
+}
 
 ///|
 /// Data reads and returns the contents of the PE section s.

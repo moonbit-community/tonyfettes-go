@@ -41,11 +41,8 @@ pub(all) struct COFFSymbol {
 ///
 /// At the moment this package only provides APIs for looking at
 /// aux symbols of format 5 (associated with section definition symbols).
-fn read_coff_symbols(fh : FileHeader, r : String) -> Array[COFFSymbol] {
-  // Simplified implementation for now
-  ignore(fh)
-  ignore(r)
-  []
+fn read_coff_symbols(fh : FileHeader, r : &@io.ReadSeeker) -> Array[COFFSymbol] {
+  ...
 }
 
 ///|

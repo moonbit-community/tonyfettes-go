@@ -16,13 +16,13 @@
 ///|
 /// A File represents an open PE file.
 pub struct File {
-  file_header : FileHeader
-  optional_header : OptionalHeader // of type *OptionalHeader32 or *OptionalHeader64
+  mut file_header : FileHeader
+  mut optional_header : OptionalHeader? // of type *OptionalHeader32 or *OptionalHeader64
   sections : Array[Section]
-  symbols : Array[Symbol] // COFF symbols with auxiliary symbol records removed
-  coff_symbols : Array[COFFSymbol] // all COFF symbols (including auxiliary symbol records)
-  string_table : StringTable
-  mut closer : &@io.Closer?
+  mut symbols : Array[Symbol] // COFF symbols with auxiliary symbol records removed
+  mut coff_symbols : Array[COFFSymbol] // all COFF symbols (including auxiliary symbol records)
+  mut string_table : StringTable
+  priv mut closer : &@io.Closer?
 }
 
 ///|
@@ -31,11 +31,6 @@ pub(all) enum OptionalHeader {
   Header32(OptionalHeader32)
   Header64(OptionalHeader64)
 } derive(Show, Eq, ToJson)
-
-///|
-impl @binary.Sized for OptionalHeader32 with size() -> Int {
-  224
-}
 
 ///|
 /// Open opens the named file using [os.Open] and prepares it for use as a PE binary.
@@ -67,7 +62,115 @@ pub fn File::close(self : File) -> Unit raise {
 ///|
 /// `new_file` creates a new `File` for accessing a PE binary in an underlying reader.
 pub fn new_file(r : &@io.ReaderAt) -> File raise {
-  ...
+  let f = File::{
+    file_header: FileHeader::{
+      machine: 0,
+      number_of_sections: 0,
+      time_date_stamp: 0,
+      pointer_to_symbol_table: 0,
+      number_of_symbols: 0,
+      size_of_optional_header: 0,
+      characteristics: 0,
+    },
+    optional_header: None,
+    sections: [],
+    symbols: [],
+    coff_symbols: [],
+    string_table: @slice.new(),
+    closer: None,
+  }
+  let sr = @io.new_section_reader(r, 0, (1 : Int64) << (63 - 1))
+  let dosheader : FixedArray[Byte] = FixedArray::make(96, 0)
+  let _ = r.read_at(@slice.array(dosheader), 0)
+  let mut base : Int64 = 0
+  if dosheader[0] == ('M' : Byte) && dosheader[1] == ('Z' : Byte) {
+    let signoff : Int64 = @binary.little_endian
+      .uint32(@slice.array(dosheader)[0x3c:0x40])
+      .to_int64()
+    let sign : FixedArray[Byte] = FixedArray::make(4, 0)
+    let _ = r.read_at(@slice.array(sign), signoff)
+    if !(sign[0] == ('P' : Byte) &&
+      sign[1] == ('E' : Byte) &&
+      sign[2] == (0 : Byte) &&
+      sign[3] == (0 : Byte)) {
+      raise Failure(
+        "invalid PE file signature: \{sign[0]} \{sign[1]} \{sign[2]} \{sign[3]}",
+      )
+    }
+    base = signoff + 4
+  } else {
+    base = 0
+  }
+  let _ = sr.seek(base, @io.SeekStart)
+  f.file_header = @binary.read(sr, @binary.little_endian, f.file_header)
+  match f.file_header.machine {
+    IMAGE_FILE_MACHINE_AMD64
+    | IMAGE_FILE_MACHINE_ARM64
+    | IMAGE_FILE_MACHINE_ARMNT
+    | IMAGE_FILE_MACHINE_I386
+    | IMAGE_FILE_MACHINE_RISCV32
+    | IMAGE_FILE_MACHINE_RISCV64
+    | IMAGE_FILE_MACHINE_RISCV128
+    | IMAGE_FILE_MACHINE_UNKNOWN => () // ok
+    _ =>
+      raise Failure(
+        "unrecognized PE machine: 0x\{f.file_header.machine.to_string(radix=16)}",
+      )
+  }
+
+  // Read string table.
+  f.string_table = read_string_table(f.file_header, sr)
+
+  // Read symbol table.
+  f.coff_symbols = read_coff_symbols(f.file_header, sr)
+  f.symbols = remove_aux_symbols(f.coff_symbols, f.string_table)
+
+  // Seek past file header.
+  let _ = sr.seek(base + @binary.size(f.file_header).to_int64(), @io.SeekStart)
+
+  // Read optional header.
+  f.optional_header = read_optional_header(
+    sr,
+    f.file_header.size_of_optional_header,
+  )
+
+  // Process sections.
+  for i in 0..<f.file_header.number_of_sections.to_int() {
+    let sh = SectionHeader32::default()
+    let sh = @binary.read(sr, @binary.little_endian, sh)
+    let name = sh.full_name(f.string_table)
+    let mut r2 = r
+    if sh.pointer_to_raw_data == 0 {
+      r2 = NobitsSectionReader::{  }
+    }
+    let ssr = @io.new_section_reader(
+      r2,
+      sh.pointer_to_raw_data.to_int64(),
+      sh.size_of_raw_data.to_int64(),
+    )
+    let s = Section::{
+      section_header: SectionHeader::{
+        name,
+        virtual_size: sh.virtual_size,
+        virtual_address: sh.virtual_address,
+        size: sh.size_of_raw_data,
+        offset: sh.pointer_to_raw_data,
+        pointer_to_relocations: sh.pointer_to_relocations,
+        pointer_to_line_numbers: sh.pointer_to_line_numbers,
+        number_of_relocations: sh.number_of_relocations,
+        number_of_line_numbers: sh.number_of_line_numbers,
+        characteristics: sh.characteristics,
+      },
+      relocs: [],
+      reader_at: ssr,
+      sr: ssr,
+    }
+    f.sections.push(s)
+  }
+  for i in 0..<f.sections.length() {
+    f.sections[i].relocs = read_relocs(f.sections[i].section_header, sr)
+  }
+  f
 }
 
 ///|
@@ -85,7 +188,7 @@ impl Show for UnexpectedReadFromSectionWithUninitializedData with output(
 }
 
 ///|
-fn NobitsSectionReader::read_at(
+pub impl @io.ReaderAt for NobitsSectionReader with read_at(
   _ : NobitsSectionReader,
   _ : @slice.Slice[Byte],
   _ : Int64,
