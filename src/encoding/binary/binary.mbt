@@ -316,12 +316,12 @@ pub impl AppendByteOrder for BigEndian with append_uint64(
 }
 
 ///|
-pub(open) trait Readable {
-  read(r : &@io.Reader, order : &ByteOrder) -> Self raise
+pub(open) trait Read {
+  read(r : &@io.Reader, order : &ByteOrder, v : Self) -> Self raise
 }
 
 ///|
-pub impl Readable for Byte with read(r : &@io.Reader, _ : &ByteOrder) -> Byte raise {
+pub impl Read for Byte with read(r : &@io.Reader, _ : &ByteOrder, _ : Byte) -> Byte raise {
   let buf = @slice.make(1)
   let n = r.read(buf)
   if n != 1 {
@@ -331,7 +331,11 @@ pub impl Readable for Byte with read(r : &@io.Reader, _ : &ByteOrder) -> Byte ra
 }
 
 ///|
-pub impl Readable for UInt16 with read(r : &@io.Reader, order : &ByteOrder) -> UInt16 raise {
+pub impl Read for UInt16 with read(
+  r : &@io.Reader,
+  order : &ByteOrder,
+  _ : UInt16,
+) -> UInt16 raise {
   let buf = @slice.make(2)
   let n = r.read(buf)
   if n != 2 {
@@ -341,7 +345,11 @@ pub impl Readable for UInt16 with read(r : &@io.Reader, order : &ByteOrder) -> U
 }
 
 ///|
-pub impl Readable for Int16 with read(r : &@io.Reader, order : &ByteOrder) -> Int16 raise {
+pub impl Read for Int16 with read(
+  r : &@io.Reader,
+  order : &ByteOrder,
+  _ : Int16,
+) -> Int16 raise {
   let buf = @slice.make(2)
   let n = r.read(buf)
   if n != 2 {
@@ -351,7 +359,7 @@ pub impl Readable for Int16 with read(r : &@io.Reader, order : &ByteOrder) -> In
 }
 
 ///|
-pub impl Readable for Int with read(r : &@io.Reader, order : &ByteOrder) -> Int raise {
+pub impl Read for Int with read(r : &@io.Reader, order : &ByteOrder, _ : Int) -> Int raise {
   let buf = @slice.make(4)
   let n = r.read(buf)
   if n != 4 {
@@ -361,7 +369,7 @@ pub impl Readable for Int with read(r : &@io.Reader, order : &ByteOrder) -> Int 
 }
 
 ///|
-pub impl Readable for UInt with read(r : &@io.Reader, order : &ByteOrder) -> UInt raise {
+pub impl Read for UInt with read(r : &@io.Reader, order : &ByteOrder, _ : UInt) -> UInt raise {
   let buf = @slice.make(4)
   let n = r.read(buf)
   if n != 4 {
@@ -371,7 +379,11 @@ pub impl Readable for UInt with read(r : &@io.Reader, order : &ByteOrder) -> UIn
 }
 
 ///|
-pub impl Readable for Int64 with read(r : &@io.Reader, order : &ByteOrder) -> Int64 raise {
+pub impl Read for Int64 with read(
+  r : &@io.Reader,
+  order : &ByteOrder,
+  _ : Int64,
+) -> Int64 raise {
   let buf = @slice.make(8)
   let n = r.read(buf)
   if n != 8 {
@@ -381,11 +393,62 @@ pub impl Readable for Int64 with read(r : &@io.Reader, order : &ByteOrder) -> In
 }
 
 ///|
-pub impl Readable for UInt64 with read(r : &@io.Reader, order : &ByteOrder) -> UInt64 raise {
+pub impl Read for UInt64 with read(
+  r : &@io.Reader,
+  order : &ByteOrder,
+  _ : UInt64,
+) -> UInt64 raise {
   let buf = @slice.make(8)
   let n = r.read(buf)
   if n != 8 {
     raise BufferTooSmall
   }
   order.uint64(buf)
+}
+
+///|
+pub fn[T : Read] read(r : &@io.Reader, order : &ByteOrder, v : T) -> T raise {
+  T::read(r, order, v)
+}
+
+///|
+pub impl[T : Read] Read for FixedArray[T] with read(
+  r : &@io.Reader,
+  order : &ByteOrder,
+  v : FixedArray[T],
+) -> FixedArray[T] raise {
+  let arr = v
+  for i = 0; i < arr.length(); i = i + 1 {
+    arr[i] = T::read(r, order, arr[i])
+  }
+  arr
+}
+
+///|
+pub impl[T : Read] Read for Array[T] with read(
+  r : &@io.Reader,
+  order : &ByteOrder,
+  v : Array[T],
+) -> Array[T] raise {
+  let arr = v
+  for i = 0; i < arr.length(); i = i + 1 {
+    arr[i] = T::read(r, order, arr[i])
+  }
+  arr
+}
+
+///|
+pub(open) trait Sized {
+  size() -> Int
+}
+
+///|
+pub fn[T : Sized] size(value : T) -> Int {
+  ignore(value)
+  T::size()
+}
+
+///|
+pub impl Sized for UInt16 with size() -> Int {
+  2
 }

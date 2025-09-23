@@ -3,6 +3,10 @@
 /// license that can be found in the LICENSE file.
 
 ///|
+/// COFF symbol table entry size in bytes
+pub const COFF_SYMBOL_SIZE : Int64 = 18
+
+///|
 /// COFFSymbol represents single COFF symbol table record.
 pub(all) struct COFFSymbol {
   name : FixedArray[Byte] // [8]uint8
@@ -37,9 +41,8 @@ pub(all) struct COFFSymbol {
 ///
 /// At the moment this package only provides APIs for looking at
 /// aux symbols of format 5 (associated with section definition symbols).
-fn read_coff_symbols(fh : FileHeader, r : &@io.ReadSeeker) -> Array[COFFSymbol] {
-  // FIXME: Implement proper COFF symbol reading
-  // For now, return empty array as placeholder
+fn read_coff_symbols(fh : FileHeader, r : String) -> Array[COFFSymbol] {
+  // Simplified implementation for now
   ignore(fh)
   ignore(r)
   []
@@ -52,7 +55,7 @@ fn is_sym_name_offset(name : FixedArray[Byte]) -> (Bool, Int64) {
     name[1] == (0 : Byte) &&
     name[2] == (0 : Byte) &&
     name[3] == (0 : Byte) {
-    // Extract 32-bit offset from last 4 bytes
+    // Extract 32-bit offset from last 4 bytes in little endian
     let offset = name[4].to_int().to_int64() |
       (name[5].to_int().to_int64() << 8) |
       (name[6].to_int().to_int64() << 16) |
@@ -67,7 +70,10 @@ fn is_sym_name_offset(name : FixedArray[Byte]) -> (Bool, Int64) {
 /// FullName finds real name of symbol sym. Normally name is stored
 /// in sym.Name, but if it is longer then 8 characters, it is stored
 /// in COFF string table st instead.
-pub fn COFFSymbol::full_name(self : COFFSymbol, st : StringTable) -> String {
+pub fn COFFSymbol::full_name(
+  self : COFFSymbol,
+  st : StringTable,
+) -> String raise {
   let (ok, offset) = is_sym_name_offset(self.name)
   if ok {
     string_table_string(st, offset)
@@ -80,7 +86,7 @@ pub fn COFFSymbol::full_name(self : COFFSymbol, st : StringTable) -> String {
 fn remove_aux_symbols(
   allsyms : Array[COFFSymbol],
   st : StringTable,
-) -> Array[Symbol] {
+) -> Array[Symbol] raise {
   if allsyms.length() == 0 {
     []
   } else {
@@ -133,6 +139,7 @@ pub struct COFFSymbolAuxFormat5 {
   checksum : Int64 // uint32 in Go
   sec_num : Int // uint16 in Go
   selection : Int // uint8 in Go
+  // padding [3]uint8 in Go - handled implicitly
 } derive(Show, Eq, ToJson)
 
 ///|
@@ -154,3 +161,52 @@ pub const IMAGE_COMDAT_SELECT_ASSOCIATIVE : Int = 5
 
 ///|
 pub const IMAGE_COMDAT_SELECT_LARGEST : Int = 6
+
+///|
+/// COFFSymbolReadSectionDefAux returns a blob of auxiliary information
+/// (including COMDAT info) for a section definition symbol. Here 'idx'
+/// is the index of a section symbol in the main [COFFSymbol] array for
+/// the File. Return value is a pointer to the appropriate aux symbol
+/// struct. For more info, see:
+///
+/// auxiliary symbols: https://docs.microsoft.com/en-us/windows/win32/debug/pe-format#auxiliary-symbol-records
+/// COMDAT sections: https://docs.microsoft.com/en-us/windows/win32/debug/pe-format#comdat-sections-object-only
+/// auxiliary info for section definitions: https://docs.microsoft.com/en-us/windows/win32/debug/pe-format#auxiliary-format-5-section-definitions
+pub fn File::coff_symbol_read_section_def_aux(
+  self : File,
+  idx : Int,
+) -> COFFSymbolAuxFormat5 raise {
+  if idx < 0 || idx >= self.coff_symbols.length() {
+    raise Failure("invalid symbol index")
+  }
+  let pesym = self.coff_symbols[idx]
+  let image_sym_class_static = 3
+  if pesym.storage_class != image_sym_class_static {
+    raise Failure("incorrect symbol storage class")
+  }
+  if pesym.number_of_aux_symbols == 0 || idx + 1 >= self.coff_symbols.length() {
+    raise Failure("aux symbol unavailable")
+  }
+  // Locate and return the successor aux symbol as COFFSymbolAuxFormat5.
+  let pesymn = self.coff_symbols[idx + 1]
+
+  // Convert the aux symbol data to COFFSymbolAuxFormat5
+  // The aux symbol is stored as a COFFSymbol but with different interpretation
+  let size = pesymn.value
+  let num_relocs = pesymn.section_number
+  let num_line_numbers = pesymn.type_
+  let checksum = pesymn.name[0].to_int().to_int64() |
+    (pesymn.name[1].to_int().to_int64() << 8) |
+    (pesymn.name[2].to_int().to_int64() << 16) |
+    (pesymn.name[3].to_int().to_int64() << 24)
+  let sec_num = pesymn.name[4].to_int() | (pesymn.name[5].to_int() << 8)
+  let selection = pesymn.storage_class
+  COFFSymbolAuxFormat5::{
+    size,
+    num_relocs,
+    num_line_numbers,
+    checksum,
+    sec_num,
+    selection,
+  }
+}

@@ -162,7 +162,7 @@ pub struct Header64 {
 }
 
 ///|
-pub impl @binary.Readable for Header64 with read(
+pub impl @binary.Read for Header64 with read(
   r : &@io.Reader,
   order : &@binary.ByteOrder,
 ) -> Header64 raise {

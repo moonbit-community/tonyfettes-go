@@ -15,44 +15,44 @@ pub(all) struct FileHeader {
 
 ///|
 pub(all) struct DataDirectory {
-  virtual_address : Int64
-  size : Int64
+  virtual_address : Int
+  size : Int
 } derive(Show, Eq, ToJson)
 
 ///|
 pub(all) struct OptionalHeader32 {
-  magic : Int
-  major_linker_version : Int
-  minor_linker_version : Int
-  size_of_code : Int64
-  size_of_initialized_data : Int64
-  size_of_uninitialized_data : Int64
-  address_of_entry_point : Int64
-  base_of_code : Int64
-  base_of_data : Int64
-  image_base : Int64
-  section_alignment : Int64
-  file_alignment : Int64
-  major_operating_system_version : Int
-  minor_operating_system_version : Int
-  major_image_version : Int
-  minor_image_version : Int
-  major_subsystem_version : Int
-  minor_subsystem_version : Int
-  win32_version_value : Int64
-  size_of_image : Int64
-  size_of_headers : Int64
-  check_sum : Int64
-  subsystem : Int
-  dll_characteristics : Int
-  size_of_stack_reserve : Int64
-  size_of_stack_commit : Int64
-  size_of_heap_reserve : Int64
-  size_of_heap_commit : Int64
-  loader_flags : Int64
-  number_of_rva_and_sizes : Int64
+  magic : UInt16
+  major_linker_version : Byte
+  minor_linker_version : Byte
+  size_of_code : Int
+  size_of_initialized_data : Int
+  size_of_uninitialized_data : Int
+  address_of_entry_point : Int
+  base_of_code : Int
+  base_of_data : Int
+  image_base : Int
+  section_alignment : Int
+  file_alignment : Int
+  major_operating_system_version : Int16
+  minor_operating_system_version : Int16
+  major_image_version : Int16
+  minor_image_version : Int16
+  major_subsystem_version : Int16
+  minor_subsystem_version : Int16
+  win32_version_value : Int
+  size_of_image : Int
+  size_of_headers : Int
+  check_sum : Int
+  subsystem : Int16
+  dll_characteristics : Int16
+  size_of_stack_reserve : Int
+  size_of_stack_commit : Int
+  size_of_heap_reserve : Int
+  size_of_heap_commit : Int
+  loader_flags : Int
+  number_of_rva_and_sizes : Int
   data_directory : FixedArray[DataDirectory] // [16]DataDirectory
-} derive(Show, Eq, ToJson)
+} derive(Show, Eq, ToJson, Default)
 
 ///|
 pub(all) struct OptionalHeader64 {

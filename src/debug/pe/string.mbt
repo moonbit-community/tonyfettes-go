@@ -27,28 +27,26 @@ fn cstring(b : @slice.Slice[Byte]) -> String {
 pub typealias @slice.Slice[Byte] as StringTable
 
 ///|
-/// COFF symbol table entry size in bytes
-pub const COFF_SYMBOL_SIZE : Int64 = 18
-
-///|
-fn read_string_table(fh : FileHeader, r : &@io.ReadSeeker) -> StringTable {
-  // FIXME: Implement proper binary reading using the available packages
-  // For now, return empty slice as placeholder
+fn read_string_table(fh : FileHeader, r : String) -> StringTable {
+  // Simplified implementation for now
   ignore(fh)
   ignore(r)
   @slice.new()
 }
 
 ///|
+/// TODO(brainman): decide if start parameter should be int instead of uint32
+
+///|
 /// String extracts string from COFF string table st at offset start.
-pub fn string_table_string(st : StringTable, start : Int64) -> String {
+pub fn string_table_string(st : StringTable, start : Int64) -> String raise {
   // start includes 4 bytes of string table length
   if start < 4 {
-    abort("offset \{start} is before the start of string table")
+    raise Failure("offset \{start} is before the start of string table")
   }
   let start_adj = start - 4
   if start_adj.to_int() > st.length() {
-    abort("offset \{start} is beyond the end of string table")
+    raise Failure("offset \{start} is beyond the end of string table")
   }
   cstring(st[start_adj.to_int():])
 }
