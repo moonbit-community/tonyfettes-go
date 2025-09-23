@@ -120,7 +120,7 @@ impl @io.Seeker for ReadSeekerFromReader with seek(r, offset, whence) {
   // Read until we reach offset.
   let buf : FixedArray[Byte] = FixedArray::make(512, 0)
   while r.offset < new_offset {
-    let buf = @slice.array(buf)
+    let buf = @slice.fixedarray(buf)
     let b = if new_offset - r.offset < buf.length().to_int64() {
       buf[:(new_offset - r.offset).to_int()]
     } else {

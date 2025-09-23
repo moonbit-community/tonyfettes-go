@@ -146,7 +146,7 @@ pub fn Scanner::scan(self : Scanner) -> Bool {
     // a chance to recover any remaining, possibly empty token.
     if self.end > self.start || self.err {
       let (advance, token) = (self.split)(
-        @slice.array(self.buf)[self.start:self.end],
+        @slice.fixedarray(self.buf)[self.start:self.end],
         self.err,
       )
       if not(self.advance(advance)) {
@@ -218,7 +218,7 @@ pub fn Scanner::scan(self : Scanner) -> Bool {
     // be extra careful: Scanner is for safe, simple jobs.
     let mut loop_count = 0
     while true {
-      let n = self.r.read(@slice.array(self.buf)[self.end:]) catch {
+      let n = self.r.read(@slice.fixedarray(self.buf)[self.end:]) catch {
         _ => {
           self.set_err()
           break

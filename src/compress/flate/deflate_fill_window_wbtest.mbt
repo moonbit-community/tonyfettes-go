@@ -101,7 +101,7 @@ test "panic Compressor fill_window with stale data" {
   // Set stale data
   d.index = 10
   d.window_end = 5
-  let dict : @slice.Slice[Byte] = @slice.array(['a'])
+  let dict : @slice.Slice[Byte] = @slice.fixedarray(['a'])
 
   // This should panic with "internal error: fillWindow called with stale data"
   d.fill_window(dict)
@@ -154,7 +154,7 @@ test "Compressor fill_window minimal data" {
   let w = MockWriter::new()
   let d = Compressor::new(w)
   d.init(w, 6)
-  let small_dict : @slice.Slice[Byte] = @slice.array(['a', 'b', 'c'])
+  let small_dict : @slice.Slice[Byte] = @slice.fixedarray(['a', 'b', 'c'])
   d.fill_window(small_dict)
   inspect(d.window_end, content="3")
   inspect(d.index, content="3")

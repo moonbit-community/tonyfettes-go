@@ -46,9 +46,9 @@ fn SectionHeader32::full_name(
   st : StringTable,
 ) -> String raise {
   if self.name[0] != ('/' : Byte) {
-    cstring(@slice.array(self.name))
+    cstring(@slice.fixedarray(self.name))
   } else {
-    let name_slice = @slice.array(self.name)
+    let name_slice = @slice.fixedarray(self.name)
     let name_tail = name_slice[1:]
     let name_str = cstring(name_tail)
     // Parse the number after '/'

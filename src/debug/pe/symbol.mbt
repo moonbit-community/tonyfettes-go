@@ -75,7 +75,7 @@ pub fn COFFSymbol::full_name(
   if ok {
     string_table_string(st, offset)
   } else {
-    cstring(@slice.array(self.name))
+    cstring(@slice.fixedarray(self.name))
   }
 }
 

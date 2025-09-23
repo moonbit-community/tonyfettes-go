@@ -27,7 +27,7 @@ test "new_writer_dict basic functionality" {
   for i = 0; i < 10; i = i + 1 {
     dict[i] = i.to_byte()
   }
-  let writer = new_writer_dict(w, 6, @slice.array(dict))
+  let writer = new_writer_dict(w, 6, @slice.fixedarray(dict))
 
   // Verify that dictionary was stored
   inspect(writer.dict.length(), content="10")
@@ -57,7 +57,7 @@ test "new_writer_dict large dictionary" {
   for i = 0; i < WindowSize + 100; i = i + 1 {
     large_dict[i] = (i % 256).to_byte()
   }
-  let writer = new_writer_dict(w, 6, @slice.array(large_dict))
+  let writer = new_writer_dict(w, 6, @slice.fixedarray(large_dict))
 
   // Verify dictionary was stored (entire dictionary)
   inspect(writer.dict.length(), content="32868")
@@ -77,12 +77,12 @@ test "new_writer_dict different compression levels" {
   }
 
   // Test with store-only mode (level 0)
-  let writer1 = new_writer_dict(w1, 0, @slice.array(dict))
+  let writer1 = new_writer_dict(w1, 0, @slice.fixedarray(dict))
   inspect(writer1.dict.length(), content="20")
   inspect(writer1.d.window_end, content="0") // Store mode doesn't fill window
 
   // Test with compression mode (level 6)
-  let writer2 = new_writer_dict(w2, 6, @slice.array(dict))
+  let writer2 = new_writer_dict(w2, 6, @slice.fixedarray(dict))
   inspect(writer2.dict.length(), content="20")
   inspect(writer2.d.window_end, content="20") // Compression mode fills window
 }

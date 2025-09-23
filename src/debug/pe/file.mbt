@@ -81,14 +81,14 @@ pub fn new_file(r : &@io.ReaderAt) -> File raise {
   }
   let sr = @io.new_section_reader(r, 0, (1 : Int64) << (63 - 1))
   let dosheader : FixedArray[Byte] = FixedArray::make(96, 0)
-  let _ = r.read_at(@slice.array(dosheader), 0)
+  let _ = r.read_at(@slice.fixedarray(dosheader), 0)
   let mut base : Int64 = 0
   if dosheader[0] == ('M' : Byte) && dosheader[1] == ('Z' : Byte) {
     let signoff : Int64 = @binary.little_endian
-      .uint32(@slice.array(dosheader)[0x3c:0x40])
+      .uint32(@slice.fixedarray(dosheader)[0x3c:0x40])
       .to_int64()
     let sign : FixedArray[Byte] = FixedArray::make(4, 0)
-    let _ = r.read_at(@slice.array(sign), signoff)
+    let _ = r.read_at(@slice.fixedarray(sign), signoff)
     if !(sign[0] == ('P' : Byte) &&
       sign[1] == ('E' : Byte) &&
       sign[2] == (0 : Byte) &&

@@ -15,7 +15,7 @@ pub impl[T : Eq] Eq for Slice[T] with equal(self : Slice[T], other : Slice[T]) -
 }
 
 ///|
-pub fn[T] array(
+pub fn[T] fixedarray(
   array : FixedArray[T],
   start? : Int = 0,
   end? : Int,
@@ -33,11 +33,16 @@ pub fn[T] array(
 }
 
 ///|
+pub fn[T] array(array : Array[T]) -> Slice[T] {
+  fixedarray(FixedArray::from_array(array))
+}
+
+///|
 fn Bytes::unsafe_reinterpret_as_fixedarray(self : Bytes) -> FixedArray[Byte] = "%identity"
 
 ///|
 pub fn bytes(bytes : Bytes, start? : Int = 0, end? : Int) -> Slice[Byte] {
-  array(bytes.unsafe_reinterpret_as_fixedarray(), start~, end?)
+  fixedarray(bytes.unsafe_reinterpret_as_fixedarray(), start~, end?)
 }
 
 ///|

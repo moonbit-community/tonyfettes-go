@@ -86,7 +86,7 @@ test "dwarf data structure" {
 ///|
 test "big endian uint64 reading" {
   // Test reading 64-bit big-endian integers
-  let data : @slice.Slice[Byte] = @slice.array([
+  let data : @slice.Slice[Byte] = @slice.fixedarray([
     0x01, 0x23, 0x45, 0x67, 0x89, 0xab, 0xcd, 0xef,
   ])
   let result = read_uint64_be(data, 0)

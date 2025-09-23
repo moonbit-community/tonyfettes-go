@@ -44,7 +44,7 @@ fn read_bytes(buf : Reader) -> String {
       err => abort("Data: \{err}")
     }
   }
-  return @utf8.decode_lossy(@slice.array(b)[0:nb])
+  return @utf8.decode_lossy(@slice.fixedarray(b)[0:nb])
 }
 
 ///|
@@ -97,7 +97,7 @@ fn reads(buf : Reader, m : Int) -> String {
   let b : FixedArray[Byte] = FixedArray::make(1000, 0)
   let mut nb = 0
   for {
-    let slice = @slice.array(b)
+    let slice = @slice.fixedarray(b)
     let view = slice[nb:nb + m]
     try {
       let n = buf.read(view)
@@ -107,7 +107,7 @@ fn reads(buf : Reader, m : Int) -> String {
       _ => ()
     }
   }
-  @utf8.decode_lossy(@slice.array(b)[0:nb])
+  @utf8.decode_lossy(@slice.fixedarray(b)[0:nb])
 }
 
 ///|
@@ -430,4 +430,30 @@ test "line_too_long" {
   for i in 0..<(MinReadBufferSize * 5 / 2) {
     data.push(('0'.to_int() + i % 10).to_byte())
   }
+  let data = @slice.array(data)
+  let buf = @bytes.new_reader(data)
+  let l = @bufio.new_reader_size(buf, MinReadBufferSize)
+  let line = l.read_line()
+  @json.inspect(line == data[:MinReadBufferSize], content=true)
+  let data = data[len(line):]
+  let line = l.read_line()
+  @json.inspect(line == data[:MinReadBufferSize], content=true)
+  let data = data[len(line):]
+  let line = l.read_line()
+  @json.inspect(line == data[:MinReadBufferSize / 2], content=true)
+  @json.inspect(try? l.read_line(), content={
+    "Err": "tonyfettes/go/io.EOF.EOF",
+  })
+}
+
+///|
+test "read_after_lines" {
+  let line1 : Bytes = "this is line1"
+  let rest_data : Bytes = "this is line2\nthis is line3\n"
+  let inbuf = @bytes.new_reader(@slice.bytes(line1 + "\n" + rest_data))
+  let outbuf = StringBuilder::new()
+  let max_line_length = len(line1) + len(rest_data) / 2
+  let l = @bufio.new_reader_size(inbuf, max_line_length)
+  let line = l.read_line()
+  @json.inspect(line == @slice.bytes(line1))
 }

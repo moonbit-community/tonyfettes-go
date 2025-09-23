@@ -94,7 +94,7 @@ test "emit_literal" {
 ///|
 /// Test load32 function
 test "load32" {
-  let bytes : @slice.Slice[Byte] = @slice.array([0x01, 0x02, 0x03, 0x04])
+  let bytes : @slice.Slice[Byte] = @slice.fixedarray([0x01, 0x02, 0x03, 0x04])
   let result = load32(bytes, 0)
   // Little endian: 0x04030201
   inspect(result, content="67305985")
@@ -103,7 +103,7 @@ test "load32" {
 ///|
 /// Test load64 function
 test "load64" {
-  let bytes : @slice.Slice[Byte] = @slice.array([
+  let bytes : @slice.Slice[Byte] = @slice.fixedarray([
     0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07, 0x08,
   ])
   let result = load64(bytes, 0)

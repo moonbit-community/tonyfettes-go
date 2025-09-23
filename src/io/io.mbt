@@ -431,6 +431,80 @@ pub fn[R : Reader, W : Writer] copy_n(
 }
 
 ///|
+/// `copy` copies from src to dst until either `EOF` is reached
+/// on src or an error occurs. It returns the number of bytes
+/// copied and the first error encountered while copying, if any.
+///
+/// A successful `copy` returns `err == nil`, not `err == EOF`.
+/// Because `copy` is defined to read from `src` until EOF, it does
+/// not treat an EOF from Read as an error to be reported.
+///
+/// If `src` implements [WriterTo],
+/// the copy is implemented by calling `src.WriteTo(dst)`.
+/// Otherwise, if dst implements [ReaderFrom],
+/// the copy is implemented by calling dst.ReadFrom(src).
+pub fn[R : Reader, W : Writer] copy(dst : W, src : R) -> Int64 raise {
+  copy_buffer(dst, src, None)
+}
+
+///|
+pub fn[Writer : Writer, Reader : Reader] copy_buffer(
+  dst : Writer,
+  src : Reader,
+  buf : @slice.Slice[Byte]?,
+) -> Int64 raise {
+  if buf is Some(buf) && len(buf) == 0 {
+    abort("empty buffer in copy_buffer")
+  }
+  _copy_buffer(dst, src, buf)
+}
+
+///|
+fn[Writer : Writer, Reader : Reader] _copy_buffer(
+  dst : Writer,
+  src : Reader,
+  buf : @slice.Slice[Byte]?,
+) -> Int64 raise {
+  let buf = match buf {
+    Some(buf) => buf
+    None => {
+      let size = 32 * 1024
+      @slice.make(size)
+    }
+  }
+  let mut written : Int64 = 0
+  let mut err = None
+  while true {
+    let nr = src.read(buf) catch {
+      EOF => break
+      e => {
+        err = Some(e)
+        break
+      }
+    }
+    let nw = dst.write(buf[0:nr]) catch {
+      ew => {
+        err = Some(ew)
+        break
+      }
+    }
+    if nr < nw {
+      err = Some(InvalidWrite)
+      break
+    }
+    written += int64(nw)
+    if nr != nw {
+      err = Some(ShortWrite)
+      break
+    }
+  }
+  if err is Some(err) && written == 0 {
+    raise err
+  }
+  written
+}
+
+///|
 /// Resetter is the interface that wraps the Reset method.
 pub(open) trait Resetter {
   reset(self : Self, r : &Reader) -> Unit raise
