@@ -7,11 +7,17 @@ import(
 )
 
 // Values
+fn[R : Reader, W : Writer] copy(W, R) -> Int64 raise
+
+fn[Writer : Writer, Reader : Reader] copy_buffer(Writer, Reader, @slice.Slice[Byte]?) -> Int64 raise
+
 fn[R : Reader, W : Writer] copy_n(W, R, Int64) -> Int64 raise
 
 fn limit_reader(&Reader, Int64) -> LimitedReader
 
 fn new_section_reader(&ReaderAt, Int64, Int64) -> SectionReader
+
+fn[Reader : Reader] read_all(Reader) -> @slice.Slice[Byte] raise
 
 fn[R : Reader] read_at_least(R, @slice.Slice[Byte], Int) -> Int raise
 

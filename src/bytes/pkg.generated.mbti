@@ -19,11 +19,25 @@ fn new_reader(@slice.Slice[Byte]) -> Reader
 type NegativeOffset
 impl Show for NegativeOffset
 
+pub suberror TooLarge
+impl Show for TooLarge
+
 // Types and methods
 type Buffer
+fn Buffer::available(Self) -> Int
+fn Buffer::available_buffer(Self) -> @slice.Slice[Byte]
+fn Buffer::bytes(Self) -> @slice.Slice[Byte]
+fn Buffer::cap(Self) -> Int
+fn Buffer::grow(Self, Int) -> Unit
 fn Buffer::reset(Self) -> Unit
+fn Buffer::string(Self) -> String
+fn Buffer::truncate(Self, Int) -> Unit
+impl Default for Buffer
+impl @tonyfettes/go/builtin.Len for Buffer
 impl @io.ByteReader for Buffer
 impl @io.Reader for Buffer
+impl @io.Writer for Buffer
+impl @io.WriterTo for Buffer
 
 type Reader
 fn Reader::reset(Self) -> Unit

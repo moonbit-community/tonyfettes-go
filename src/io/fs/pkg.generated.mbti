@@ -18,7 +18,6 @@ fn FileMode::char_device() -> Self
 fn FileMode::device() -> Self
 fn FileMode::dir() -> Self
 fn FileMode::exclusive() -> Self
-#deprecated
 fn FileMode::inner(Self) -> UInt
 fn FileMode::irregular() -> Self
 fn FileMode::is_dir(Self) -> Bool

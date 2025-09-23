@@ -2,11 +2,13 @@
 package "tonyfettes/go/slice"
 
 // Values
-fn[T] array(FixedArray[T], start? : Int, end? : Int) -> Slice[T]
+fn[T] array(Array[T]) -> Slice[T]
 
 fn bytes(Bytes, start? : Int, end? : Int) -> Slice[Byte]
 
 fn bytesview(BytesView) -> Slice[Byte]
+
+fn[T] fixedarray(FixedArray[T], start? : Int, end? : Int) -> Slice[T]
 
 fn[T : Default] make(Int) -> Slice[T]
 

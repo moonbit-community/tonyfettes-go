@@ -78,6 +78,7 @@ fn Reader::unread_byte(Self) -> Unit raise InvalidUnreadByte
 fn Reader::unread_rune(Self) -> Unit raise InvalidUnreadRune
 impl @io.ByteReader for Reader
 impl @io.Reader for Reader
+impl @io.WriterTo for Reader
 
 type Scanner
 fn Scanner::buffer(Self, FixedArray[Byte], Int) -> Unit
