@@ -13,6 +13,10 @@ let little_endian : LittleEndian
 
 let native_endian : LittleEndian
 
+fn[T : Readable] read(&@io.Reader, &ByteOrder, T) -> T raise
+
+fn[T : Sized] size(T) -> Int
+
 // Errors
 
 // Types and methods
@@ -47,7 +51,7 @@ pub trait ByteOrder : Show + ToJson {
 }
 
 pub(open) trait Readable {
-  read(&@io.Reader, &ByteOrder) -> Self raise
+  read(&@io.Reader, &ByteOrder, Self) -> Self raise
 }
 impl Readable for Byte
 impl Readable for Int
@@ -56,4 +60,13 @@ impl Readable for Int64
 impl Readable for UInt
 impl Readable for UInt16
 impl Readable for UInt64
+impl[T : Readable] Readable for FixedArray[T]
+impl[T : Readable] Readable for Ref[T]
+impl[T : Readable] Readable for Array[T]
+impl[T : Readable] Readable for @slice.Slice[T]
+
+pub(open) trait Sized {
+  size() -> Int
+}
+impl Sized for UInt16
 

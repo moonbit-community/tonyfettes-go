@@ -2,6 +2,7 @@
 package "tonyfettes/go/debug/pe"
 
 import(
+  "tonyfettes/go/encoding/binary"
   "tonyfettes/go/io"
   "tonyfettes/go/slice"
 )
@@ -21,35 +22,35 @@ const IMAGE_COMDAT_SELECT_NODUPLICATES : Int = 1
 
 const IMAGE_COMDAT_SELECT_SAME_SIZE : Int = 3
 
-const IMAGE_DIRECTORY_ENTRY_ARCHITECTURE : Int64 = 7
+const IMAGE_DIRECTORY_ENTRY_ARCHITECTURE : Int = 7
 
-const IMAGE_DIRECTORY_ENTRY_BASERELOC : Int64 = 5
+const IMAGE_DIRECTORY_ENTRY_BASERELOC : Int = 5
 
-const IMAGE_DIRECTORY_ENTRY_BOUND_IMPORT : Int64 = 11
+const IMAGE_DIRECTORY_ENTRY_BOUND_IMPORT : Int = 11
 
-const IMAGE_DIRECTORY_ENTRY_COM_DESCRIPTOR : Int64 = 14
+const IMAGE_DIRECTORY_ENTRY_COM_DESCRIPTOR : Int = 14
 
-const IMAGE_DIRECTORY_ENTRY_DEBUG : Int64 = 6
+const IMAGE_DIRECTORY_ENTRY_DEBUG : Int = 6
 
-const IMAGE_DIRECTORY_ENTRY_DELAY_IMPORT : Int64 = 13
+const IMAGE_DIRECTORY_ENTRY_DELAY_IMPORT : Int = 13
 
-const IMAGE_DIRECTORY_ENTRY_EXCEPTION : Int64 = 3
+const IMAGE_DIRECTORY_ENTRY_EXCEPTION : Int = 3
 
-const IMAGE_DIRECTORY_ENTRY_EXPORT : Int64 = 0
+const IMAGE_DIRECTORY_ENTRY_EXPORT : Int = 0
 
-const IMAGE_DIRECTORY_ENTRY_GLOBALPTR : Int64 = 8
+const IMAGE_DIRECTORY_ENTRY_GLOBALPTR : Int = 8
 
-const IMAGE_DIRECTORY_ENTRY_IAT : Int64 = 12
+const IMAGE_DIRECTORY_ENTRY_IAT : Int = 12
 
-const IMAGE_DIRECTORY_ENTRY_IMPORT : Int64 = 1
+const IMAGE_DIRECTORY_ENTRY_IMPORT : Int = 1
 
-const IMAGE_DIRECTORY_ENTRY_LOAD_CONFIG : Int64 = 10
+const IMAGE_DIRECTORY_ENTRY_LOAD_CONFIG : Int = 10
 
-const IMAGE_DIRECTORY_ENTRY_RESOURCE : Int64 = 2
+const IMAGE_DIRECTORY_ENTRY_RESOURCE : Int = 2
 
-const IMAGE_DIRECTORY_ENTRY_SECURITY : Int64 = 4
+const IMAGE_DIRECTORY_ENTRY_SECURITY : Int = 4
 
-const IMAGE_DIRECTORY_ENTRY_TLS : Int64 = 9
+const IMAGE_DIRECTORY_ENTRY_TLS : Int = 9
 
 const IMAGE_DLLCHARACTERISTICS_APPCONTAINER : Int = 0x1000
 
@@ -93,21 +94,21 @@ const IMAGE_FILE_LINE_NUMS_STRIPPED : Int = 0x0004
 
 const IMAGE_FILE_LOCAL_SYMS_STRIPPED : Int = 0x0008
 
-const IMAGE_FILE_MACHINE_AM33 : Int = 0x1d3
+const IMAGE_FILE_MACHINE_AM33 : UInt16 = 0x1d3
 
-const IMAGE_FILE_MACHINE_AMD64 : Int = 0x8664
+const IMAGE_FILE_MACHINE_AMD64 : UInt16 = 0x8664
 
-const IMAGE_FILE_MACHINE_ARM : Int = 0x1c0
+const IMAGE_FILE_MACHINE_ARM : UInt16 = 0x1c0
 
-const IMAGE_FILE_MACHINE_ARM64 : Int = 0xaa64
+const IMAGE_FILE_MACHINE_ARM64 : UInt16 = 0xaa64
 
-const IMAGE_FILE_MACHINE_ARMNT : Int = 0x1c4
+const IMAGE_FILE_MACHINE_ARMNT : UInt16 = 0x1c4
 
 const IMAGE_FILE_MACHINE_EBC : Int = 0xebc
 
-const IMAGE_FILE_MACHINE_I386 : Int = 0x14c
+const IMAGE_FILE_MACHINE_I386 : UInt16 = 0x14c
 
-const IMAGE_FILE_MACHINE_IA64 : Int = 0x200
+const IMAGE_FILE_MACHINE_IA64 : UInt16 = 0x200
 
 const IMAGE_FILE_MACHINE_LOONGARCH32 : Int = 0x6232
 
@@ -127,11 +128,11 @@ const IMAGE_FILE_MACHINE_POWERPCFP : Int = 0x1f1
 
 const IMAGE_FILE_MACHINE_R4000 : Int = 0x166
 
-const IMAGE_FILE_MACHINE_RISCV128 : Int = 0x5128
+const IMAGE_FILE_MACHINE_RISCV128 : UInt16 = 0x5128
 
-const IMAGE_FILE_MACHINE_RISCV32 : Int = 0x5032
+const IMAGE_FILE_MACHINE_RISCV32 : UInt16 = 0x5032
 
-const IMAGE_FILE_MACHINE_RISCV64 : Int = 0x5064
+const IMAGE_FILE_MACHINE_RISCV64 : UInt16 = 0x5064
 
 const IMAGE_FILE_MACHINE_SH3 : Int = 0x1a2
 
@@ -143,7 +144,7 @@ const IMAGE_FILE_MACHINE_SH5 : Int = 0x1a8
 
 const IMAGE_FILE_MACHINE_THUMB : Int = 0x1c2
 
-const IMAGE_FILE_MACHINE_UNKNOWN : Int = 0x0
+const IMAGE_FILE_MACHINE_UNKNOWN : UInt16 = 0x0
 
 const IMAGE_FILE_MACHINE_WCEMIPSV2 : Int = 0x169
 
@@ -201,11 +202,11 @@ const IMAGE_SUBSYSTEM_WINDOWS_GUI : Int = 2
 
 const IMAGE_SUBSYSTEM_XBOX : Int = 14
 
-fn new_file(&@io.ReaderAt) -> File
+fn new_file(&@io.ReaderAt) -> File raise
 
-fn open(String) -> File
+fn open(String) -> File raise
 
-fn string_table_string(@slice.Slice[Byte], Int64) -> String
+fn string_table_string(@slice.Slice[Byte], Int64) -> String raise
 
 // Errors
 
@@ -218,7 +219,7 @@ pub(all) struct COFFSymbol {
   storage_class : Int
   number_of_aux_symbols : Int
 }
-fn COFFSymbol::full_name(Self, @slice.Slice[Byte]) -> String
+fn COFFSymbol::full_name(Self, @slice.Slice[Byte]) -> String raise
 impl Eq for COFFSymbol
 impl Show for COFFSymbol
 impl ToJson for COFFSymbol
@@ -236,41 +237,44 @@ impl Show for COFFSymbolAuxFormat5
 impl ToJson for COFFSymbolAuxFormat5
 
 pub(all) struct DataDirectory {
-  virtual_address : Int64
-  size : Int64
+  virtual_address : UInt
+  size : UInt
 }
+impl Default for DataDirectory
 impl Eq for DataDirectory
 impl Show for DataDirectory
 impl ToJson for DataDirectory
 
 pub struct File {
-  file_header : FileHeader
-  optional_header : OptionalHeaderVariant
+  mut file_header : FileHeader
+  mut optional_header : OptionalHeader?
   sections : Array[Section]
-  symbols : Array[Symbol]
-  coff_symbols : Array[COFFSymbol]
-  string_table : @slice.Slice[Byte]
+  mut symbols : Array[Symbol]
+  mut coff_symbols : Array[COFFSymbol]
+  mut string_table : @slice.Slice[Byte]
+  // private fields
 }
-fn File::close(Self) -> String
+fn File::close(Self) -> Unit raise
+fn File::coff_symbol_read_section_def_aux(Self, Int) -> COFFSymbolAuxFormat5 raise
 fn File::dwarf(Self) -> String
-fn File::imported_libraries(Self) -> Array[String]
+fn File::imported_libraries(Self) -> Array[String] raise
 fn File::imported_symbols(Self) -> Array[String]
 fn File::section(Self, String) -> Section?
-impl Show for File
-impl ToJson for File
 
 pub(all) struct FileHeader {
-  machine : Int
-  number_of_sections : Int
-  time_date_stamp : Int64
-  pointer_to_symbol_table : Int64
-  number_of_symbols : Int64
-  size_of_optional_header : Int
-  characteristics : Int
+  machine : UInt16
+  number_of_sections : UInt16
+  time_date_stamp : UInt
+  pointer_to_symbol_table : UInt
+  number_of_symbols : UInt
+  size_of_optional_header : UInt16
+  characteristics : UInt16
 }
 impl Eq for FileHeader
 impl Show for FileHeader
 impl ToJson for FileHeader
+impl @binary.Readable for FileHeader
+impl @binary.Sized for FileHeader
 
 pub(all) struct FormatError {
 }
@@ -279,101 +283,102 @@ impl Eq for FormatError
 impl Show for FormatError
 impl ToJson for FormatError
 
-pub(all) struct ImportDirectory {
-  original_first_thunk : Int64
-  time_date_stamp : Int64
-  forwarder_chain : Int64
-  name : Int64
-  first_thunk : Int64
-  dll : String
+pub struct ImportDirectory {
+  original_first_thunk : UInt
+  time_date_stamp : UInt
+  forwarder_chain : UInt
+  name : UInt
+  first_thunk : UInt
+  // private fields
 }
 impl Eq for ImportDirectory
 impl Show for ImportDirectory
 impl ToJson for ImportDirectory
 
 type NobitsSectionReader
+impl @io.ReaderAt for NobitsSectionReader
+
+pub(all) enum OptionalHeader {
+  Header32(OptionalHeader32)
+  Header64(OptionalHeader64)
+}
+impl Eq for OptionalHeader
+impl Show for OptionalHeader
+impl ToJson for OptionalHeader
 
 pub(all) struct OptionalHeader32 {
-  magic : Int
-  major_linker_version : Int
-  minor_linker_version : Int
-  size_of_code : Int64
-  size_of_initialized_data : Int64
-  size_of_uninitialized_data : Int64
-  address_of_entry_point : Int64
-  base_of_code : Int64
-  base_of_data : Int64
-  image_base : Int64
-  section_alignment : Int64
-  file_alignment : Int64
-  major_operating_system_version : Int
-  minor_operating_system_version : Int
-  major_image_version : Int
-  minor_image_version : Int
-  major_subsystem_version : Int
-  minor_subsystem_version : Int
-  win32_version_value : Int64
-  size_of_image : Int64
-  size_of_headers : Int64
-  check_sum : Int64
-  subsystem : Int
-  dll_characteristics : Int
-  size_of_stack_reserve : Int64
-  size_of_stack_commit : Int64
-  size_of_heap_reserve : Int64
-  size_of_heap_commit : Int64
-  loader_flags : Int64
-  number_of_rva_and_sizes : Int64
+  magic : UInt16
+  major_linker_version : Byte
+  minor_linker_version : Byte
+  size_of_code : UInt
+  size_of_initialized_data : UInt
+  size_of_uninitialized_data : UInt
+  address_of_entry_point : UInt
+  base_of_code : UInt
+  base_of_data : UInt
+  image_base : UInt
+  section_alignment : UInt
+  file_alignment : UInt
+  major_operating_system_version : UInt16
+  minor_operating_system_version : UInt16
+  major_image_version : UInt16
+  minor_image_version : UInt16
+  major_subsystem_version : UInt16
+  minor_subsystem_version : UInt16
+  win32_version_value : UInt
+  size_of_image : UInt
+  size_of_headers : UInt
+  check_sum : UInt
+  subsystem : UInt16
+  dll_characteristics : UInt16
+  size_of_stack_reserve : UInt
+  size_of_stack_commit : UInt
+  size_of_heap_reserve : UInt
+  size_of_heap_commit : UInt
+  loader_flags : UInt
+  number_of_rva_and_sizes : UInt
   data_directory : FixedArray[DataDirectory]
 }
+impl Default for OptionalHeader32
 impl Eq for OptionalHeader32
 impl Show for OptionalHeader32
 impl ToJson for OptionalHeader32
 
 pub(all) struct OptionalHeader64 {
-  magic : Int
-  major_linker_version : Int
-  minor_linker_version : Int
-  size_of_code : Int64
-  size_of_initialized_data : Int64
-  size_of_uninitialized_data : Int64
-  address_of_entry_point : Int64
-  base_of_code : Int64
+  magic : UInt16
+  major_linker_version : Byte
+  minor_linker_version : Byte
+  size_of_code : UInt
+  size_of_initialized_data : UInt
+  size_of_uninitialized_data : UInt
+  address_of_entry_point : UInt
+  base_of_code : UInt
   image_base : Int64
-  section_alignment : Int64
-  file_alignment : Int64
-  major_operating_system_version : Int
-  minor_operating_system_version : Int
-  major_image_version : Int
-  minor_image_version : Int
-  major_subsystem_version : Int
-  minor_subsystem_version : Int
-  win32_version_value : Int64
-  size_of_image : Int64
-  size_of_headers : Int64
-  check_sum : Int64
-  subsystem : Int
-  dll_characteristics : Int
-  size_of_stack_reserve : Int64
-  size_of_stack_commit : Int64
-  size_of_heap_reserve : Int64
-  size_of_heap_commit : Int64
-  loader_flags : Int64
-  number_of_rva_and_sizes : Int64
+  section_alignment : UInt
+  file_alignment : UInt
+  major_operating_system_version : UInt16
+  minor_operating_system_version : UInt16
+  major_image_version : UInt16
+  minor_image_version : UInt16
+  major_subsystem_version : UInt16
+  minor_subsystem_version : UInt16
+  win32_version_value : UInt
+  size_of_image : UInt
+  size_of_headers : UInt
+  check_sum : UInt
+  subsystem : UInt16
+  dll_characteristics : UInt16
+  size_of_stack_reserve : UInt64
+  size_of_stack_commit : UInt64
+  size_of_heap_reserve : UInt64
+  size_of_heap_commit : UInt64
+  loader_flags : UInt
+  number_of_rva_and_sizes : UInt
   data_directory : FixedArray[DataDirectory]
 }
 impl Eq for OptionalHeader64
 impl Show for OptionalHeader64
 impl ToJson for OptionalHeader64
-
-pub(all) enum OptionalHeaderVariant {
-  Header32(OptionalHeader32)
-  Header64(OptionalHeader64)
-  None
-}
-impl Eq for OptionalHeaderVariant
-impl Show for OptionalHeaderVariant
-impl ToJson for OptionalHeaderVariant
 
 pub struct Reloc {
   virtual_address : Int64
@@ -386,33 +391,35 @@ impl ToJson for Reloc
 
 pub struct Section {
   section_header : SectionHeader
-  relocs : Array[Reloc]
+  mut relocs : Array[Reloc]
+  reader_at : &@io.ReaderAt
+  sr : @io.SectionReader
 }
 fn Section::data(Self) -> @slice.Slice[Byte]
 fn Section::open(Self) -> String
-impl Show for Section
-impl ToJson for Section
 
 pub(all) struct SectionHeader {
   name : String
-  virtual_size : Int64
-  virtual_address : Int64
-  size : Int64
-  offset : Int64
-  pointer_to_relocations : Int64
-  pointer_to_line_numbers : Int64
-  number_of_relocations : Int
-  number_of_line_numbers : Int
-  characteristics : Int64
+  virtual_size : UInt
+  virtual_address : UInt
+  size : UInt
+  offset : UInt
+  pointer_to_relocations : UInt
+  pointer_to_line_numbers : UInt
+  number_of_relocations : UInt16
+  number_of_line_numbers : UInt16
+  characteristics : UInt
 }
 impl Eq for SectionHeader
 impl Show for SectionHeader
 impl ToJson for SectionHeader
 
 type SectionHeader32
+impl Default for SectionHeader32
 impl Eq for SectionHeader32
 impl Show for SectionHeader32
 impl ToJson for SectionHeader32
+impl @binary.Readable for SectionHeader32
 
 pub(all) struct Symbol {
   name : String

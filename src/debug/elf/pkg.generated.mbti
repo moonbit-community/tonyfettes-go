@@ -325,6 +325,7 @@ impl Show for DynamicVersionDep
 impl ToJson for DynamicVersionDep
 
 pub(all) struct DynamicVersionFlag(UInt16)
+#deprecated
 fn DynamicVersionFlag::inner(Self) -> UInt16
 impl Eq for DynamicVersionFlag
 impl Show for DynamicVersionFlag
@@ -702,6 +703,7 @@ impl Show for Prog64
 impl ToJson for Prog64
 
 pub(all) struct ProgFlag(UInt)
+#deprecated
 fn ProgFlag::inner(Self) -> UInt
 impl BitAnd for ProgFlag
 impl BitOr for ProgFlag
@@ -1318,6 +1320,7 @@ impl Show for Section64
 impl ToJson for Section64
 
 pub(all) struct SectionFlag(UInt)
+#deprecated
 fn SectionFlag::inner(Self) -> UInt
 impl BitAnd for SectionFlag
 impl BitOr for SectionFlag
@@ -1516,6 +1519,7 @@ impl ToJson for Version
 
 pub struct VersionIndex(UInt16)
 fn VersionIndex::index(Self) -> UInt16
+#deprecated
 fn VersionIndex::inner(Self) -> UInt16
 fn VersionIndex::is_hidden(Self) -> Bool
 fn VersionIndex::new(UInt16) -> Self

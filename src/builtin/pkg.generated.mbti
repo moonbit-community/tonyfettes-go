@@ -2,25 +2,53 @@
 package "tonyfettes/go/builtin"
 
 // Values
+fn[T : ToChar] char(T) -> Char raise InvalidChar
+
 fn[T : ToInt] int(T) -> Int
+
+fn[T : ToInt16] int16(T) -> Int16
 
 fn[T : ToInt64] int64(T) -> Int64
 
 fn[T : Len] len(T) -> Int
 
+fn[T : ToChar] rune(T) -> Char raise InvalidChar
+
+fn[T : ToUInt] uint(T) -> UInt
+
+fn[T : ToUInt16] uint16(T) -> UInt16
+
+fn[T : ToUInt64] uint64(T) -> UInt64
+
 fn[T : ToUIntPtr] uintptr(T) -> UIntPtr
 
 // Errors
+pub(all) suberror InvalidChar
 
 // Types and methods
 #external
 pub type UIntPtr
+fn UIntPtr::from_byte(Byte) -> Self
 fn UIntPtr::from_int(Int) -> Self
+fn UIntPtr::from_int16(Int16) -> Self
+fn UIntPtr::from_int64(Int64) -> Self
+fn UIntPtr::from_uint(UInt) -> Self
+fn UIntPtr::from_uint16(UInt16) -> Self
 fn UIntPtr::from_uint64(UInt64) -> Self
+fn UIntPtr::to_byte(Self) -> Byte
 fn UIntPtr::to_int(Self) -> Int
+fn UIntPtr::to_int16(Self) -> Int16
+fn UIntPtr::to_int64(Self) -> Int64
+fn UIntPtr::to_uint(Self) -> UInt
+fn UIntPtr::to_uint16(Self) -> UInt16
 fn UIntPtr::to_uint64(Self) -> UInt64
+impl ToChar for UIntPtr
 impl ToInt for UIntPtr
+impl ToInt16 for UIntPtr
 impl ToInt64 for UIntPtr
+impl ToUInt for UIntPtr
+impl ToUInt16 for UIntPtr
+impl ToUInt64 for UIntPtr
 
 // Type aliases
 pub typealias Char as Rune
@@ -32,6 +60,17 @@ pub(open) trait Len {
 impl Len for Bytes
 impl Len for BytesView
 
+pub(open) trait ToChar {
+  to_char(Self) -> Char raise InvalidChar
+}
+impl ToChar for Byte
+impl ToChar for Int
+impl ToChar for Int16
+impl ToChar for Int64
+impl ToChar for UInt
+impl ToChar for UInt16
+impl ToChar for UInt64
+
 trait ToInt
 impl ToInt for Byte
 impl ToInt for Char
@@ -41,14 +80,54 @@ impl ToInt for UInt
 impl ToInt for UInt16
 impl ToInt for UInt64
 
+trait ToInt16
+impl ToInt16 for Byte
+impl ToInt16 for Char
+impl ToInt16 for Int
+impl ToInt16 for Int64
+impl ToInt16 for UInt
+impl ToInt16 for UInt16
+impl ToInt16 for UInt64
+
 trait ToInt64
+impl ToInt64 for Byte
+impl ToInt64 for Char
 impl ToInt64 for Int
 impl ToInt64 for Int16
 impl ToInt64 for UInt
 impl ToInt64 for UInt16
 impl ToInt64 for UInt64
 
+trait ToUInt
+impl ToUInt for Byte
+impl ToUInt for Char
+impl ToUInt for Int
+impl ToUInt for Int16
+impl ToUInt for Int64
+impl ToUInt for UInt16
+impl ToUInt for UInt64
+
+trait ToUInt16
+impl ToUInt16 for Byte
+impl ToUInt16 for Char
+impl ToUInt16 for Int
+impl ToUInt16 for Int16
+impl ToUInt16 for Int64
+impl ToUInt16 for UInt
+impl ToUInt16 for UInt64
+
+trait ToUInt64
+impl ToUInt64 for Byte
+impl ToUInt64 for Char
+impl ToUInt64 for Int
+impl ToUInt64 for Int16
+impl ToUInt64 for Int64
+impl ToUInt64 for UInt
+impl ToUInt64 for UInt16
+
 trait ToUIntPtr
+impl ToUIntPtr for Byte
+impl ToUIntPtr for Char
 impl ToUIntPtr for Int
 impl ToUIntPtr for Int16
 impl ToUIntPtr for Int64
