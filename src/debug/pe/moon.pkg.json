@@ -2,7 +2,7 @@
   "import": [
     "tonyfettes/go/io",
     "tonyfettes/go/slice",
-    "tonyfettes/go/encoding/binary", 
+    "tonyfettes/go/encoding/binary",
     "tonyfettes/go/os",
     "tonyfettes/go/internal/saferio",
     "tonyfettes/go/builtin",
@@ -11,6 +11,7 @@
     "tonyfettes/go/unsafe",
     "tonyfettes/go/strings",
     "tonyfettes/go/bufio",
-    "tonyfettes/go/bytes"
+    "tonyfettes/go/bytes",
+    "tonyfettes/go/unicode/utf8"
   ]
 }
