@@ -6,3 +6,6 @@ fnalias @builtin.int64
 
 ///|
 fnalias @builtin.len
+
+///|
+typealias @builtin.Rune

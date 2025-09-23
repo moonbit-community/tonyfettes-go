@@ -1,8 +1,8 @@
 {
   "import": [
     "tonyfettes/go/builtin",
-    "tonyfettes/utf8",
     "tonyfettes/go/io",
-    "tonyfettes/go/slice"
+    "tonyfettes/go/slice",
+    "tonyfettes/go/unicode/utf8"
   ]
 }
