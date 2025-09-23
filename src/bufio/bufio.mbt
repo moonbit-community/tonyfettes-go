@@ -346,7 +346,7 @@ pub impl @io.ByteReader for Reader with read_byte(self) {
 /// unread_byte unreads the last byte. Only the most recently read byte can be unread.
 ///
 /// unread_byte returns an error if the most recent method called on the
-/// Reader was not a read operation. Notably, Reader.peek, Reader.discard, and Reader.write_to are not
+/// Reader was not a read operation. Notably, `Reader::peek`, `Reader::discard`, and `Reader::write_to` are not
 /// considered read operations.
 pub fn Reader::unread_byte(self : Reader) -> Unit raise InvalidUnreadByte {
   if self.last_byte < 0 || (self.r == 0 && self.w > 0) {
@@ -459,6 +459,7 @@ pub fn Reader::read_slice(
     if self.buffered() >= self.buf.length() {
       self.r = self.w
       line = self.buf
+      self.err = Some(BufferFull)
       break
     }
     s = self.w - self.r // do not rescan area we scanned before
@@ -492,7 +493,8 @@ pub fn Reader::read_slice(
 /// part of the line returned by `read_line`.
 pub fn Reader::read_line(self : Reader) -> @slice.Slice[Byte] raise {
   let mut line = self.read_slice('\n')
-  if !(line.bytesview() is [.., '\n']) {
+  if self.err is Some(BufferFull) {
+    self.err = None
     // Handles the case where "\r\n" straddles the buffer
     if len(line) > 0 && line[len(line) - 1] == '\r' {
       // Put the '\r' back on the buf and drop it from the line.
@@ -591,6 +593,53 @@ pub fn Reader::read_bytes(
 pub fn Reader::read_string(self : Reader, delim : Byte) -> String raise {
   let bytes = self.read_bytes(delim)
   @utf8.decode(bytes.bytesview())
+}
+
+///|
+/// `write_to` implements `@io.WriterTo`.
+/// This may make multiple calls to the `Reader::read` method of the underlying
+/// `@io.Reader`.
+pub impl @io.WriterTo for Reader with write_to(self : Reader, w : &@io.Writer) -> Int64 raise {
+  self.last_byte = -1
+  self.last_rune_size = -1
+  let mut n : Int64 = 0
+  if self.r < self.w {
+    n = self.write_buf(w)
+  }
+  if self.w - self.r < len(self.buf) {
+    self.fill()
+  }
+  while self.r < self.w {
+    let m = self.write_buf(w)
+    n += m
+    self.fill()
+  }
+  if n == 0 && self.err is Some(err) {
+    raise err
+  } else {
+    return n
+  }
+}
+
+///|
+priv suberror NegativeWrite
+
+///|
+impl Show for NegativeWrite with output(_ : NegativeWrite, logger : &Logger) -> Unit {
+  logger.write_string(
+    "tonyfettes/go/bufio: writer returned negative count from write",
+  )
+}
+
+///|
+/// `write_buf` writes the `Reader`'s buffer to the writer.
+fn[W : @io.Writer] Reader::write_buf(self : Reader, w : W) -> Int64 raise {
+  let n = w.write(self.buf[self.r:self.w])
+  if n < 0 {
+    abort(NegativeWrite.to_string())
+  }
+  self.r += n
+  int64(n)
 }
 
 ///|

@@ -2,6 +2,12 @@
 fnalias @builtin.len
 
 ///|
+fnalias @builtin.int
+
+///|
+fnalias @builtin.int64
+
+///|
 /// Reads from a reader and rot13s the result.
 priv struct Rot13Reader {
   r : &@io.Reader
@@ -451,9 +457,83 @@ test "read_after_lines" {
   let line1 : Bytes = "this is line1"
   let rest_data : Bytes = "this is line2\nthis is line3\n"
   let inbuf = @bytes.new_reader(@slice.bytes(line1 + "\n" + rest_data))
-  let outbuf = StringBuilder::new()
+  let outbuf = @buffer.new()
   let max_line_length = len(line1) + len(rest_data) / 2
   let l = @bufio.new_reader_size(inbuf, max_line_length)
   let line = l.read_line()
-  @json.inspect(line == @slice.bytes(line1))
+  @json.inspect(line == @slice.bytes(line1), content=true)
+  let n = @io.copy(outbuf, l)
+  @json.inspect(int(n) == len(rest_data), content=true)
+  @json.inspect(outbuf.contents() == rest_data, content=true)
+}
+
+///|
+test "read_empty_buffer" {
+  let l = @bufio.new_reader_size(@bytes.Buffer::default(), MinReadBufferSize)
+  @json.inspect(try? l.read_line(), content={
+    "Err": "tonyfettes/go/io.EOF.EOF",
+  })
+}
+
+///|
+test "lines_after_read" {
+  let l = @bufio.new_reader_size(
+    @bytes.new_reader(@slice.bytes("foo")),
+    MinReadBufferSize,
+  )
+  let _ = @io.read_all(l)
+  @json.inspect(try? l.read_line(), content={
+    "Err": "tonyfettes/go/io.EOF.EOF",
+  })
+}
+
+///|
+test "read_line_new_lines" {
+  let input = "012345678901234\r\n012345678901234\r\n"
+  let b = @bufio.new_reader_size(@strings.new_reader(input), MinReadBufferSize)
+  @json.inspect(b.read_line(), content=[
+    48, 49, 50, 51, 52, 53, 54, 55, 56, 57, 48, 49, 50, 51, 52,
+  ])
+  @json.inspect(b.read_line(), content=[])
+  @json.inspect(b.read_line(), content=[
+    48, 49, 50, 51, 52, 53, 54, 55, 56, 57, 48, 49, 50, 51, 52,
+  ])
+  @json.inspect(b.read_line(), content=[])
+  @json.inspect(try? b.read_line(), content={
+    "Err": "tonyfettes/go/io.EOF.EOF",
+  })
+  let input = "0123456789012345\r012345678901234\r"
+  let b = @bufio.new_reader_size(@strings.new_reader(input), MinReadBufferSize)
+  @json.inspect(b.read_line(), content=[
+    48, 49, 50, 51, 52, 53, 54, 55, 56, 57, 48, 49, 50, 51, 52, 53,
+  ])
+  @json.inspect(b.read_line(), content=[
+    13, 48, 49, 50, 51, 52, 53, 54, 55, 56, 57, 48, 49, 50, 51, 52,
+  ])
+  @json.inspect(b.read_line(), content=[13])
+  @json.inspect(try? b.read_line(), content={
+    "Err": "tonyfettes/go/io.EOF.EOF",
+  })
+}
+
+///|
+fn create_test_input(n : Int) -> @slice.Slice[Byte] {
+  let input = @slice.make(n)
+  for i in 0..<n {
+    input[i] = (i % 251).to_byte()
+    if i % 101 == 0 {
+      input[i] = input[i] ^ (i / 101).to_byte()
+    }
+  }
+  input
+}
+
+///|
+test "reader_write_to" {
+  let input = create_test_input(8192)
+  let r = @bufio.new_reader(@bytes.new_reader(input))
+  let w = @bytes.Buffer::default()
+  let n = r.write_to(w)
+  @json.inspect(n == int64(len(input)), content=true)
+  @json.inspect(w.bytes() == input, content=true)
 }

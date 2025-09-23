@@ -631,3 +631,21 @@ pub impl ReaderAt for SectionReader with read_at(
 pub fn SectionReader::size(s : SectionReader) -> Int64 {
   return s.limit - s.base
 }
+
+///|
+pub fn[Reader : Reader] read_all(r : Reader) -> @slice.Slice[Byte] raise {
+  let mut buf = @slice.make(512)
+  let mut len = 0
+  for {
+    let n = r.read(buf[len:]) catch {
+      EOF => return buf
+      err => raise err
+    }
+    len += n
+    if len == buf.length() {
+      let new_buf = @slice.make(buf.length() * 2)
+      let _ = new_buf.copy(buf)
+      buf = new_buf
+    }
+  }
+}
