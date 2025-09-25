@@ -536,6 +536,4 @@ test "reader_write_to" {
   let n = r.write_to(w)
   @json.inspect(n == int64(len(input)), content=true)
   @json.inspect(w.bytes() == input, content=true)
-  @json.inspect(line == @slice.bytes(line1))
-  let n = @io.copy(outbuf, l)
 }
