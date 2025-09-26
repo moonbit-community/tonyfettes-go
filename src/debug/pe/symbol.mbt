@@ -94,16 +94,15 @@ fn read_coff_symbols(
 
 ///|
 /// isSymNameOffset checks symbol name if it is encoded as offset into string table.
-fn is_sym_name_offset(name : FixedArray[Byte]) -> (Bool, Int64) {
+fn is_sym_name_offset(name : FixedArray[Byte]) -> (Bool, UInt) {
   if name[0] == (0 : Byte) &&
     name[1] == (0 : Byte) &&
     name[2] == (0 : Byte) &&
     name[3] == (0 : Byte) {
-    // Extract 32-bit offset from last 4 bytes in little endian
-    let offset = name[4].to_int().to_int64() |
-      (name[5].to_int().to_int64() << 8) |
-      (name[6].to_int().to_int64() << 16) |
-      (name[7].to_int().to_int64() << 24)
+    let offset = name[4].to_uint() |
+      (name[5].to_uint() << 8) |
+      (name[6].to_uint() << 16) |
+      (name[7].to_uint() << 24)
     (true, offset)
   } else {
     (false, 0)
@@ -120,7 +119,7 @@ pub fn COFFSymbol::full_name(
 ) -> String raise {
   let (ok, offset) = is_sym_name_offset(self.name)
   if ok {
-    string_table_string(st, offset)
+    st.string(offset)
   } else {
     cstring(@slice.fixedarray(self.name))
   }

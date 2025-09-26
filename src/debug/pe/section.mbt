@@ -47,26 +47,8 @@ fn SectionHeader32::full_name(
   if self.name[0] != ('/' : Byte) {
     cstring(@slice.fixedarray(self.name))
   } else {
-    let name_slice = @slice.fixedarray(self.name)
-    let name_tail = name_slice[1:]
-    let name_str = cstring(name_tail)
-    // Parse the number after '/'
-    let mut i = 0
-    let mut valid = true
-    for c in name_str {
-      let code = c.to_int()
-      if code >= 48 && code <= 57 { // '0' to '9'
-        i = i * 10 + (code - 48)
-      } else {
-        valid = false
-        break
-      }
-    }
-    if valid {
-      string_table_string(st, i.to_int64())
-    } else {
-      raise Failure("invalid section name offset")
-    }
+    let i = @strconv.parse_int(cstring(@slice.fixedarray(self.name)[1:]))
+    st.string(uint(i))
   }
 }
 

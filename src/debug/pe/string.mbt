@@ -40,13 +40,13 @@ fn read_string_table(fh : FileHeader, r : &@io.ReadSeeker) -> StringTable raise 
 
 ///|
 /// String extracts string from COFF string table st at offset start.
-pub fn string_table_string(st : StringTable, start : Int64) -> String raise {
+pub fn StringTable::string(st : StringTable, start : UInt) -> String raise {
   // start includes 4 bytes of string table length
   if start < 4 {
     raise Failure("offset \{start} is before the start of string table")
   }
   let start = start - 4
-  if start.to_int() > len(st) {
+  if int(start) > len(st) {
     raise Failure("offset \{start} is beyond the end of string table")
   }
   cstring(st.0[int(start):])
