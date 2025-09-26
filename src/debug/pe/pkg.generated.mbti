@@ -2,13 +2,14 @@
 package "tonyfettes/go/debug/pe"
 
 import(
+  "tonyfettes/go/debug/dwarf"
   "tonyfettes/go/encoding/binary"
   "tonyfettes/go/io"
   "tonyfettes/go/slice"
 )
 
 // Values
-const COFF_SYMBOL_SIZE : Int64 = 18
+const COFF_SYMBOL_SIZE : UInt = 18
 
 const IMAGE_COMDAT_SELECT_ANY : Int = 2
 
@@ -206,35 +207,40 @@ fn new_file(&@io.ReaderAt) -> File raise
 
 fn open(String) -> File raise
 
-fn string_table_string(@slice.Slice[Byte], Int64) -> String raise
+fn string_table_string(StringTable, Int64) -> String raise
 
 // Errors
 
 // Types and methods
 pub(all) struct COFFSymbol {
   name : FixedArray[Byte]
-  value : Int64
-  section_number : Int
-  type_ : Int
-  storage_class : Int
-  number_of_aux_symbols : Int
+  value : UInt
+  section_number : Int16
+  type_ : UInt16
+  storage_class : Byte
+  number_of_aux_symbols : Byte
+  aux_symbols : Array[COFFSymbolAuxFormat5]
 }
-fn COFFSymbol::full_name(Self, @slice.Slice[Byte]) -> String raise
+fn COFFSymbol::full_name(Self, StringTable) -> String raise
+impl Default for COFFSymbol
 impl Eq for COFFSymbol
 impl Show for COFFSymbol
 impl ToJson for COFFSymbol
+impl @binary.Readable for COFFSymbol
 
 pub struct COFFSymbolAuxFormat5 {
-  size : Int64
-  num_relocs : Int
-  num_line_numbers : Int
-  checksum : Int64
-  sec_num : Int
-  selection : Int
+  size : UInt
+  num_relocs : UInt16
+  num_line_numbers : UInt16
+  checksum : UInt
+  sec_num : UInt16
+  selection : Byte
 }
+impl Default for COFFSymbolAuxFormat5
 impl Eq for COFFSymbolAuxFormat5
 impl Show for COFFSymbolAuxFormat5
 impl ToJson for COFFSymbolAuxFormat5
+impl @binary.Readable for COFFSymbolAuxFormat5
 
 pub(all) struct DataDirectory {
   virtual_address : UInt
@@ -251,13 +257,13 @@ pub struct File {
   sections : Array[Section]
   mut symbols : Array[Symbol]
   mut coff_symbols : Array[COFFSymbol]
-  mut string_table : @slice.Slice[Byte]
+  mut string_table : StringTable
   // private fields
 }
 fn File::close(Self) -> Unit raise
 fn File::coff_symbol_read_section_def_aux(Self, Int) -> COFFSymbolAuxFormat5 raise
-fn File::dwarf(Self) -> String
-fn File::imported_libraries(Self) -> Array[String] raise
+fn File::dwarf(Self) -> @dwarf.Data raise
+fn File::imported_libraries(Self) -> Array[String]
 fn File::imported_symbols(Self) -> Array[String]
 fn File::section(Self, String) -> Section?
 
@@ -291,6 +297,7 @@ pub struct ImportDirectory {
   first_thunk : UInt
   // private fields
 }
+impl Default for ImportDirectory
 impl Eq for ImportDirectory
 impl Show for ImportDirectory
 impl ToJson for ImportDirectory
@@ -381,13 +388,15 @@ impl Show for OptionalHeader64
 impl ToJson for OptionalHeader64
 
 pub struct Reloc {
-  virtual_address : Int64
-  symbol_table_index : Int64
-  type_ : Int
+  virtual_address : UInt
+  symbol_table_index : UInt
+  type_ : UInt16
 }
+impl Default for Reloc
 impl Eq for Reloc
 impl Show for Reloc
 impl ToJson for Reloc
+impl @binary.Readable for Reloc
 
 pub struct Section {
   section_header : SectionHeader
@@ -421,19 +430,26 @@ impl Show for SectionHeader32
 impl ToJson for SectionHeader32
 impl @binary.Readable for SectionHeader32
 
+pub struct StringTable(@slice.Slice[Byte])
+#deprecated
+fn StringTable::inner(Self) -> @slice.Slice[Byte]
+impl Eq for StringTable
+impl Show for StringTable
+impl ToJson for StringTable
+impl @tonyfettes/go/builtin.Len for StringTable
+
 pub(all) struct Symbol {
   name : String
-  value : Int64
-  section_number : Int
-  type_ : Int
-  storage_class : Int
+  value : UInt
+  section_number : Int16
+  type_ : Int16
+  storage_class : Byte
 }
 impl Eq for Symbol
 impl Show for Symbol
 impl ToJson for Symbol
 
 // Type aliases
-pub typealias @slice.Slice[Byte] as StringTable
 
 // Traits
 

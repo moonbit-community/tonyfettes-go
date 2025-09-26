@@ -6,6 +6,7 @@ fnalias @builtin.uint64
 
 ///|
 fnalias @builtin.int
+fnalias @builtin.uint
 
 ///|
 fnalias @builtin.uint16

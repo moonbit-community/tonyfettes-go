@@ -24,42 +24,6 @@ const EI_VERSION : Int = 6
 
 const ELFMAG : Bytes = \x7FELF
 
-const PF_MASKOS : UInt = 0x0ff00000
-
-const PF_MASKPROC : UInt = 0xf0000000
-
-const PF_R : UInt = 0x4
-
-const PF_W : UInt = 0x2
-
-const PF_X : UInt = 0x1
-
-const SHF_ALLOC : UInt = 0x2
-
-const SHF_COMPRESSED : UInt = 0x800
-
-const SHF_EXECINSTR : UInt = 0x4
-
-const SHF_GROUP : UInt = 0x200
-
-const SHF_INFO_LINK : UInt = 0x40
-
-const SHF_LINK_ORDER : UInt = 0x80
-
-const SHF_MASKOS : UInt = 0x0ff00000
-
-const SHF_MASKPROC : UInt = 0xf0000000
-
-const SHF_MERGE : UInt = 0x10
-
-const SHF_OS_NONCONFORMING : UInt = 0x100
-
-const SHF_STRINGS : UInt = 0x20
-
-const SHF_TLS : UInt = 0x400
-
-const SHF_WRITE : UInt = 0x1
-
 const Sym32Size : Int = 16
 
 const Sym64Size : Int = 24
@@ -70,9 +34,103 @@ const VER_FLG_INFO : UInt = 0x4
 
 const VER_FLG_WEAK : UInt = 0x2
 
+let compressHiOs : Int
+
+let compressHiProc : Int
+
+let compressLoOs : Int
+
+let compressLoProc : Int
+
+let compressZlib : CompressionType
+
+let compressZstd : CompressionType
+
+let dynFlag1ConfAlt : DynFlag1
+
+let dynFlag1Direct : DynFlag1
+
+let dynFlag1DisprelDne : DynFlag1
+
+let dynFlag1DisprelPnd : DynFlag1
+
+let dynFlag1Edited : DynFlag1
+
+let dynFlag1EndFiltee : DynFlag1
+
+let dynFlag1Global : DynFlag1
+
+let dynFlag1GlobalAudit : DynFlag1
+
+let dynFlag1Group : DynFlag1
+
+let dynFlag1IgnMulDef : DynFlag1
+
+let dynFlag1InitFirst : DynFlag1
+
+let dynFlag1Interpose : DynFlag1
+
+let dynFlag1Kmod : DynFlag1
+
+let dynFlag1LoadFltr : DynFlag1
+
+let dynFlag1NoCommon : DynFlag1
+
+let dynFlag1NoDefLib : DynFlag1
+
+let dynFlag1NoDelete : DynFlag1
+
+let dynFlag1NoDirect : DynFlag1
+
+let dynFlag1NoDump : DynFlag1
+
+let dynFlag1NoHdr : DynFlag1
+
+let dynFlag1NoKsyms : DynFlag1
+
+let dynFlag1NoOpen : DynFlag1
+
+let dynFlag1NoReloc : DynFlag1
+
+let dynFlag1Now : DynFlag1
+
+let dynFlag1Origin : DynFlag1
+
+let dynFlag1Pie : DynFlag1
+
+let dynFlag1Singleton : DynFlag1
+
+let dynFlag1Stub : DynFlag1
+
+let dynFlag1SymInterpose : DynFlag1
+
+let dynFlag1Trans : DynFlag1
+
+let dynFlag1WeakFilter : DynFlag1
+
+let dynFlagBindNow : DynFlag
+
+let dynFlagOrigin : DynFlag
+
+let dynFlagStaticTls : DynFlag
+
+let dynFlagSymbolic : DynFlag
+
+let dynFlagTextRel : DynFlag
+
 fn new_file(&@io.ReaderAt) -> File raise
 
 fn open(String) -> File raise
+
+let progFlagExec : UInt
+
+let progFlagMaskOs : UInt
+
+let progFlagMaskProc : UInt
+
+let progFlagRead : UInt
+
+let progFlagWrite : UInt
 
 fn r_info(UInt, UInt) -> UInt64
 
@@ -85,6 +143,32 @@ fn r_sym64(UInt64) -> UInt
 fn r_type32(UInt) -> UInt
 
 fn r_type64(UInt64) -> UInt
+
+let sectionFlagAlloc : SectionFlag
+
+let sectionFlagCompressed : SectionFlag
+
+let sectionFlagExecInstr : SectionFlag
+
+let sectionFlagGroup : SectionFlag
+
+let sectionFlagInfoLink : SectionFlag
+
+let sectionFlagLinkOrder : SectionFlag
+
+let sectionFlagMaskOs : SectionFlag
+
+let sectionFlagMaskProc : SectionFlag
+
+let sectionFlagMergeable : SectionFlag
+
+let sectionFlagOsNonConforming : SectionFlag
+
+let sectionFlagStrings : SectionFlag
+
+let sectionFlagTls : SectionFlag
+
+let sectionFlagWrite : SectionFlag
 
 fn st_bind(Byte) -> SymBind
 
@@ -119,9 +203,9 @@ impl Show for Chdr64
 impl ToJson for Chdr64
 
 pub(all) enum Class {
-  ELFCLASSNONE
-  ELFCLASS32
-  ELFCLASS64
+  None
+  Class32
+  Class64
 }
 fn Class::from_int(Int) -> Self
 fn Class::to_int(Self) -> Int
@@ -129,21 +213,12 @@ impl Eq for Class
 impl Show for Class
 impl ToJson for Class
 
-pub(all) enum CompressionType {
-  COMPRESS_NONE
-  COMPRESS_ZLIB
-  COMPRESS_ZSTD
-  COMPRESS_LOOS
-  COMPRESS_HIOS
-  COMPRESS_LOPROC
-  COMPRESS_HIPROC
-}
-fn CompressionType::from_int(Int) -> Self
-fn CompressionType::to_int(Self) -> Int
+pub(all) struct CompressionType(Int)
+#deprecated
+fn CompressionType::inner(Self) -> Int
 impl Default for CompressionType
 impl Eq for CompressionType
 impl Show for CompressionType
-impl ToJson for CompressionType
 
 pub(all) enum Data {
   ELFDATANONE
@@ -170,6 +245,19 @@ pub struct Dyn64 {
 impl Show for Dyn64
 impl ToJson for Dyn64
 
+pub(all) struct DynFlag(Int)
+#deprecated
+fn DynFlag::inner(Self) -> Int
+impl Add for DynFlag
+impl BitAnd for DynFlag
+impl BitOr for DynFlag
+impl Show for DynFlag
+
+pub struct DynFlag1(UInt)
+#deprecated
+fn DynFlag1::inner(Self) -> UInt
+impl Show for DynFlag1
+
 pub(all) enum DynTag {
   DT_NULL
   DT_NEEDED
@@ -187,7 +275,7 @@ pub(all) enum DynTag {
   DT_FINI
   DT_SONAME
   DT_RPATH
-  DT_SYMBOLIC
+  Symbolic
   DT_REL
   DT_RELSZ
   DT_RELENT
@@ -325,6 +413,7 @@ impl Show for DynamicVersionDep
 impl ToJson for DynamicVersionDep
 
 pub(all) struct DynamicVersionFlag(UInt16)
+#deprecated
 fn DynamicVersionFlag::inner(Self) -> UInt16
 impl Eq for DynamicVersionFlag
 impl Show for DynamicVersionFlag
@@ -450,7 +539,7 @@ pub(all) enum Machine {
   EM_386
   EM_68K
   EM_88K
-  EM_860
+  I860
   EM_MIPS
   EM_S370
   EM_MIPS_RS3_LE
@@ -639,26 +728,26 @@ impl Show for Machine
 impl ToJson for Machine
 
 pub(all) enum OSABI {
-  ELFOSABI_NONE
-  ELFOSABI_HPUX
-  ELFOSABI_NETBSD
-  ELFOSABI_LINUX
-  ELFOSABI_HURD
-  ELFOSABI_86OPEN
-  ELFOSABI_SOLARIS
-  ELFOSABI_AIX
-  ELFOSABI_IRIX
-  ELFOSABI_FREEBSD
-  ELFOSABI_TRU64
-  ELFOSABI_MODESTO
-  ELFOSABI_OPENBSD
-  ELFOSABI_OPENVMS
-  ELFOSABI_NSK
-  ELFOSABI_AROS
-  ELFOSABI_FENIXOS
-  ELFOSABI_CLOUDABI
-  ELFOSABI_ARM
-  ELFOSABI_STANDALONE
+  None
+  HPUX
+  NetBSD
+  Linux
+  Hurd
+  X86OPEN
+  Solaris
+  AIX
+  IRIX
+  FreeBSD
+  TRU64
+  Modesto
+  OpenBSD
+  OpenVMS
+  NSK
+  AROS
+  FenixOS
+  CloudABI
+  ARM
+  Standalone
 }
 fn OSABI::from_byte(Byte) -> Self
 fn OSABI::to_byte(Self) -> Byte
@@ -702,6 +791,7 @@ impl Show for Prog64
 impl ToJson for Prog64
 
 pub(all) struct ProgFlag(UInt)
+#deprecated
 fn ProgFlag::inner(Self) -> UInt
 impl BitAnd for ProgFlag
 impl BitOr for ProgFlag
@@ -725,9 +815,9 @@ impl ToJson for ProgHeader
 
 pub(all) enum ProgType {
   PT_NULL
-  PT_LOAD
-  PT_DYNAMIC
-  PT_INTERP
+  Load
+  Dynamic
+  Interp
   PT_NOTE
   PT_SHLIB
   PT_PHDR
@@ -1318,10 +1408,13 @@ impl Show for Section64
 impl ToJson for Section64
 
 pub(all) struct SectionFlag(UInt)
+#deprecated
 fn SectionFlag::inner(Self) -> UInt
+impl Add for SectionFlag
 impl BitAnd for SectionFlag
 impl BitOr for SectionFlag
 impl Default for SectionFlag
+impl Eq for SectionFlag
 impl Show for SectionFlag
 impl ToJson for SectionFlag
 
@@ -1345,7 +1438,7 @@ impl ToJson for SectionHeader
 pub(all) enum SectionIndex {
   SHN_UNDEF
   SHN_LORESERVE
-  SHN_LOPROC
+  LoProc
   SHN_HIPROC
   SHN_LOOS
   SHN_HIOS
@@ -1361,38 +1454,38 @@ impl Show for SectionIndex
 impl ToJson for SectionIndex
 
 pub(all) enum SectionType {
-  SHT(UInt)
-  SHT_NULL
-  SHT_PROGBITS
-  SHT_SYMTAB
-  SHT_STRTAB
-  SHT_RELA
-  SHT_HASH
-  SHT_DYNAMIC
-  SHT_NOTE
-  SHT_NOBITS
-  SHT_REL
-  SHT_SHLIB
-  SHT_DYNSYM
-  SHT_INIT_ARRAY
-  SHT_FINI_ARRAY
-  SHT_PREINIT_ARRAY
-  SHT_GROUP
-  SHT_SYMTAB_SHNDX
-  SHT_LOOS
-  SHT_GNU_ATTRIBUTES
-  SHT_GNU_HASH
-  SHT_GNU_LIBLIST
-  SHT_GNU_VERDEF
-  SHT_GNU_VERNEED
-  SHT_GNU_VERSYM
-  SHT_HIOS
-  SHT_LOPROC
-  SHT_RISCV_ATTRIBUTES
-  SHT_MIPS_ABIFLAGS
-  SHT_HIPROC
-  SHT_LOUSER
-  SHT_HIUSER
+  SectionType(UInt)
+  Null
+  ProgBits
+  SymTab
+  StrTab
+  RelA
+  Hash
+  Dynamic
+  Note
+  NoBits
+  Rel
+  Shlib
+  DynSym
+  InitArray
+  FiniArray
+  PreInitArray
+  Group
+  SymtabShndx
+  LoOs
+  GnuAttributes
+  GnuHash
+  GnuLibList
+  GnuVerdef
+  GnuVerneed
+  GnuVersym
+  HiOs
+  LoProc
+  RiscvAttributes
+  MipsABIFlags
+  HiProc
+  LoUser
+  HiUser
 }
 fn SectionType::from_uint(UInt) -> Self
 fn SectionType::to_uint(Self) -> UInt
@@ -1488,15 +1581,15 @@ impl Show for Symbol
 impl ToJson for Symbol
 
 pub(all) enum Type {
-  ET_NONE
-  ET_REL
-  ET_EXEC
-  ET_DYN
-  ET_CORE
-  ET_LOOS
-  ET_HIOS
-  ET_LOPROC
-  ET_HIPROC
+  None
+  Rel
+  Exec
+  Dyn
+  Core
+  LoOs
+  HiOs
+  LoProc
+  HiProc
 }
 fn Type::from_uint16(UInt16) -> Self
 fn Type::to_uint16(Self) -> UInt16
@@ -1516,6 +1609,7 @@ impl ToJson for Version
 
 pub struct VersionIndex(UInt16)
 fn VersionIndex::index(Self) -> UInt16
+#deprecated
 fn VersionIndex::inner(Self) -> UInt16
 fn VersionIndex::is_hidden(Self) -> Bool
 fn VersionIndex::new(UInt16) -> Self

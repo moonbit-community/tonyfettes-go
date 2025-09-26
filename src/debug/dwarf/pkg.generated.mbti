@@ -6,7 +6,7 @@ import(
 )
 
 // Values
-fn new(abbrev~ : @slice.Slice[Byte], aranges~ : @slice.Slice[Byte], frame~ : @slice.Slice[Byte], info~ : @slice.Slice[Byte], line~ : @slice.Slice[Byte], pubnames~ : @slice.Slice[Byte], ranges~ : @slice.Slice[Byte], str~ : @slice.Slice[Byte]) -> Data raise
+fn new(abbrev~ : @slice.Slice[Byte], aranges? : @slice.Slice[Byte], frame? : @slice.Slice[Byte], info~ : @slice.Slice[Byte], line~ : @slice.Slice[Byte], pubnames? : @slice.Slice[Byte], ranges~ : @slice.Slice[Byte], str~ : @slice.Slice[Byte]) -> Data raise
 
 // Errors
 pub suberror DecodeError {

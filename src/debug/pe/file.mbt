@@ -303,29 +303,120 @@ pub struct ImportDirectory {
   forwarder_chain : UInt
   name : UInt
   first_thunk : UInt
-  priv dll : String
-} derive(Show, Eq, ToJson)
+  priv mut dll : String
+} derive(Show, Eq, ToJson, Default)
 
 ///|
 /// `imported_symbols` returns the names of all symbols
 /// referred to by the binary f that are expected to be
 /// satisfied by other libraries at dynamic load time.
 /// It does not return weak symbols.
-pub fn File::imported_symbols(self : File) -> Array[String] {
+pub fn File::imported_symbols(self : File) -> Array[String] raise {
   guard self.optional_header is Some(oh) else { return [] }
-  ...
+
+  // grab the number of data directory entries
+  let dd_length = match oh {
+    Header64(oh64) => oh64.number_of_rva_and_sizes
+    Header32(oh32) => oh32.number_of_rva_and_sizes
+  }
+
+  // check that the length of data directory entries is large
+  // enough to include the imports directory.
+  if dd_length <= uint(IMAGE_DIRECTORY_ENTRY_IMPORT) {
+    return []
+  }
+
+  // grab the import data directory entry
+  let idd = match oh {
+    Header64(oh64) => oh64.data_directory[IMAGE_DIRECTORY_ENTRY_IMPORT]
+    Header32(oh32) => oh32.data_directory[IMAGE_DIRECTORY_ENTRY_IMPORT]
+  }
+
+  // figure out which section contains the import directory table
+  let mut ds = None
+  for s in self.sections {
+    if s.section_header.offset == 0 {
+      continue
+    }
+
+    // We are using distance between s.VirtualAddress and idd.VirtualAddress
+    // to avoid potential overflow of uint32 caused by addition of s.VirtualSize
+    // to s.VirtualAddress.
+    if s.section_header.virtual_address <= idd.virtual_address &&
+      idd.virtual_address - s.section_header.virtual_address <
+      s.section_header.virtual_size {
+      ds = Some(s)
+      break
+    }
+  }
+
+  // didn't find a section, so no import libraries were found
+  guard ds is Some(ds) else { return [] }
+  let mut d = ds.data()
+
+  // seek to the virtual address specified in the import data directory
+  d = d[int(idd.virtual_address - ds.section_header.virtual_address):]
+
+  // start decoding the import directory
+  let ida : Array[ImportDirectory] = []
+  while len(d) >= 20 {
+    let dt = ImportDirectory::{
+      original_first_thunk: @binary.little_endian.uint32(d[0:4]),
+      time_date_stamp: @binary.little_endian.uint32(d[4:8]),
+      forwarder_chain: @binary.little_endian.uint32(d[8:12]),
+      name: @binary.little_endian.uint32(d[12:16]),
+      first_thunk: @binary.little_endian.uint32(d[16:20]),
+      dll: "",
+    }
+    d = d[20:]
+    if dt.original_first_thunk == 0 {
+      break
+    }
+    ida.push(dt)
+  }
+  // TODO(brainman): this needs to be rewritten
+  //  ds.Data() returns contents of section containing import table. Why store in variable called "names"?
+  //  Why we are retrieving it second time? We already have it in "d", and it is not modified anywhere.
+  //  getString does not extracts a string from symbol string table (as getString doco says).
+  //  Why ds.Data() called again and again in the loop?
+  //  Needs test before rewrite.
+  let names = ds.data()
+  let all : Array[String] = []
+  for dt in ida {
+    let (dt_dll, _) = get_string(
+      names,
+      int(dt.name - ds.section_header.virtual_address),
+    )
+    dt.dll = dt_dll
+    d = ds.data()
+    d = d[int(dt.original_first_thunk - ds.section_header.virtual_address):]
+    while len(d) > 0 {
+      let va = @binary.little_endian.uint64(d[0:8])
+      d = d[8:]
+      if va == 0 {
+        break
+      }
+      if (va & 0x8000000000000000UL) > 0 {
+        // TODO add dynimport ordinal support
+      } else {
+        let (fn_, _) = get_string(
+          names,
+          int(uint(va) - ds.section_header.virtual_address + 2),
+        )
+        all.push(fn_ + ":" + dt.dll)
+      }
+    }
+  }
+  return all
 }
 
 ///|
 /// ImportedLibraries returns the names of all libraries
 /// referred to by the binary f that are expected to be
 /// linked with the binary at dynamic link time.
-pub fn File::imported_libraries(_ : File) -> Array[String] raise {
+pub fn File::imported_libraries(_ : File) -> Array[String] {
   // TODO
   // cgo -dynimport don't use this for windows PE, so just return.
-  if false {
-    fail("unreachable")
-  }
   return []
 }
 

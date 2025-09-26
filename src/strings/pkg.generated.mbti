@@ -12,6 +12,14 @@ fn new_reader(String) -> Reader
 // Errors
 
 // Types and methods
+type Builder
+fn Builder::cap(Self) -> Int
+fn Builder::grow(Self, Int) -> Unit
+fn Builder::len(Self) -> Int
+fn Builder::reset(Self) -> Unit
+fn Builder::string(Self) -> String
+impl @io.Writer for Builder
+
 type Reader
 fn Reader::size(Self) -> Int64
 impl @tonyfettes/go/builtin.Len for Reader

@@ -8,9 +8,6 @@
     "tonyfettes/go/builtin",
     "tonyfettes/go/compress/zlib",
     "tonyfettes/go/debug/dwarf",
-    "tonyfettes/go/unsafe",
-    "tonyfettes/go/strings",
-    "tonyfettes/go/bufio",
     "tonyfettes/go/bytes",
     "tonyfettes/go/unicode/utf8"
   ]

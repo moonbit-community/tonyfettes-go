@@ -145,10 +145,8 @@ pub struct Section {
 ///
 /// If s.Offset is 0, the section has no contents,
 /// and Data will always return a non-nil error.
-pub fn Section::data(self : Section) -> @slice.Slice[Byte] {
-  // Simplified implementation using saferio
-  ignore(self)
-  @slice.new()
+pub fn Section::data(self : Section) -> @slice.Slice[Byte] raise {
+  @saferio.read_data_at(self.sr, uint64(self.section_header.size), 0)
 }
 
 ///|
@@ -156,10 +154,8 @@ pub fn Section::data(self : Section) -> @slice.Slice[Byte] {
 ///
 /// If s.Offset is 0, the section has no contents, and all calls
 /// to the returned reader will return a non-nil error.
-pub fn Section::open(self : Section) -> String {
-  // Simplified implementation - return placeholder string
-  ignore(self)
-  "section reader placeholder"
+pub fn Section::open(self : Section) -> &@io.ReadSeeker {
+  @io.new_section_reader(self.sr, 0, 1 << (63 - 1))
 }
 
 ///|
