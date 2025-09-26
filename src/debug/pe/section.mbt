@@ -77,14 +77,37 @@ fn SectionHeader32::full_name(
 /// Reloc represents a PE COFF relocation.
 /// Each section contains its own relocation list.
 pub struct Reloc {
-  virtual_address : Int64
-  symbol_table_index : Int64
-  type_ : Int
-} derive(Show, Eq, ToJson)
+  virtual_address : UInt
+  symbol_table_index : UInt
+  type_ : UInt16
+} derive(Show, Eq, ToJson, Default)
 
 ///|
-fn read_relocs(sh : SectionHeader, r : &@io.ReadSeeker) -> Array[Reloc] {
-  ...
+pub impl @binary.Readable for Reloc with read(
+  r : &@io.Reader,
+  order : &@binary.ByteOrder,
+) -> Reloc raise {
+  Reloc::{
+    virtual_address: @binary.read(r, order),
+    symbol_table_index: @binary.read(r, order),
+    type_: @binary.read(r, order),
+  }
+}
+
+///|
+fn read_relocs(sh : SectionHeader, r : &@io.ReadSeeker) -> Array[Reloc] raise {
+  if sh.number_of_relocations <= 0 {
+    return []
+  }
+  let _ = r.seek(int64(sh.pointer_to_relocations), @io.SeekStart)
+  let relocs = @binary.read_n(
+    r,
+    @binary.little_endian,
+    int(sh.number_of_relocations),
+  ) catch {
+    error => fail("failed to read section relocations: \{error}")
+  }
+  relocs
 }
 
 ///|

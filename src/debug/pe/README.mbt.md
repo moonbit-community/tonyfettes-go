@@ -87,7 +87,7 @@ The translation maintains:
 ```moonbit
 ///|
 test "basic PE usage" {
-  // Test PE functionality with placeholder implementation  
+  // Test PE functionality with placeholder implementation
   let file_header = @pe.FileHeader::{
     machine: @pe.IMAGE_FILE_MACHINE_AMD64,
     number_of_sections: 0,
@@ -108,7 +108,7 @@ test "basic PE usage" {
   let format_error = @pe.FormatError::{}
   @json.inspect(format_error.error() == "unknown error", content=true)
 
-  // Test string table functionality 
+  // Test string table functionality
   let string_table = @pe.string_table_string(@slice.new(), 4)
   @json.inspect(string_table == "", content=true)
 }

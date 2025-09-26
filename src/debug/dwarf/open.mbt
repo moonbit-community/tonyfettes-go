@@ -81,11 +81,11 @@ pub impl Default for Data with default() -> Data {
 /// the ".debug_abbrev" section.
 pub fn new(
   abbrev~ : @slice.Slice[Byte],
-  aranges~ : @slice.Slice[Byte],
-  frame~ : @slice.Slice[Byte],
+  aranges? : @slice.Slice[Byte] = @slice.new(),
+  frame? : @slice.Slice[Byte] = @slice.new(),
   info~ : @slice.Slice[Byte],
   line~ : @slice.Slice[Byte],
-  pubnames~ : @slice.Slice[Byte],
+  pubnames? : @slice.Slice[Byte] = @slice.new(),
   ranges~ : @slice.Slice[Byte],
   str~ : @slice.Slice[Byte],
 ) -> Data raise {

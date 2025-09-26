@@ -5,30 +5,34 @@
 ///|
 /// cstring converts ASCII byte sequence b to string.
 /// It stops once it finds 0 or reaches end of b.
-fn cstring(b : @slice.Slice[Byte]) -> String {
-  let mut i = 0
-  for j = 0; j < b.length(); j = j + 1 {
-    if b[j] == (0 : Byte) {
-      i = j
-      break
-    }
-  } else {
-    i = b.length()
-  }
-  let sb = StringBuilder::new()
-  for k = 0; k < i; k = k + 1 {
-    sb.write_char(Char::from_int(b[k].to_int()))
-  }
-  sb.to_string()
+fn cstring(b : @slice.Slice[Byte]) -> String raise {
+  @encoding/utf8.decode(b.bytesview())
 }
 
 ///|
 /// StringTable is a COFF string table.
-pub typealias @slice.Slice[Byte] as StringTable
+pub struct StringTable(@slice.Slice[Byte]) derive(Show, Eq, ToJson)
+
+///|
+pub impl @builtin.Len for StringTable with len(self : StringTable) -> Int {
+  len(self.0)
+}
 
 ///|
 fn read_string_table(fh : FileHeader, r : &@io.ReadSeeker) -> StringTable raise {
-  ...
+  if fh.pointer_to_symbol_table <= 0 {
+    return StringTable(@slice.make(0))
+  }
+  let offset = fh.pointer_to_symbol_table +
+    COFF_SYMBOL_SIZE * fh.number_of_symbols
+  let _ = r.seek(int64(offset), @io.SeekStart)
+  let l : UInt = @binary.read(r, @binary.little_endian)
+  if l <= 4 {
+    return StringTable(@slice.make(0))
+  }
+  let l = l - 4
+  let buf = @saferio.read_data(r, uint64(l))
+  StringTable(buf)
 }
 
 ///|
@@ -41,9 +45,9 @@ pub fn string_table_string(st : StringTable, start : Int64) -> String raise {
   if start < 4 {
     raise Failure("offset \{start} is before the start of string table")
   }
-  let start_adj = start - 4
-  if start_adj.to_int() > st.length() {
+  let start = start - 4
+  if start.to_int() > len(st) {
     raise Failure("offset \{start} is beyond the end of string table")
   }
-  cstring(st[start_adj.to_int():])
+  cstring(st.0[int(start):])
 }

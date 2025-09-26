@@ -222,8 +222,75 @@ pub fn File::section(self : File, name : String) -> Section? {
 }
 
 ///|
-pub fn File::dwarf(self : File) -> String {
-  ...
+pub fn File::dwarf(self : File) -> @dwarf.Data raise {
+  fn dwarf_suffix(s : Section) -> String {
+    if s.section_header.name is [.. ".debug_", .. name] {
+      return name.to_string()
+    } else if s.section_header.name is [.. ".zdebug_", .. name] {
+      return name.to_string()
+    } else {
+      return ""
+    }
+  }
+
+  fn section_data(s : Section) -> @slice.Slice[Byte] raise {
+    let mut b = s.data()
+    if 0U < s.section_header.virtual_size &&
+      s.section_header.virtual_size < s.section_header.size {
+      b = b[:int(s.section_header.virtual_size)]
+    }
+    if len(b) >= 12 && b[:4].bytesview() is "ZLIB" {
+      let dlen = @binary.big_endian.uint64(b[4:12])
+      let dbuf = @slice.make(int(dlen))
+      let r = @zlib.new_reader(@bytes.new_buffer(b[12:]))
+      let _ = @io.read_full(r, dbuf)
+      r.close()
+      b = dbuf
+    }
+    return b
+  }
+
+  // There are many other DWARF sections, but these
+  // are the ones the debug/dwarf package uses.
+  // Don't bother loading others.
+  let dat = {
+    "abbrev": @slice.new(),
+    "info": @slice.new(),
+    "str": @slice.new(),
+    "line": @slice.new(),
+    "ranges": @slice.new(),
+  }
+  for s in self.sections {
+    let suffix = dwarf_suffix(s)
+    if suffix == "" {
+      continue
+    }
+    guard dat.get(suffix) is Some(_) else { continue }
+    let b = section_data(s)
+    dat[suffix] = b
+  }
+  let d = @dwarf.new(
+    abbrev=dat["abbrev"],
+    info=dat["info"],
+    str=dat["str"],
+    ranges=dat["ranges"],
+    line=dat["line"],
+  )
+  for i in 0..<self.sections.length() {
+    let s = self.sections[i]
+    let suffix = dwarf_suffix(s)
+    if suffix == "" {
+      continue
+    }
+    guard dat.get(suffix) is Some(_) else { continue }
+    let b = section_data(s)
+    if suffix is "types" {
+      d.add_types("types-\{i}", b)
+    } else {
+      d.add_section([..".debug", ..suffix], b)
+    }
+  }
+  d
 }
 
 ///|
@@ -245,6 +312,7 @@ pub struct ImportDirectory {
 /// satisfied by other libraries at dynamic load time.
 /// It does not return weak symbols.
 pub fn File::imported_symbols(self : File) -> Array[String] {
+  guard self.optional_header is Some(oh) else { return [] }
   ...
 }
 

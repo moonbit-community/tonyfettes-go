@@ -4,7 +4,7 @@
 
 ///|
 /// COFF symbol table entry size in bytes
-pub const COFF_SYMBOL_SIZE : Int64 = 18
+pub const COFF_SYMBOL_SIZE : UInt = 18
 
 ///|
 /// COFFSymbol represents single COFF symbol table record.
