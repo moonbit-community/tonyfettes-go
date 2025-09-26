@@ -146,7 +146,7 @@ fn File::string_table(self : File, link : UInt) -> @slice.Slice[Byte] raise {
 /// Even if the section is stored compressed in the ELF file,
 /// the ReadSeeker reads uncompressed data.
 pub fn Section::open(self : Section) -> &@io.ReadSeeker raise {
-  if self.section_header.type_ is SHT_NOBITS {
+  if self.section_header.type_ is NoBits {
     return @io.new_section_reader(
       NobitsSectionReader::{  },
       0,
@@ -154,7 +154,7 @@ pub fn Section::open(self : Section) -> &@io.ReadSeeker raise {
     )
   }
   let mut zrd : ((@io.SectionReader) -> &@io.Reader raise)? = None
-  if (self.section_header.flags & shfCompressed) == 0 {
+  if (self.section_header.flags & sectionFlagCompressed) == 0 {
     if !self.section_header.name.has_prefix(".zdebug") {
       return @io.new_section_reader(self.sr.unwrap(), 0, 1 << (63 - 1))
     }
@@ -167,7 +167,7 @@ pub fn Section::open(self : Section) -> &@io.ReadSeeker raise {
     self.compression_type = compressZlib
     self.section_header.size = @binary.big_endian.uint64(b[4:12])
     zrd = Some(r => @zlib.new_reader(@bufio.new_reader(r)))
-  } else if (self.section_header.flags & shfAlloc) != 0 {
+  } else if (self.section_header.flags & sectionFlagAlloc) != 0 {
     return ErrorReader::new(
       FormatError::new(
         off=int64(self.section_header.offset),
@@ -364,7 +364,7 @@ pub fn new_file(r : &@io.ReaderAt) -> File raise {
     gnu_versym: @slice.make(0),
   }
   match f.file_header.class {
-    ELFCLASS32 | ELFCLASS64 => ()
+    Class32 | Class64 => ()
     _ =>
       raise FormatError::new(
         off=0,
@@ -403,7 +403,7 @@ pub fn new_file(r : &@io.ReaderAt) -> File raise {
   let mut shnum : Int = 0
   let mut shstrndx : Int = 0
   match f.file_header.class {
-    ELFCLASS32 => {
+    Class32 => {
       let data = @slice.make(52)
       let n = sr.read_at(data, 0)
       if n != 52 {
@@ -428,7 +428,7 @@ pub fn new_file(r : &@io.ReaderAt) -> File raise {
       shnum = bo.uint16(data[48:50]).to_int()
       shstrndx = bo.uint16(data[50:52]).to_int()
     }
-    ELFCLASS64 => {
+    Class64 => {
       let data = @slice.make(Header64::sizeof(Header64))
       let n = sr.read_at(data, 0)
       if n != 64 {
@@ -484,13 +484,13 @@ pub fn new_file(r : &@io.ReaderAt) -> File raise {
 
   // Validate header entry sizes
   let want_phentsize = match f.file_header.class {
-    ELFCLASS32 => 8 * 4
-    ELFCLASS64 => 2 * 4 + 6 * 8
+    Class32 => 8 * 4
+    Class64 => 2 * 4 + 6 * 8
     _ => 0
   }
   let want_shentsize = match f.file_header.class {
-    ELFCLASS32 => 10 * 4
-    ELFCLASS64 => 4 * 4 + 6 * 8
+    Class32 => 10 * 4
+    Class64 => 4 * 4 + 6 * 8
     _ => 0
   }
   if phnum > 0 && phentsize < want_phentsize {
@@ -510,7 +510,7 @@ pub fn new_file(r : &@io.ReaderAt) -> File raise {
     let off = (i.to_uint64() * phentsize.to_uint64()).to_int()
     let p = Prog::default()
     match f.file_header.class {
-      ELFCLASS32 =>
+      Class32 =>
         p.prog_header = ProgHeader::{
           type_: ProgType::from_int(
             bo.uint32(phdata[off + 0:off + 4]).reinterpret_as_int(),
@@ -523,7 +523,7 @@ pub fn new_file(r : &@io.ReaderAt) -> File raise {
           memsz: bo.uint32(phdata[off + 20:off + 24]).to_uint64(),
           align: bo.uint32(phdata[off + 28:off + 32]).to_uint64(),
         }
-      ELFCLASS64 =>
+      Class64 =>
         p.prog_header = ProgHeader::{
           type_: ProgType::from_int(
             bo.uint32(phdata[off + 0:off + 4]).reinterpret_as_int(),
@@ -574,7 +574,7 @@ pub fn new_file(r : &@io.ReaderAt) -> File raise {
     let mut typ : UInt = 0
     let mut link : UInt = 0
     match f.file_header.class {
-      ELFCLASS32 => {
+      Class32 => {
         let data = @slice.make(40)
         let n = sr.read(data)
         if n != 40 {
@@ -599,7 +599,7 @@ pub fn new_file(r : &@io.ReaderAt) -> File raise {
         typ = sh.type_
         link = sh.link
       }
-      ELFCLASS64 => {
+      Class64 => {
         let data = @slice.make(64)
         let n = sr.read(data)
         if n != 64 {
@@ -626,7 +626,7 @@ pub fn new_file(r : &@io.ReaderAt) -> File raise {
       }
       _ => ()
     }
-    if !(SectionType::from_uint(typ) is SHT_NULL) {
+    if !(SectionType::from_uint(typ) is Null) {
       raise FormatError::new(
         off=shoff,
         msg="invalid type of the initial section",
@@ -675,7 +675,7 @@ pub fn new_file(r : &@io.ReaderAt) -> File raise {
     let off = (i.to_uint64() * shentsize.to_uint64()).to_int()
     let s = Section::default()
     let sh = match f.file_header.class {
-      ELFCLASS32 => {
+      Class32 => {
         names.push(bo.uint32(shdata[off + 0:off + 4]))
         s.section_header = SectionHeader::{
           name: "",
@@ -691,7 +691,7 @@ pub fn new_file(r : &@io.ReaderAt) -> File raise {
           entsize: bo.uint32(shdata[off + 36:off + 40]).to_uint64(),
         }
       }
-      ELFCLASS64 => {
+      Class64 => {
         names.push(bo.uint32(shdata[off + 0:off + 4]))
         s.section_header = SectionHeader::{
           name: "",
@@ -707,7 +707,7 @@ pub fn new_file(r : &@io.ReaderAt) -> File raise {
           entsize: bo.uint64(shdata[off + 56:off + 64]),
         }
       }
-      ELFCLASSNONE => ()
+      None => ()
     }
     if s.section_header.offset < 0 {
       raise FormatError::new(
@@ -730,12 +730,12 @@ pub fn new_file(r : &@io.ReaderAt) -> File raise {
         s.section_header.file_size.reinterpret_as_int64(),
       ),
     )
-    if (s.section_header.flags & shfCompressed) == 0 {
+    if (s.section_header.flags & sectionFlagCompressed) == 0 {
       s.reader_at = s.sr.map(sr => sr)
       s.section_header.size = s.section_header.file_size
     } else {
       match f.class() {
-        ELFCLASS32 => {
+        Class32 => {
           let chdata = @slice.make(12)
           guard s.sr is Some(sr)
           let n = sr.read_at(chdata, 0)
@@ -752,7 +752,7 @@ pub fn new_file(r : &@io.ReaderAt) -> File raise {
           s.section_header.addralign = bo.uint32(chdata[8:12]).to_uint64()
           s.compression_offset = 12
         }
-        ELFCLASS64 => {
+        Class64 => {
           let chdata = @slice.make(16)
           guard s.sr is Some(sr)
           let n = sr.read_at(chdata, 0)
@@ -769,7 +769,7 @@ pub fn new_file(r : &@io.ReaderAt) -> File raise {
           s.section_header.addralign = bo.uint64(chdata[12:16])
           s.compression_offset = 16
         }
-        ELFCLASSNONE => ()
+        None => ()
       }
     }
     f.sections.push(s)
@@ -782,7 +782,7 @@ pub fn new_file(r : &@io.ReaderAt) -> File raise {
     return f
   }
   let shstr = f.sections[shstrndx]
-  if shstr.section_header.type_ != SHT_STRTAB {
+  if shstr.section_header.type_ != StrTab {
     raise FormatError::new(
       off=shoff +
         (shstrndx.to_uint64() * shentsize.to_uint64()).reinterpret_as_int64(),
@@ -817,8 +817,8 @@ fn File::get_symbols(
   typ : SectionType,
 ) -> (Array[Symbol], @slice.Slice[Byte]) raise {
   match self.file_header.class {
-    ELFCLASS64 => self.get_symbols64(typ)
-    ELFCLASS32 => self.get_symbols32(typ)
+    Class64 => self.get_symbols64(typ)
+    Class32 => self.get_symbols32(typ)
     _ => raise NotImplemented
   }
 }
@@ -957,7 +957,7 @@ pub fn File::section(self : File, name : String) -> Section? {
 /// After retrieving the symbols as symtab, an externally supplied index x
 /// corresponds to symtab[x-1], not symtab[x].
 pub fn File::symbols(self : File) -> Array[Symbol] raise {
-  let (sym, _) = self.get_symbols(SHT_SYMTAB)
+  let (sym, _) = self.get_symbols(SymTab)
   sym
 }
 
@@ -972,7 +972,7 @@ pub fn File::symbols(self : File) -> Array[Symbol] raise {
 /// After retrieving the symbols as symtab, an externally supplied index x
 /// corresponds to symtab[x-1], not symtab[x].
 pub fn File::dynamic_symbols(self : File) -> Array[Symbol] raise {
-  let (sym, str) = self.get_symbols(SHT_DYNSYM)
+  let (sym, str) = self.get_symbols(DynSym)
   let has_versions = self.gnu_version_init(str)
   if has_versions {
     for i in 0..<sym.length() {
@@ -999,7 +999,7 @@ pub struct ImportedSymbol {
 /// satisfied by other libraries at dynamic load time.
 /// It does not return weak symbols.
 pub fn File::imported_symbols(self : File) -> Array[ImportedSymbol] raise {
-  let (sym, str) = self.get_symbols(SHT_DYNSYM)
+  let (sym, str) = self.get_symbols(DynSym)
   self.gnu_version_init(str) |> ignore
   let all : Array[ImportedSymbol] = []
   for i in 0..<sym.length() {
@@ -1083,7 +1083,7 @@ fn File::_dynamic_versions(self : File, str : @slice.Slice[Byte]) -> Unit raise 
   if self.dyn_vers is Some(_) {
     return
   }
-  let vd = self.section_by_type(SHT_GNU_VERDEF)
+  let vd = self.section_by_type(GnuVerdef)
   guard vd is Some(vd) else { return }
   let d = vd.data()
   let dyn_vers : Array[DynamicVersion] = []
@@ -1138,7 +1138,7 @@ fn File::_dynamic_versions(self : File, str : @slice.Slice[Byte]) -> Unit raise 
 // dynamic_versions returns version information for a dynamic object.
 pub fn File::dynamic_versions(self : File) -> Array[DynamicVersion] raise {
   if self.dyn_vers is None {
-    let (_, str) = self.get_symbols(SHT_DYNSYM)
+    let (_, str) = self.get_symbols(DynSym)
     let has_versions = self.gnu_version_init(str)
     if !has_versions {
       fail("DynamicVersions: missing version table")
@@ -1157,7 +1157,7 @@ fn File::_dynamic_version_needs(
     // Already initialized.
     return
   }
-  let vn = self.section_by_type(SHT_GNU_VERNEED)
+  let vn = self.section_by_type(GnuVerneed)
   guard vn is Some(vn) else { return }
   let d = vn.data()
   let dyn_ver_needs : Array[DynamicVersionNeed] = []
@@ -1206,7 +1206,7 @@ pub fn File::dynamic_version_needs(
   self : File,
 ) -> Array[DynamicVersionNeed] raise {
   if self.dyn_ver_needs is None {
-    let (_, str) = self.get_symbols(SHT_DYNSYM)
+    let (_, str) = self.get_symbols(DynSym)
     let has_versions = self.gnu_version_init(str)
     if !has_versions {
       fail("DynamicVersionNeeds: missing version table")
@@ -1231,7 +1231,7 @@ impl Show for SectionHasInvalidStringTableLink with output(
 /// for use by calls to gnuVersion.
 /// It reports whether any version tables were found.
 fn File::gnu_version_init(self : File, str : @slice.Slice[Byte]) -> Bool raise {
-  guard self.section_by_type(SHT_GNU_VERSYM) is Some(vs) else { return false }
+  guard self.section_by_type(GnuVersym) is Some(vs) else { return false }
   let d = vs.data()
   self.gnu_versym = d
   self._dynamic_versions(str)
@@ -1302,12 +1302,12 @@ pub fn File::dyn_string(self : File, tag : DynTag) -> Array[String] raise {
         val=tag.to_int().to_string(),
       )
   }
-  let ds = match self.section_by_type(SHT_DYNAMIC) {
+  let ds = match self.section_by_type(Dynamic) {
     Some(s) => s
     None => return [] // not dynamic, so no libraries
   }
   let d = ds.data()
-  let dyn_size = if self.file_header.class is ELFCLASS64 { 16 } else { 8 }
+  let dyn_size = if self.file_header.class is Class64 { 16 } else { 8 }
   if d.length() % dyn_size != 0 {
     fail("length of dynamic section is not a multiple of dynamic entry size")
   }
@@ -1318,12 +1318,12 @@ pub fn File::dyn_string(self : File, tag : DynTag) -> Array[String] raise {
   while offset + dyn_size <= d.length() {
     let dyn_data = d[offset:offset + dyn_size]
     let (t, v) = match self.file_header.class {
-      ELFCLASS32 => {
+      Class32 => {
         let tag_val = bo.uint32(dyn_data[0:4])
         let val = bo.uint32(dyn_data[4:8]).to_uint64()
         (DynTag::from_int(tag_val.reinterpret_as_int()), val)
       }
-      ELFCLASS64 => {
+      Class64 => {
         let tag_val = bo.uint64(dyn_data[0:8])
         let val = bo.uint64(dyn_data[8:16])
         (DynTag::from_int(tag_val.to_int()), val)
@@ -1345,12 +1345,12 @@ pub fn File::dyn_string(self : File, tag : DynTag) -> Array[String] raise {
 /// DynValue returns the values listed for the given tag in the file's dynamic
 /// section.
 fn File::dyn_value(self : File, tag : DynTag) -> Array[UInt64] raise {
-  let ds = match self.section_by_type(SHT_DYNAMIC) {
+  let ds = match self.section_by_type(Dynamic) {
     Some(s) => s
     None => return []
   }
   let d = ds.data()
-  let dyn_size = if self.file_header.class is ELFCLASS64 { 16 } else { 8 }
+  let dyn_size = if self.file_header.class is Class64 { 16 } else { 8 }
   if d.length() % dyn_size != 0 {
     fail("length of dynamic section is not a multiple of dynamic entry size")
   }
@@ -1360,12 +1360,12 @@ fn File::dyn_value(self : File, tag : DynTag) -> Array[UInt64] raise {
   while offset + dyn_size <= d.length() {
     let dyn_data = d[offset:offset + dyn_size]
     let (t, v) = match self.file_header.class {
-      ELFCLASS32 => {
+      Class32 => {
         let tag_val = bo.uint32(dyn_data[0:4])
         let val = bo.uint32(dyn_data[4:8]).to_uint64()
         (DynTag::from_int(tag_val.reinterpret_as_int()), val)
       }
-      ELFCLASS64 => {
+      Class64 => {
         let tag_val = bo.uint64(dyn_data[0:8])
         let val = bo.uint64(dyn_data[8:16])
         (DynTag::from_int(tag_val.to_int()), val)

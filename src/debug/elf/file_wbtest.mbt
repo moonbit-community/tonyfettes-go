@@ -21,20 +21,20 @@ let file_tests : Array[FileTest] = [
   {
     file: "testdata/gcc-386-freebsd-exec",
     hdr: {
-      class: ELFCLASS32,
+      class: Class32,
       data: ELFDATA2LSB,
       version: EV_CURRENT,
-      osabi: ELFOSABI_FREEBSD,
+      osabi: FreeBSD,
       abi_version: 0,
       byte_order: @binary.little_endian,
-      type_: ET_EXEC,
+      type_: Exec,
       machine: EM_386,
       entry: 0x80483cc,
     },
     sections: [
       {
         name: "",
-        type_: SHT_NULL,
+        type_: Null,
         flags: SectionFlag(0x0),
         addr: 0x0,
         offset: 0x0,
@@ -47,8 +47,8 @@ let file_tests : Array[FileTest] = [
       },
       {
         name: ".interp",
-        type_: SHT_PROGBITS,
-        flags: shfAlloc,
+        type_: ProgBits,
+        flags: sectionFlagAlloc,
         addr: 0x80480d4,
         offset: 0xd4,
         size: 0x15,
@@ -60,8 +60,8 @@ let file_tests : Array[FileTest] = [
       },
       {
         name: ".hash",
-        type_: SHT_HASH,
-        flags: shfAlloc,
+        type_: Hash,
+        flags: sectionFlagAlloc,
         addr: 0x80480ec,
         offset: 0xec,
         size: 0x90,
@@ -85,7 +85,7 @@ let file_tests : Array[FileTest] = [
         align: 0x4,
       },
       {
-        type_: PT_INTERP,
+        type_: Interp,
         flags: progFlagRead,
         off: 0xd4,
         vaddr: 0x80480d4,
@@ -124,10 +124,10 @@ test "file open and parse" {
   @json.inspect(EI_DATA, content=5)
 
   // Test enum conversions
-  @json.inspect(Class::ELFCLASS32.to_int(), content=1)
+  @json.inspect(Class::Class32.to_int(), content=1)
   @json.inspect(Data::ELFDATA2LSB.to_byte(), content=1)
   @json.inspect(Version::EV_CURRENT.to_byte(), content=1)
-  @json.inspect(Type::ET_EXEC.to_uint16(), content=2)
+  @json.inspect(Type::Exec.to_uint16(), content=2)
   @json.inspect(Machine::EM_386.to_int(), content=3)
 }
 
@@ -136,8 +136,8 @@ test "file open and parse" {
 test "section header structure" {
   let sh : SectionHeader = {
     name: ".text",
-    type_: SHT_PROGBITS,
-    flags: shfAlloc | shfExecInstr,
+    type_: ProgBits,
+    flags: sectionFlagAlloc | sectionFlagExecInstr,
     addr: 0x1000,
     offset: 0x200,
     size: 0x100,
@@ -158,7 +158,7 @@ test "section header structure" {
 /// Test program header structure
 test "program header structure" {
   let ph : ProgHeader = {
-    type_: PT_LOAD,
+    type_: Load,
     flags: progFlagRead | progFlagExec,
     off: 0x0,
     vaddr: 0x8048000,
@@ -198,13 +198,13 @@ test "symbol structure" {
 /// Test file header structure
 test "file header structure" {
   let fh : FileHeader = {
-    class: ELFCLASS64,
+    class: Class64,
     data: ELFDATA2LSB,
     version: EV_CURRENT,
-    osabi: ELFOSABI_NONE,
+    osabi: None,
     abi_version: 0,
     byte_order: @binary.little_endian,
-    type_: ET_EXEC,
+    type_: Exec,
     machine: EM_X86_64,
     entry: 0x4003e0,
   }
@@ -230,23 +230,23 @@ test "version index operations" {
 ///|
 /// Test section types and flags
 test "section types and flags" {
-  @json.inspect(SectionType::SHT_NULL.to_uint(), content=0)
-  @json.inspect(SectionType::SHT_PROGBITS.to_uint(), content=1)
-  @json.inspect(SectionType::SHT_SYMTAB.to_uint(), content=2)
-  @json.inspect(SectionType::SHT_STRTAB.to_uint(), content=3)
-  @json.inspect(shfWrite, content=1)
-  @json.inspect(shfAlloc, content=2)
-  @json.inspect(shfExecInstr, content=4)
-  @json.inspect(shfMerge | shfStrings, content=48) // 0x10 | 0x20 = 48
+  @json.inspect(SectionType::Null.to_uint(), content=0)
+  @json.inspect(SectionType::ProgBits.to_uint(), content=1)
+  @json.inspect(SectionType::SymTab.to_uint(), content=2)
+  @json.inspect(SectionType::StrTab.to_uint(), content=3)
+  @json.inspect(sectionFlagWrite, content=1)
+  @json.inspect(sectionFlagAlloc, content=2)
+  @json.inspect(sectionFlagExecInstr, content=4)
+  @json.inspect(sectionFlagMergeable | sectionFlagStrings, content=48) // 0x10 | 0x20 = 48
 }
 
 ///|
 /// Test program types and flags
 test "program types and flags" {
   @json.inspect(ProgType::PT_NULL.to_int(), content=0)
-  @json.inspect(ProgType::PT_LOAD.to_int(), content=1)
-  @json.inspect(ProgType::PT_DYNAMIC.to_int(), content=2)
-  @json.inspect(ProgType::PT_INTERP.to_int(), content=3)
+  @json.inspect(ProgType::Load.to_int(), content=1)
+  @json.inspect(ProgType::Dynamic.to_int(), content=2)
+  @json.inspect(ProgType::Interp.to_int(), content=3)
   @json.inspect(progFlagExec, content=1)
   @json.inspect(progFlagWrite, content=2)
   @json.inspect(progFlagRead, content=4)
@@ -265,11 +265,11 @@ test "machine types" {
 ///|
 /// Test ELF types
 test "elf types" {
-  @json.inspect(Type::ET_NONE.to_uint16(), content=0)
-  @json.inspect(Type::ET_REL.to_uint16(), content=1)
-  @json.inspect(Type::ET_EXEC.to_uint16(), content=2)
-  @json.inspect(Type::ET_DYN.to_uint16(), content=3)
-  @json.inspect(Type::ET_CORE.to_uint16(), content=4)
+  @json.inspect(Type::None.to_uint16(), content=0)
+  @json.inspect(Type::Rel.to_uint16(), content=1)
+  @json.inspect(Type::Exec.to_uint16(), content=2)
+  @json.inspect(Type::Dyn.to_uint16(), content=3)
+  @json.inspect(Type::Core.to_uint16(), content=4)
 }
 
 ///|

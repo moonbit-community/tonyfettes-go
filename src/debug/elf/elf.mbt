@@ -76,29 +76,29 @@ pub fn Version::from_byte(i : Byte) -> Version {
 /// Class is found in Header.Ident[EI_CLASS] and Header.Class.
 pub(all) enum Class {
   /// 0 Unknown class.
-  ELFCLASSNONE
+  None
   /// 1 32-bit architecture.
-  ELFCLASS32
+  Class32
   /// 2 64-bit architecture.
-  ELFCLASS64
+  Class64
 } derive(Eq, Show, ToJson)
 
 ///|
 pub fn Class::to_int(self : Class) -> Int {
   match self {
-    ELFCLASSNONE => 0
-    ELFCLASS32 => 1
-    ELFCLASS64 => 2
+    None => 0
+    Class32 => 1
+    Class64 => 2
   }
 }
 
 ///|
 pub fn Class::from_int(i : Int) -> Class {
   match i {
-    0 => ELFCLASSNONE
-    1 => ELFCLASS32
-    2 => ELFCLASS64
-    _ => ELFCLASSNONE
+    0 => None
+    1 => Class32
+    2 => Class64
+    _ => None
   }
 }
 
@@ -136,156 +136,156 @@ pub fn Data::from_byte(b : Byte) -> Data {
 /// OSABI is found in Header.Ident[EI_OSABI] and Header.OSABI.
 pub(all) enum OSABI {
   /// 0   UNIX System V ABI
-  ELFOSABI_NONE
+  None
   /// 1   HP-UX operating system
-  ELFOSABI_HPUX
+  HPUX
   /// 2   NetBSD
-  ELFOSABI_NETBSD
+  NetBSD
   /// 3   Linux
-  ELFOSABI_LINUX
+  Linux
   /// 4   Hurd
-  ELFOSABI_HURD
+  Hurd
   /// 5   86Open common IA32 ABI
-  ELFOSABI_86OPEN
+  X86OPEN
   /// 6   Solaris
-  ELFOSABI_SOLARIS
+  Solaris
   /// 7   AIX
-  ELFOSABI_AIX
+  AIX
   /// 8   IRIX
-  ELFOSABI_IRIX
+  IRIX
   /// 9   FreeBSD
-  ELFOSABI_FREEBSD
+  FreeBSD
   /// 10  TRU64 UNIX
-  ELFOSABI_TRU64
+  TRU64
   /// 11  Novell Modesto
-  ELFOSABI_MODESTO
+  Modesto
   /// 12  OpenBSD
-  ELFOSABI_OPENBSD
+  OpenBSD
   /// 13  Open VMS
-  ELFOSABI_OPENVMS
+  OpenVMS
   /// 14  HP Non-Stop Kernel
-  ELFOSABI_NSK
+  NSK
   /// 15  Amiga Research OS
-  ELFOSABI_AROS
+  AROS
   /// 16  The FenixOS highly scalable multi-core OS
-  ELFOSABI_FENIXOS
+  FenixOS
   /// 17  Nuxi CloudABI
-  ELFOSABI_CLOUDABI
+  CloudABI
   /// 97  ARM
-  ELFOSABI_ARM
+  ARM
   /// 255 Standalone (embedded) application
-  ELFOSABI_STANDALONE
+  Standalone
 } derive(Eq, Show, ToJson)
 
 ///|
 pub impl Default for OSABI with default() {
-  ELFOSABI_NONE
+  None
 }
 
 ///|
 pub fn OSABI::to_byte(self : OSABI) -> Byte {
   match self {
-    ELFOSABI_NONE => 0
-    ELFOSABI_HPUX => 1
-    ELFOSABI_NETBSD => 2
-    ELFOSABI_LINUX => 3
-    ELFOSABI_HURD => 4
-    ELFOSABI_86OPEN => 5
-    ELFOSABI_SOLARIS => 6
-    ELFOSABI_AIX => 7
-    ELFOSABI_IRIX => 8
-    ELFOSABI_FREEBSD => 9
-    ELFOSABI_TRU64 => 10
-    ELFOSABI_MODESTO => 11
-    ELFOSABI_OPENBSD => 12
-    ELFOSABI_OPENVMS => 13
-    ELFOSABI_NSK => 14
-    ELFOSABI_AROS => 15
-    ELFOSABI_FENIXOS => 16
-    ELFOSABI_CLOUDABI => 17
-    ELFOSABI_ARM => 97
-    ELFOSABI_STANDALONE => 255
+    None => 0
+    HPUX => 1
+    NetBSD => 2
+    Linux => 3
+    Hurd => 4
+    X86OPEN => 5
+    Solaris => 6
+    AIX => 7
+    IRIX => 8
+    FreeBSD => 9
+    TRU64 => 10
+    Modesto => 11
+    OpenBSD => 12
+    OpenVMS => 13
+    NSK => 14
+    AROS => 15
+    FenixOS => 16
+    CloudABI => 17
+    ARM => 97
+    Standalone => 255
   }
 }
 
 ///|
 pub fn OSABI::from_byte(b : Byte) -> OSABI {
   match b {
-    0 => ELFOSABI_NONE
-    1 => ELFOSABI_HPUX
-    2 => ELFOSABI_NETBSD
-    3 => ELFOSABI_LINUX
-    4 => ELFOSABI_HURD
-    5 => ELFOSABI_86OPEN
-    6 => ELFOSABI_SOLARIS
-    7 => ELFOSABI_AIX
-    8 => ELFOSABI_IRIX
-    9 => ELFOSABI_FREEBSD
-    10 => ELFOSABI_TRU64
-    11 => ELFOSABI_MODESTO
-    12 => ELFOSABI_OPENBSD
-    13 => ELFOSABI_OPENVMS
-    14 => ELFOSABI_NSK
-    15 => ELFOSABI_AROS
-    16 => ELFOSABI_FENIXOS
-    17 => ELFOSABI_CLOUDABI
-    97 => ELFOSABI_ARM
-    255 => ELFOSABI_STANDALONE
-    _ => ELFOSABI_NONE
+    0 => None
+    1 => HPUX
+    2 => NetBSD
+    3 => Linux
+    4 => Hurd
+    5 => X86OPEN
+    6 => Solaris
+    7 => AIX
+    8 => IRIX
+    9 => FreeBSD
+    10 => TRU64
+    11 => Modesto
+    12 => OpenBSD
+    13 => OpenVMS
+    14 => NSK
+    15 => AROS
+    16 => FenixOS
+    17 => CloudABI
+    97 => ARM
+    255 => Standalone
+    _ => None
   }
 }
 
 ///|
 /// Type is found in Header.Type.
 pub(all) enum Type {
-  /// 0      Unknown type.
-  ET_NONE
-  /// 1      Relocatable.
-  ET_REL
-  /// 2      Executable.
-  ET_EXEC
-  /// 3      Shared object.
-  ET_DYN
-  /// 4      Core file.
-  ET_CORE
-  /// 0xfe00 First operating system specific.
-  ET_LOOS
-  /// 0xfeff Last operating system-specific.
-  ET_HIOS
-  /// 0xff00 First processor-specific.
-  ET_LOPROC
-  /// 0xffff Last processor-specific.
-  ET_HIPROC
+  /// Unknown type.
+  None
+  /// Relocatable.
+  Rel
+  /// Executable.
+  Exec
+  /// Shared object.
+  Dyn
+  /// Core file.
+  Core
+  /// First operating system specific.
+  LoOs
+  /// Last operating system-specific.
+  HiOs
+  /// First processor-specific.
+  LoProc
+  /// Last processor-specific.
+  HiProc
 } derive(Eq, Show, ToJson)
 
 ///|
 pub fn Type::to_uint16(self : Type) -> UInt16 {
   match self {
-    ET_NONE => 0
-    ET_REL => 1
-    ET_EXEC => 2
-    ET_DYN => 3
-    ET_CORE => 4
-    ET_LOOS => 0xfe00
-    ET_HIOS => 0xfeff
-    ET_LOPROC => 0xff00
-    ET_HIPROC => 0xffff
+    None => 0
+    Rel => 1
+    Exec => 2
+    Dyn => 3
+    Core => 4
+    LoOs => 0xfe00
+    HiOs => 0xfeff
+    LoProc => 0xff00
+    HiProc => 0xffff
   }
 }
 
 ///|
 pub fn Type::from_uint16(i : UInt16) -> Type {
   match i {
-    0 => ET_NONE
-    1 => ET_REL
-    2 => ET_EXEC
-    3 => ET_DYN
-    4 => ET_CORE
-    0xfe00 => ET_LOOS
-    0xfeff => ET_HIOS
-    0xff00 => ET_LOPROC
-    0xffff => ET_HIPROC
-    _ => ET_NONE
+    0 => None
+    1 => Rel
+    2 => Exec
+    3 => Dyn
+    4 => Core
+    0xfe00 => LoOs
+    0xfeff => HiOs
+    0xff00 => LoProc
+    0xffff => HiProc
+    _ => None
   }
 }
 
@@ -305,7 +305,7 @@ pub(all) enum Machine {
   /// 5   Motorola 88000.
   EM_88K
   /// 7   Intel i860.
-  EM_860
+  I860
   /// 8   MIPS R3000 Big-Endian only.
   EM_MIPS
   /// 9   IBM System/370.
@@ -678,7 +678,7 @@ pub fn Machine::to_int(self : Machine) -> Int {
     EM_386 => 3
     EM_68K => 4
     EM_88K => 5
-    EM_860 => 7
+    I860 => 7
     EM_MIPS => 8
     EM_S370 => 9
     EM_MIPS_RS3_LE => 10
@@ -872,7 +872,7 @@ pub fn Machine::from_uint16(i : UInt16) -> Machine {
     4 => EM_68K
     5 => EM_88K
     6 => EM_486
-    7 => EM_860
+    7 => I860
     8 => EM_MIPS
     9 => EM_S370
     10 => EM_MIPS_RS3_LE
@@ -1062,7 +1062,7 @@ pub(all) enum SectionIndex {
   /// 0xff00 First of reserved range.
   SHN_LORESERVE
   /// 0xff00 First processor-specific.
-  SHN_LOPROC
+  LoProc
   /// 0xff1f Last processor-specific.
   SHN_HIPROC
   /// 0xff20 First operating system-specific.
@@ -1084,7 +1084,7 @@ pub fn SectionIndex::to_int(self : SectionIndex) -> Int {
   match self {
     SHN_UNDEF => 0
     SHN_LORESERVE => 0xff00
-    SHN_LOPROC => 0xff00
+    LoProc => 0xff00
     SHN_HIPROC => 0xff1f
     SHN_LOOS => 0xff20
     SHN_HIOS => 0xff3f
@@ -1113,148 +1113,148 @@ pub fn SectionIndex::from_int(i : Int) -> SectionIndex {
 ///|
 /// Section type.
 pub(all) enum SectionType {
-  SHT(UInt)
+  SectionType(UInt)
   /// 0          inactive
-  SHT_NULL
+  Null
   /// 1          program defined information
-  SHT_PROGBITS
+  ProgBits
   /// 2          symbol table section
-  SHT_SYMTAB
+  SymTab
   /// 3          string table section
-  SHT_STRTAB
+  StrTab
   /// 4          relocation section with addends
-  SHT_RELA
+  RelA
   /// 5          symbol hash table section
-  SHT_HASH
+  Hash
   /// 6          dynamic section
-  SHT_DYNAMIC
+  Dynamic
   /// 7          note section
-  SHT_NOTE
+  Note
   /// 8          no space section
-  SHT_NOBITS
+  NoBits
   /// 9          relocation section - no addends
-  SHT_REL
+  Rel
   /// 10         reserved - purpose unknown
-  SHT_SHLIB
+  Shlib
   /// 11         dynamic symbol table section
-  SHT_DYNSYM
+  DynSym
   /// 14         Initialization function pointers.
-  SHT_INIT_ARRAY
+  InitArray
   /// 15         Termination function pointers.
-  SHT_FINI_ARRAY
+  FiniArray
   /// 16         Pre-initialization function ptrs.
-  SHT_PREINIT_ARRAY
+  PreInitArray
   /// 17         Section group.
-  SHT_GROUP
+  Group
   /// 18         Section indexes (see SHN_XINDEX).
-  SHT_SYMTAB_SHNDX
+  SymtabShndx
   /// 0x60000000 First of OS specific semantics
-  SHT_LOOS
+  LoOs
   /// 0x6ffffff5 GNU object attributes
-  SHT_GNU_ATTRIBUTES
+  GnuAttributes
   /// 0x6ffffff6 GNU hash table
-  SHT_GNU_HASH
+  GnuHash
   /// 0x6ffffff7 GNU prelink library list
-  SHT_GNU_LIBLIST
+  GnuLibList
   /// 0x6ffffffd GNU version definition section
-  SHT_GNU_VERDEF
+  GnuVerdef
   /// 0x6ffffffe GNU version needs section
-  SHT_GNU_VERNEED
+  GnuVerneed
   /// 0x6fffffff GNU version symbol table
-  SHT_GNU_VERSYM
+  GnuVersym
   /// 0x6fffffff Last of OS specific semantics
-  SHT_HIOS
+  HiOs
   /// 0x70000000 reserved range for processor
-  SHT_LOPROC
+  LoProc
   /// 0x70000003 RISCV object attributes
-  SHT_RISCV_ATTRIBUTES
+  RiscvAttributes
   /// 0x7000002a .MIPS.abiflags
-  SHT_MIPS_ABIFLAGS
+  MipsABIFlags
   /// 0x7fffffff specific section header types
-  SHT_HIPROC
+  HiProc
   /// 0x80000000 reserved range for application
-  SHT_LOUSER
+  LoUser
   /// 0xffffffff specific indexes
-  SHT_HIUSER
+  HiUser
 } derive(Eq, Show, ToJson)
 
 ///|
 pub impl Default for SectionType with default() -> SectionType {
-  SHT_NULL
+  Null
 }
 
 ///|
 pub fn SectionType::to_uint(self : SectionType) -> UInt {
   match self {
-    SHT(type_) => type_
-    SHT_NULL => 0
-    SHT_PROGBITS => 1
-    SHT_SYMTAB => 2
-    SHT_STRTAB => 3
-    SHT_RELA => 4
-    SHT_HASH => 5
-    SHT_DYNAMIC => 6
-    SHT_NOTE => 7
-    SHT_NOBITS => 8
-    SHT_REL => 9
-    SHT_SHLIB => 10
-    SHT_DYNSYM => 11
-    SHT_INIT_ARRAY => 14
-    SHT_FINI_ARRAY => 15
-    SHT_PREINIT_ARRAY => 16
-    SHT_GROUP => 17
-    SHT_SYMTAB_SHNDX => 18
-    SHT_LOOS => 0x60000000
-    SHT_GNU_ATTRIBUTES => 0x6ffffff5
-    SHT_GNU_HASH => 0x6ffffff6
-    SHT_GNU_LIBLIST => 0x6ffffff7
-    SHT_GNU_VERDEF => 0x6ffffffd
-    SHT_GNU_VERNEED => 0x6ffffffe
-    SHT_GNU_VERSYM => 0x6fffffff
-    SHT_HIOS => 0x6fffffff
-    SHT_LOPROC => 0x70000000
-    SHT_RISCV_ATTRIBUTES => 0x70000003
-    SHT_MIPS_ABIFLAGS => 0x7000002a
-    SHT_HIPROC => 0x7fffffff
-    SHT_LOUSER => 0x80000000
-    SHT_HIUSER => 0xffffffff
+    SectionType(type_) => type_
+    Null => 0
+    ProgBits => 1
+    SymTab => 2
+    StrTab => 3
+    RelA => 4
+    Hash => 5
+    Dynamic => 6
+    Note => 7
+    NoBits => 8
+    Rel => 9
+    Shlib => 10
+    DynSym => 11
+    InitArray => 14
+    FiniArray => 15
+    PreInitArray => 16
+    Group => 17
+    SymtabShndx => 18
+    LoOs => 0x60000000
+    GnuAttributes => 0x6ffffff5
+    GnuHash => 0x6ffffff6
+    GnuLibList => 0x6ffffff7
+    GnuVerdef => 0x6ffffffd
+    GnuVerneed => 0x6ffffffe
+    GnuVersym => 0x6fffffff
+    HiOs => 0x6fffffff
+    LoProc => 0x70000000
+    RiscvAttributes => 0x70000003
+    MipsABIFlags => 0x7000002a
+    HiProc => 0x7fffffff
+    LoUser => 0x80000000
+    HiUser => 0xffffffff
   }
 }
 
 ///|
 pub fn SectionType::from_uint(i : UInt) -> SectionType {
   match i {
-    0 => SHT_NULL
-    1 => SHT_PROGBITS
-    2 => SHT_SYMTAB
-    3 => SHT_STRTAB
-    4 => SHT_RELA
-    5 => SHT_HASH
-    6 => SHT_DYNAMIC
-    7 => SHT_NOTE
-    8 => SHT_NOBITS
-    9 => SHT_REL
-    10 => SHT_SHLIB
-    11 => SHT_DYNSYM
-    14 => SHT_INIT_ARRAY
-    15 => SHT_FINI_ARRAY
-    16 => SHT_PREINIT_ARRAY
-    17 => SHT_GROUP
-    18 => SHT_SYMTAB_SHNDX
-    0x60000000 => SHT_LOOS
-    0x6ffffff5 => SHT_GNU_ATTRIBUTES
-    0x6ffffff6 => SHT_GNU_HASH
-    0x6ffffff7 => SHT_GNU_LIBLIST
-    0x6ffffffd => SHT_GNU_VERDEF
-    0x6ffffffe => SHT_GNU_VERNEED
-    0x6fffffff => SHT_GNU_VERSYM
-    0x70000000 => SHT_LOPROC
-    0x70000003 => SHT_RISCV_ATTRIBUTES
-    0x7000002a => SHT_MIPS_ABIFLAGS
-    0x7fffffff => SHT_HIPROC
-    0x80000000 => SHT_LOUSER
-    0xffffffff => SHT_HIUSER
-    i => SHT(i)
+    0 => Null
+    1 => ProgBits
+    2 => SymTab
+    3 => StrTab
+    4 => RelA
+    5 => Hash
+    6 => Dynamic
+    7 => Note
+    8 => NoBits
+    9 => Rel
+    10 => Shlib
+    11 => DynSym
+    14 => InitArray
+    15 => FiniArray
+    16 => PreInitArray
+    17 => Group
+    18 => SymtabShndx
+    0x60000000 => LoOs
+    0x6ffffff5 => GnuAttributes
+    0x6ffffff6 => GnuHash
+    0x6ffffff7 => GnuLibList
+    0x6ffffffd => GnuVerdef
+    0x6ffffffe => GnuVerneed
+    0x6fffffff => GnuVersym
+    0x70000000 => LoProc
+    0x70000003 => RiscvAttributes
+    0x7000002a => MipsABIFlags
+    0x7fffffff => HiProc
+    0x80000000 => LoUser
+    0xffffffff => HiUser
+    i => SectionType(i)
   }
 }
 
@@ -1264,55 +1264,55 @@ pub(all) struct SectionFlag(UInt)
 
 ///|
 /// Section contains writable data.
-pub let shfWrite : SectionFlag = 0x1
+pub let sectionFlagWrite : SectionFlag = 0x1
 
 ///|
 /// Section occupies memory.
-pub let shfAlloc : SectionFlag = 0x2
+pub let sectionFlagAlloc : SectionFlag = 0x2
 
 ///|
 /// Section contains instructions.
-pub let shfExecInstr : SectionFlag = 0x4
+pub let sectionFlagExecInstr : SectionFlag = 0x4
 
 ///|
 /// Section may be merged.
-pub let shfMerge : SectionFlag = 0x10
+pub let sectionFlagMergeable : SectionFlag = 0x10
 
 ///|
 /// Section contains strings.
-pub let shfStrings : SectionFlag = 0x20
+pub let sectionFlagStrings : SectionFlag = 0x20
 
 ///|
 /// sh_info holds section index.
-pub let shfInfoLink : SectionFlag = 0x40
+pub let sectionFlagInfoLink : SectionFlag = 0x40
 
 ///|
 /// Special ordering requirements.
-pub let shfLinkOrder : SectionFlag = 0x80
+pub let sectionFlagLinkOrder : SectionFlag = 0x80
 
 ///|
 /// OS-specific processing required.
-pub let shfOsNonConforming : SectionFlag = 0x100
+pub let sectionFlagOsNonConforming : SectionFlag = 0x100
 
 ///|
 /// Member of section group.
-pub let shfGroup : SectionFlag = 0x200
+pub let sectionFlagGroup : SectionFlag = 0x200
 
 ///|
 /// Section contains TLS data.
-pub let shfTls : SectionFlag = 0x400
+pub let sectionFlagTls : SectionFlag = 0x400
 
 ///|
 /// Section is compressed.
-pub let shfCompressed : SectionFlag = 0x800
+pub let sectionFlagCompressed : SectionFlag = 0x800
 
 ///|
 /// OS-specific semantics.
-pub let shfMaskOs : SectionFlag = 0x0ff00000
+pub let sectionFlagMaskOs : SectionFlag = 0x0ff00000
 
 ///|
 /// Processor-specific semantics.
-pub let shfMaskProc : SectionFlag = 0xf0000000
+pub let sectionFlagMaskProc : SectionFlag = 0xf0000000
 
 ///|
 pub impl Default for SectionFlag with default() -> SectionFlag {
@@ -1386,11 +1386,11 @@ pub(all) enum ProgType {
   /// 0 Unused entry.
   PT_NULL
   /// 1 Loadable segment.
-  PT_LOAD
+  Load
   /// 2 Dynamic linking information segment.
-  PT_DYNAMIC
+  Dynamic
   /// 3 Pathname of interpreter.
-  PT_INTERP
+  Interp
   /// 4 Auxiliary information.
   PT_NOTE
   /// 5 Reserved (not used).
@@ -1464,9 +1464,9 @@ pub impl Default for ProgType with default() -> ProgType {
 pub fn ProgType::to_int(self : ProgType) -> Int {
   match self {
     PT_NULL => 0
-    PT_LOAD => 1
-    PT_DYNAMIC => 2
-    PT_INTERP => 3
+    Load => 1
+    Dynamic => 2
+    Interp => 3
     PT_NOTE => 4
     PT_SHLIB => 5
     PT_PHDR => 6
@@ -1505,9 +1505,9 @@ pub fn ProgType::to_int(self : ProgType) -> Int {
 pub fn ProgType::from_int(i : Int) -> ProgType {
   match i {
     0 => PT_NULL
-    1 => PT_LOAD
-    2 => PT_DYNAMIC
-    3 => PT_INTERP
+    1 => Load
+    2 => Dynamic
+    3 => Interp
     4 => PT_NOTE
     5 => PT_SHLIB
     6 => PT_PHDR
@@ -1620,7 +1620,7 @@ pub(all) enum DynTag {
   /// 15 String table offset of library path. [sup]
   DT_RPATH
   /// 16 Indicates "symbolic" linking. [sup]
-  DT_SYMBOLIC
+  Symbolic
   /// 17 Address of ElfNN_Rel relocations.
   DT_REL
   /// 18 Total size of ElfNN_Rel relocations.
@@ -1870,7 +1870,7 @@ pub fn DynTag::to_int(self : DynTag) -> Int {
     DT_FINI => 13
     DT_SONAME => 14
     DT_RPATH => 15
-    DT_SYMBOLIC => 16
+    Symbolic => 16
     DT_REL => 17
     DT_RELSZ => 18
     DT_RELENT => 19
@@ -2005,7 +2005,7 @@ pub fn DynTag::from_int(i : Int) -> DynTag {
     13 => DT_FINI
     14 => DT_SONAME
     15 => DT_RPATH
-    16 => DT_SYMBOLIC
+    16 => Symbolic
     17 => DT_REL
     18 => DT_RELSZ
     19 => DT_RELENT
@@ -2118,28 +2118,28 @@ pub(all) struct DynFlag(Int)
 /// Indicates that the object being loaded may
 /// make reference to the
 /// $ORIGIN substitution string
-pub let dfOrigin : DynFlag = 0x0001
+pub let dynFlagOrigin : DynFlag = 0x0001
 
 ///|
 /// Indicates "symbolic" linking.
-pub let dfSymbolic : DynFlag = 0x0002
+pub let dynFlagSymbolic : DynFlag = 0x0002
 
 ///|
 /// Indicates there may be relocations in non-writable segments.
-pub let dfTextRel : DynFlag = 0x0004
+pub let dynFlagTextRel : DynFlag = 0x0004
 
 ///|
 /// Indicates that the dynamic linker should
 /// process all relocations for the object
 /// containing this entry before transferring
 /// control to the program.
-pub let dfBindNow : DynFlag = 0x0008
+pub let dynFlagBindNow : DynFlag = 0x0008
 
 ///|
 /// Indicates that the shared object or
 /// executable contains code using a static
 /// thread-local storage scheme.
-pub let dfStaticTls : DynFlag = 0x0010
+pub let dynFlagStaticTls : DynFlag = 0x0010
 
 ///|
 pub impl BitAnd for DynFlag with land(self : DynFlag, other : DynFlag) -> DynFlag {
@@ -2174,139 +2174,139 @@ pub struct DynFlag1(UInt)
 ///|
 /// Indicates that all relocations for this object must be processed before
 /// returning control to the program.
-pub let df1Now : DynFlag1 = 0x00000001
+pub let dynFlag1Now : DynFlag1 = 0x00000001
 
 ///|
 /// Unused.
-pub let df1Global : DynFlag1 = 0x00000002
+pub let dynFlag1Global : DynFlag1 = 0x00000002
 
 ///|
 /// Indicates that the object is a member of a group.
-pub let df1Group : DynFlag1 = 0x00000004
+pub let dynFlag1Group : DynFlag1 = 0x00000004
 
 ///|
 /// Indicates that the object cannot be deleted from a process.
-pub let df1NoDelete : DynFlag1 = 0x00000008
+pub let dynFlag1NoDelete : DynFlag1 = 0x00000008
 
 ///|
 /// Meaningful only for filters. Indicates that all associated filtees be
 /// processed immediately.
-pub let df1LoadFltr : DynFlag1 = 0x00000010
+pub let dynFlag1LoadFltr : DynFlag1 = 0x00000010
 
 ///|
 /// Indicates that this object's initialization section be run before any other
 /// objects loaded.
-pub let df1InitFirst : DynFlag1 = 0x00000020
+pub let dynFlag1InitFirst : DynFlag1 = 0x00000020
 
 ///|
 /// Indicates that the object cannot be added to a running process with dlopen.
-pub let df1NoOpen : DynFlag1 = 0x00000040
+pub let dynFlag1NoOpen : DynFlag1 = 0x00000040
 
 ///|
 /// Indicates the object requires $ORIGIN processing.
-pub let df1Origin : DynFlag1 = 0x00000080
+pub let dynFlag1Origin : DynFlag1 = 0x00000080
 
 ///|
 /// Indicates that the object should use direct binding information.
-pub let df1Direct : DynFlag1 = 0x00000100
+pub let dynFlag1Direct : DynFlag1 = 0x00000100
 
 ///|
 /// Unused.
-pub let df1Trans : DynFlag1 = 0x00000200
+pub let dynFlag1Trans : DynFlag1 = 0x00000200
 
 ///|
 /// Indicates that the objects symbol table is to interpose before all symbols
 /// except the primary load object, which is typically the executable.
-pub let df1Interpose : DynFlag1 = 0x00000400
+pub let dynFlag1Interpose : DynFlag1 = 0x00000400
 
 ///|
 /// Indicates that the search for dependencies of this object ignores any
 /// default library search paths.
-pub let df1NoDefLib : DynFlag1 = 0x00000800
+pub let dynFlag1NoDefLib : DynFlag1 = 0x00000800
 
 ///|
 /// Indicates that this object is not dumped by dldump. Candidates are objects
 /// with no relocations that might get included when generating alternative
 /// objects using.
-pub let df1NoDump : DynFlag1 = 0x00001000
+pub let dynFlag1NoDump : DynFlag1 = 0x00001000
 
 ///|
 /// Identifies this object as a configuration alternative object generated by
 /// crle. Triggers the runtime linker to search for a configuration file $ORIGIN/ld.config.app-name.
-pub let df1ConfAlt : DynFlag1 = 0x00002000
+pub let dynFlag1ConfAlt : DynFlag1 = 0x00002000
 
 ///|
 /// Meaningful only for filtees. Terminates a filters search for any
 /// further filtees.
-pub let df1EndFiltee : DynFlag1 = 0x00004000
+pub let dynFlag1EndFiltee : DynFlag1 = 0x00004000
 
 ///|
 /// Indicates that this object has displacement relocations applied.
-pub let df1DisprelDne : DynFlag1 = 0x00008000
+pub let dynFlag1DisprelDne : DynFlag1 = 0x00008000
 
 ///|
 /// Indicates that this object has displacement relocations pending.
-pub let df1DisprelPnd : DynFlag1 = 0x00010000
+pub let dynFlag1DisprelPnd : DynFlag1 = 0x00010000
 
 ///|
 /// Indicates that this object contains symbols that cannot be directly
 /// bound to.
-pub let df1NoDirect : DynFlag1 = 0x00020000
+pub let dynFlag1NoDirect : DynFlag1 = 0x00020000
 
 ///|
 /// Reserved for internal use by the kernel runtime-linker.
-pub let df1IgnMulDef : DynFlag1 = 0x00040000
+pub let dynFlag1IgnMulDef : DynFlag1 = 0x00040000
 
 ///|
 /// Reserved for internal use by the kernel runtime-linker.
-pub let df1NoKsyms : DynFlag1 = 0x00080000
+pub let dynFlag1NoKsyms : DynFlag1 = 0x00080000
 
 ///|
 /// Reserved for internal use by the kernel runtime-linker.
-pub let df1NoHdr : DynFlag1 = 0x00100000
+pub let dynFlag1NoHdr : DynFlag1 = 0x00100000
 
 ///|
 /// Indicates that this object has been edited or has been modified since the
 /// objects original construction by the link-editor.
-pub let df1Edited : DynFlag1 = 0x00200000
+pub let dynFlag1Edited : DynFlag1 = 0x00200000
 
 ///|
 /// Reserved for internal use by the kernel runtime-linker.
-pub let df1NoReloc : DynFlag1 = 0x00400000
+pub let dynFlag1NoReloc : DynFlag1 = 0x00400000
 
 ///|
 /// Indicates that the object contains individual symbols that should interpose
 /// before all symbols except the primary load object, which is typically the
 /// executable.
-pub let df1SymInterpose : DynFlag1 = 0x00800000
+pub let dynFlag1SymInterpose : DynFlag1 = 0x00800000
 
 ///|
 /// Indicates that the executable requires global auditing.
-pub let df1GlobalAudit : DynFlag1 = 0x01000000
+pub let dynFlag1GlobalAudit : DynFlag1 = 0x01000000
 
 ///|
 /// Indicates that the object defines, or makes reference to singleton symbols.
-pub let df1Singleton : DynFlag1 = 0x02000000
+pub let dynFlag1Singleton : DynFlag1 = 0x02000000
 
 ///|
 /// Indicates that the object is a stub.
-pub let df1Stub : DynFlag1 = 0x04000000
+pub let dynFlag1Stub : DynFlag1 = 0x04000000
 
 ///|
 /// Indicates that the object is a position-independent executable.
-pub let df1Pie : DynFlag1 = 0x08000000
+pub let dynFlag1Pie : DynFlag1 = 0x08000000
 
 ///|
 /// Indicates that the object is a kernel module.
-pub let df1Kmod : DynFlag1 = 0x10000000
+pub let dynFlag1Kmod : DynFlag1 = 0x10000000
 
 ///|
 /// Indicates that the object is a weak standard filter.
-pub let df1WeakFilter : DynFlag1 = 0x20000000
+pub let dynFlag1WeakFilter : DynFlag1 = 0x20000000
 
 ///|
 /// Unused.
-pub let df1NoCommon : DynFlag1 = 0x40000000
+pub let dynFlag1NoCommon : DynFlag1 = 0x40000000
 
 ///|
 pub impl Show for DynFlag1 with output(self : DynFlag1, logger : &Logger) -> Unit {
