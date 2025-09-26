@@ -154,7 +154,7 @@ pub fn Section::open(self : Section) -> &@io.ReadSeeker raise {
     )
   }
   let mut zrd : ((@io.SectionReader) -> &@io.Reader raise)? = None
-  if (self.section_header.flags.0 & SHF_COMPRESSED) == 0 {
+  if (self.section_header.flags & shfCompressed) == 0 {
     if !self.section_header.name.has_prefix(".zdebug") {
       return @io.new_section_reader(self.sr.unwrap(), 0, 1 << (63 - 1))
     }
@@ -164,21 +164,20 @@ pub fn Section::open(self : Section) -> &@io.ReadSeeker raise {
       return @io.new_section_reader(self.sr.unwrap(), 0, 1 << (63 - 1))
     }
     self.compression_offset = 12
-    self.compression_type = CompressionType::COMPRESS_ZLIB
+    self.compression_type = compressZlib
     self.section_header.size = @binary.big_endian.uint64(b[4:12])
     zrd = Some(r => @zlib.new_reader(@bufio.new_reader(r)))
-  } else if (self.section_header.flags.0 & SHF_ALLOC) != 0 {
+  } else if (self.section_header.flags & shfAlloc) != 0 {
     return ErrorReader::new(
       FormatError::new(
-        off=self.section_header.offset.reinterpret_as_int64(),
+        off=int64(self.section_header.offset),
         msg="SHF_COMPRESSED applies only to non-allocable sections",
         val=self.compression_type.to_string(),
       ),
     )
   }
-  match self.compression_type {
-    COMPRESS_ZLIB => zrd = Some(r => @zlib.new_reader(@bufio.new_reader(r)))
-    _ => ()
+  if self.compression_type == compressZlib {
+    zrd = Some(r => @zlib.new_reader(@bufio.new_reader(r)))
   }
   guard zrd is Some(zrd) else {
     return ErrorReader::new(
@@ -731,7 +730,7 @@ pub fn new_file(r : &@io.ReaderAt) -> File raise {
         s.section_header.file_size.reinterpret_as_int64(),
       ),
     )
-    if (s.section_header.flags.0 & SHF_COMPRESSED) == 0 {
+    if (s.section_header.flags & shfCompressed) == 0 {
       s.reader_at = s.sr.map(sr => sr)
       s.section_header.size = s.section_header.file_size
     } else {
@@ -746,7 +745,7 @@ pub fn new_file(r : &@io.ReaderAt) -> File raise {
               msg="incomplete ELF32 compressed section header",
             )
           }
-          s.compression_type = CompressionType::from_int(
+          s.compression_type = CompressionType(
             bo.uint32(chdata[0:4]).reinterpret_as_int(),
           )
           s.section_header.size = bo.uint32(chdata[4:8]).to_uint64()
@@ -763,7 +762,7 @@ pub fn new_file(r : &@io.ReaderAt) -> File raise {
               msg="incomplete ELF64 compressed section header",
             )
           }
-          s.compression_type = CompressionType::from_int(
+          s.compression_type = CompressionType(
             bo.uint32(chdata[0:4]).reinterpret_as_int(),
           )
           s.section_header.size = bo.uint64(chdata[4:12])

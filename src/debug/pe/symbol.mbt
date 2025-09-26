@@ -10,12 +10,40 @@ pub const COFF_SYMBOL_SIZE : Int64 = 18
 /// COFFSymbol represents single COFF symbol table record.
 pub(all) struct COFFSymbol {
   name : FixedArray[Byte] // [8]uint8
-  value : Int64 // uint32 in Go
-  section_number : Int // int16 in Go
-  type_ : Int // uint16 in Go
-  storage_class : Int // uint8 in Go
-  number_of_aux_symbols : Int // uint8 in Go
-} derive(Show, Eq, ToJson)
+  value : UInt
+  section_number : Int16
+  type_ : UInt16
+  storage_class : Byte
+  number_of_aux_symbols : Byte
+  aux_symbols : Array[COFFSymbolAuxFormat5]
+} derive(Show, Eq, ToJson, Default)
+
+///|
+pub impl @binary.Readable for COFFSymbol with read(
+  r : &@io.Reader,
+  order : &@binary.ByteOrder,
+) -> COFFSymbol raise {
+  let name : FixedArray[Byte] = @binary.read_n(r, order, 8)
+  let value : UInt = @binary.read(r, order)
+  let section_number : Int16 = @binary.read(r, order)
+  let type_ : UInt16 = @binary.read(r, order)
+  let storage_class : Byte = @binary.read(r, order)
+  let number_of_aux_symbols : Byte = @binary.read(r, order)
+  let aux_symbols : Array[COFFSymbolAuxFormat5] = @binary.read_n(
+    r,
+    order,
+    int(number_of_aux_symbols),
+  )
+  COFFSymbol::{
+    name,
+    value,
+    section_number,
+    type_,
+    storage_class,
+    number_of_aux_symbols,
+    aux_symbols,
+  }
+}
 
 ///|
 /// readCOFFSymbols reads in the symbol table for a PE file, returning
@@ -41,8 +69,27 @@ pub(all) struct COFFSymbol {
 ///
 /// At the moment this package only provides APIs for looking at
 /// aux symbols of format 5 (associated with section definition symbols).
-fn read_coff_symbols(fh : FileHeader, r : &@io.ReadSeeker) -> Array[COFFSymbol] {
-  ...
+fn read_coff_symbols(
+  fh : FileHeader,
+  r : &@io.ReadSeeker,
+) -> Array[COFFSymbol] raise {
+  if fh.pointer_to_symbol_table == 0 {
+    return []
+  }
+  if fh.number_of_symbols <= 0 {
+    return []
+  }
+  let _ = r.seek(int64(fh.pointer_to_symbol_table), @io.SeekStart) catch {
+    err => fail("failed to seek to symbol table: \{err}")
+  }
+  let syms = []
+  for k in 0U..<fh.number_of_symbols {
+    let sym : COFFSymbol = @binary.read(r, @binary.little_endian) catch {
+      err => fail("failed to read symbol table: \{err}")
+    }
+    syms.push(sym)
+  }
+  syms
 }
 
 ///|
@@ -88,7 +135,7 @@ fn remove_aux_symbols(
     []
   } else {
     let syms : Array[Symbol] = []
-    let mut aux = 0
+    let mut aux : Byte = 0
     for sym in allsyms {
       if aux > 0 {
         aux = aux - 1
@@ -100,7 +147,7 @@ fn remove_aux_symbols(
         name,
         value: sym.value,
         section_number: sym.section_number,
-        type_: sym.type_,
+        type_: int16(sym.type_),
         storage_class: sym.storage_class,
       }
       syms.push(s)
@@ -114,10 +161,10 @@ fn remove_aux_symbols(
 /// by Go string. Symbol also does not have NumberOfAuxSymbols.
 pub(all) struct Symbol {
   name : String
-  value : Int64 // uint32 in Go
-  section_number : Int // int16 in Go
-  type_ : Int // uint16 in Go
-  storage_class : Int // uint8 in Go
+  value : UInt
+  section_number : Int16
+  type_ : Int16
+  storage_class : Byte
 } derive(Show, Eq, ToJson)
 
 ///|
@@ -130,14 +177,34 @@ pub(all) struct Symbol {
 /// https://docs.microsoft.com/en-us/windows/win32/debug/pe-format#auxiliary-format-5-section-definitions
 /// for more on what's going on here.
 pub struct COFFSymbolAuxFormat5 {
-  size : Int64 // uint32 in Go
-  num_relocs : Int // uint16 in Go
-  num_line_numbers : Int // uint16 in Go
-  checksum : Int64 // uint32 in Go
-  sec_num : Int // uint16 in Go
-  selection : Int // uint8 in Go
-  // padding [3]uint8 in Go - handled implicitly
-} derive(Show, Eq, ToJson)
+  size : UInt
+  num_relocs : UInt16
+  num_line_numbers : UInt16
+  checksum : UInt
+  sec_num : UInt16
+  selection : Byte
+} derive(Show, Eq, ToJson, Default)
+
+///|
+pub impl @binary.Readable for COFFSymbolAuxFormat5 with read(
+  r : &@io.Reader,
+  order : &@binary.ByteOrder,
+) -> COFFSymbolAuxFormat5 raise {
+  let size : UInt = @binary.read(r, order)
+  let num_relocs : UInt16 = @binary.read(r, order)
+  let num_line_numbers : UInt16 = @binary.read(r, order)
+  let checksum : UInt = @binary.read(r, order)
+  let sec_num : UInt16 = @binary.read(r, order)
+  let selection : Byte = @binary.read(r, order)
+  COFFSymbolAuxFormat5::{
+    size,
+    num_relocs,
+    num_line_numbers,
+    checksum,
+    sec_num,
+    selection,
+  }
+}
 
 ///|
 /// These constants make up the possible values for the 'Selection'
@@ -177,7 +244,7 @@ pub fn File::coff_symbol_read_section_def_aux(
     raise Failure("invalid symbol index")
   }
   let pesym = self.coff_symbols[idx]
-  let image_sym_class_static = 3
+  let image_sym_class_static : Byte = 3
   if pesym.storage_class != image_sym_class_static {
     raise Failure("incorrect symbol storage class")
   }
@@ -192,15 +259,15 @@ pub fn File::coff_symbol_read_section_def_aux(
   let size = pesymn.value
   let num_relocs = pesymn.section_number
   let num_line_numbers = pesymn.type_
-  let checksum = pesymn.name[0].to_int().to_int64() |
-    (pesymn.name[1].to_int().to_int64() << 8) |
-    (pesymn.name[2].to_int().to_int64() << 16) |
-    (pesymn.name[3].to_int().to_int64() << 24)
-  let sec_num = pesymn.name[4].to_int() | (pesymn.name[5].to_int() << 8)
+  let checksum = pesymn.name[0].to_uint() |
+    (pesymn.name[1].to_uint() << 8) |
+    (pesymn.name[2].to_uint() << 16) |
+    (pesymn.name[3].to_uint() << 24)
+  let sec_num = pesymn.name[4].to_uint16() | (pesymn.name[5].to_uint16() << 8)
   let selection = pesymn.storage_class
   COFFSymbolAuxFormat5::{
     size,
-    num_relocs,
+    num_relocs: uint16(num_relocs),
     num_line_numbers,
     checksum,
     sec_num,

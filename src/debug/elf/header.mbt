@@ -165,7 +165,6 @@ pub struct Header64 {
 pub impl @binary.Readable for Header64 with read(
   r : &@io.Reader,
   order : &@binary.ByteOrder,
-  _ : Header64,
 ) -> Header64 raise {
   let data = @slice.make(Header64::sizeof(Header64))
   let _ = @io.read_full(r, data)

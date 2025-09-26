@@ -17,16 +17,15 @@ pub(all) struct FileHeader {
 pub impl @binary.Readable for FileHeader with read(
   r : &@io.Reader,
   order : &@binary.ByteOrder,
-  _ : FileHeader,
 ) -> FileHeader raise {
   FileHeader::{
-    machine: @binary.read(r, order, 0),
-    number_of_sections: @binary.read(r, order, 0),
-    time_date_stamp: @binary.read(r, order, 0),
-    pointer_to_symbol_table: @binary.read(r, order, 0),
-    number_of_symbols: @binary.read(r, order, 0),
-    size_of_optional_header: @binary.read(r, order, 0),
-    characteristics: @binary.read(r, order, 0),
+    machine: @binary.read(r, order),
+    number_of_sections: @binary.read(r, order),
+    time_date_stamp: @binary.read(r, order),
+    pointer_to_symbol_table: @binary.read(r, order),
+    number_of_symbols: @binary.read(r, order),
+    size_of_optional_header: @binary.read(r, order),
+    characteristics: @binary.read(r, order),
   }
 }
 
@@ -45,11 +44,10 @@ pub(all) struct DataDirectory {
 impl @binary.Readable for DataDirectory with read(
   r : &@io.Reader,
   order : &@binary.ByteOrder,
-  _ : DataDirectory,
 ) -> DataDirectory raise {
   DataDirectory::{
-    virtual_address: @binary.read(r, order, 0),
-    size: @binary.read(r, order, 0),
+    virtual_address: @binary.read(r, order),
+    size: @binary.read(r, order),
   }
 }
 

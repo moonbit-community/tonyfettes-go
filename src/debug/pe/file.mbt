@@ -102,7 +102,7 @@ pub fn new_file(r : &@io.ReaderAt) -> File raise {
     base = 0
   }
   let _ = sr.seek(base, @io.SeekStart)
-  f.file_header = @binary.read(sr, @binary.little_endian, f.file_header)
+  f.file_header = @binary.read(sr, @binary.little_endian)
   match f.file_header.machine {
     IMAGE_FILE_MACHINE_AMD64
     | IMAGE_FILE_MACHINE_ARM64
@@ -136,8 +136,7 @@ pub fn new_file(r : &@io.ReaderAt) -> File raise {
 
   // Process sections.
   for i in 0..<f.file_header.number_of_sections.to_int() {
-    let sh = SectionHeader32::default()
-    let sh = @binary.read(sr, @binary.little_endian, sh)
+    let sh : SectionHeader32 = @binary.read(sr, @binary.little_endian)
     let name = sh.full_name(f.string_table)
     let mut r2 = r
     if sh.pointer_to_raw_data == 0 {
@@ -294,7 +293,7 @@ fn read_optional_header(
       "optional header size is less than optional header magic size",
     )
   }
-  oh_magic = @binary.read(r, @binary.little_endian, 0) catch {
+  oh_magic = @binary.read(r, @binary.little_endian) catch {
     err => raise Failure("failure to read optional header magic: \{err}")
   }
   match oh_magic {
@@ -309,39 +308,35 @@ fn read_optional_header(
       // Init oh32 fields
       let oh32 = OptionalHeader32::{
         magic: oh_magic,
-        major_linker_version: @binary.read(r, @binary.little_endian, 0),
-        minor_linker_version: @binary.read(r, @binary.little_endian, 0),
-        size_of_code: @binary.read(r, @binary.little_endian, 0),
-        size_of_initialized_data: @binary.read(r, @binary.little_endian, 0),
-        size_of_uninitialized_data: @binary.read(r, @binary.little_endian, 0),
-        address_of_entry_point: @binary.read(r, @binary.little_endian, 0),
-        base_of_code: @binary.read(r, @binary.little_endian, 0),
-        base_of_data: @binary.read(r, @binary.little_endian, 0),
-        image_base: @binary.read(r, @binary.little_endian, 0),
-        section_alignment: @binary.read(r, @binary.little_endian, 0),
-        file_alignment: @binary.read(r, @binary.little_endian, 0),
-        major_operating_system_version: @binary.read(
-          r, @binary.little_endian, 0,
-        ),
-        minor_operating_system_version: @binary.read(
-          r, @binary.little_endian, 0,
-        ),
-        major_image_version: @binary.read(r, @binary.little_endian, 0),
-        minor_image_version: @binary.read(r, @binary.little_endian, 0),
-        major_subsystem_version: @binary.read(r, @binary.little_endian, 0),
-        minor_subsystem_version: @binary.read(r, @binary.little_endian, 0),
-        win32_version_value: @binary.read(r, @binary.little_endian, 0),
-        size_of_image: @binary.read(r, @binary.little_endian, 0),
-        size_of_headers: @binary.read(r, @binary.little_endian, 0),
-        check_sum: @binary.read(r, @binary.little_endian, 0),
-        subsystem: @binary.read(r, @binary.little_endian, 0),
-        dll_characteristics: @binary.read(r, @binary.little_endian, 0),
-        size_of_stack_reserve: @binary.read(r, @binary.little_endian, 0),
-        size_of_stack_commit: @binary.read(r, @binary.little_endian, 0),
-        size_of_heap_reserve: @binary.read(r, @binary.little_endian, 0),
-        size_of_heap_commit: @binary.read(r, @binary.little_endian, 0),
-        loader_flags: @binary.read(r, @binary.little_endian, 0),
-        number_of_rva_and_sizes: @binary.read(r, @binary.little_endian, 0),
+        major_linker_version: @binary.read(r, @binary.little_endian),
+        minor_linker_version: @binary.read(r, @binary.little_endian),
+        size_of_code: @binary.read(r, @binary.little_endian),
+        size_of_initialized_data: @binary.read(r, @binary.little_endian),
+        size_of_uninitialized_data: @binary.read(r, @binary.little_endian),
+        address_of_entry_point: @binary.read(r, @binary.little_endian),
+        base_of_code: @binary.read(r, @binary.little_endian),
+        base_of_data: @binary.read(r, @binary.little_endian),
+        image_base: @binary.read(r, @binary.little_endian),
+        section_alignment: @binary.read(r, @binary.little_endian),
+        file_alignment: @binary.read(r, @binary.little_endian),
+        major_operating_system_version: @binary.read(r, @binary.little_endian),
+        minor_operating_system_version: @binary.read(r, @binary.little_endian),
+        major_image_version: @binary.read(r, @binary.little_endian),
+        minor_image_version: @binary.read(r, @binary.little_endian),
+        major_subsystem_version: @binary.read(r, @binary.little_endian),
+        minor_subsystem_version: @binary.read(r, @binary.little_endian),
+        win32_version_value: @binary.read(r, @binary.little_endian),
+        size_of_image: @binary.read(r, @binary.little_endian),
+        size_of_headers: @binary.read(r, @binary.little_endian),
+        check_sum: @binary.read(r, @binary.little_endian),
+        subsystem: @binary.read(r, @binary.little_endian),
+        dll_characteristics: @binary.read(r, @binary.little_endian),
+        size_of_stack_reserve: @binary.read(r, @binary.little_endian),
+        size_of_stack_commit: @binary.read(r, @binary.little_endian),
+        size_of_heap_reserve: @binary.read(r, @binary.little_endian),
+        size_of_heap_commit: @binary.read(r, @binary.little_endian),
+        loader_flags: @binary.read(r, @binary.little_endian),
+        number_of_rva_and_sizes: @binary.read(r, @binary.little_endian),
         data_directory: [],
       }
       let dd = read_data_directories(
@@ -363,38 +358,34 @@ fn read_optional_header(
       }
       let oh64 = OptionalHeader64::{
         magic: oh_magic,
-        major_linker_version: @binary.read(r, @binary.little_endian, 0),
-        minor_linker_version: @binary.read(r, @binary.little_endian, 0),
-        size_of_code: @binary.read(r, @binary.little_endian, 0),
-        size_of_initialized_data: @binary.read(r, @binary.little_endian, 0),
-        size_of_uninitialized_data: @binary.read(r, @binary.little_endian, 0),
-        address_of_entry_point: @binary.read(r, @binary.little_endian, 0),
-        base_of_code: @binary.read(r, @binary.little_endian, 0),
-        image_base: @binary.read(r, @binary.little_endian, 0),
-        section_alignment: @binary.read(r, @binary.little_endian, 0),
-        file_alignment: @binary.read(r, @binary.little_endian, 0),
-        major_operating_system_version: @binary.read(
-          r, @binary.little_endian, 0,
-        ),
-        minor_operating_system_version: @binary.read(
-          r, @binary.little_endian, 0,
-        ),
-        major_image_version: @binary.read(r, @binary.little_endian, 0),
-        minor_image_version: @binary.read(r, @binary.little_endian, 0),
-        major_subsystem_version: @binary.read(r, @binary.little_endian, 0),
-        minor_subsystem_version: @binary.read(r, @binary.little_endian, 0),
-        win32_version_value: @binary.read(r, @binary.little_endian, 0),
-        size_of_image: @binary.read(r, @binary.little_endian, 0),
-        size_of_headers: @binary.read(r, @binary.little_endian, 0),
-        check_sum: @binary.read(r, @binary.little_endian, 0),
-        subsystem: @binary.read(r, @binary.little_endian, 0),
-        dll_characteristics: @binary.read(r, @binary.little_endian, 0),
-        size_of_stack_reserve: @binary.read(r, @binary.little_endian, 0),
-        size_of_stack_commit: @binary.read(r, @binary.little_endian, 0),
-        size_of_heap_reserve: @binary.read(r, @binary.little_endian, 0),
-        size_of_heap_commit: @binary.read(r, @binary.little_endian, 0),
-        loader_flags: @binary.read(r, @binary.little_endian, 0),
-        number_of_rva_and_sizes: @binary.read(r, @binary.little_endian, 0),
+        major_linker_version: @binary.read(r, @binary.little_endian),
+        minor_linker_version: @binary.read(r, @binary.little_endian),
+        size_of_code: @binary.read(r, @binary.little_endian),
+        size_of_initialized_data: @binary.read(r, @binary.little_endian),
+        size_of_uninitialized_data: @binary.read(r, @binary.little_endian),
+        address_of_entry_point: @binary.read(r, @binary.little_endian),
+        base_of_code: @binary.read(r, @binary.little_endian),
+        image_base: @binary.read(r, @binary.little_endian),
+        section_alignment: @binary.read(r, @binary.little_endian),
+        file_alignment: @binary.read(r, @binary.little_endian),
+        major_operating_system_version: @binary.read(r, @binary.little_endian),
+        minor_operating_system_version: @binary.read(r, @binary.little_endian),
+        major_image_version: @binary.read(r, @binary.little_endian),
+        minor_image_version: @binary.read(r, @binary.little_endian),
+        major_subsystem_version: @binary.read(r, @binary.little_endian),
+        minor_subsystem_version: @binary.read(r, @binary.little_endian),
+        win32_version_value: @binary.read(r, @binary.little_endian),
+        size_of_image: @binary.read(r, @binary.little_endian),
+        size_of_headers: @binary.read(r, @binary.little_endian),
+        check_sum: @binary.read(r, @binary.little_endian),
+        subsystem: @binary.read(r, @binary.little_endian),
+        dll_characteristics: @binary.read(r, @binary.little_endian),
+        size_of_stack_reserve: @binary.read(r, @binary.little_endian),
+        size_of_stack_commit: @binary.read(r, @binary.little_endian),
+        size_of_heap_reserve: @binary.read(r, @binary.little_endian),
+        size_of_heap_commit: @binary.read(r, @binary.little_endian),
+        loader_flags: @binary.read(r, @binary.little_endian),
+        number_of_rva_and_sizes: @binary.read(r, @binary.little_endian),
         data_directory: FixedArray::make(16, DataDirectory::default()),
       }
       let dd = read_data_directories(
@@ -429,9 +420,5 @@ fn read_data_directories(
       "size of data directories(\{sz}) is inconsistent with number of data directories(\{n})",
     )
   }
-  let dd : Array[DataDirectory] = Array::make(
-    n.reinterpret_as_int(),
-    DataDirectory::default(),
-  )
-  @binary.read(r, @binary.little_endian, dd)
+  @binary.read_n(r, @binary.little_endian, int(n))
 }

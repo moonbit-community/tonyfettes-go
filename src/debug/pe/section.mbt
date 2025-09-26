@@ -21,19 +21,18 @@ struct SectionHeader32 {
 pub impl @binary.Readable for SectionHeader32 with read(
   r : &@io.Reader,
   order : &@binary.ByteOrder,
-  _ : SectionHeader32,
 ) -> SectionHeader32 raise {
   SectionHeader32::{
-    name: @binary.read(r, order, FixedArray::make(8, (0 : Byte))),
-    virtual_size: @binary.read(r, order, 0),
-    virtual_address: @binary.read(r, order, 0),
-    size_of_raw_data: @binary.read(r, order, 0),
-    pointer_to_raw_data: @binary.read(r, order, 0),
-    pointer_to_relocations: @binary.read(r, order, 0),
-    pointer_to_line_numbers: @binary.read(r, order, 0),
-    number_of_relocations: @binary.read(r, order, 0),
-    number_of_line_numbers: @binary.read(r, order, 0),
-    characteristics: @binary.read(r, order, 0),
+    name: @binary.read_n(r, order, 8),
+    virtual_size: @binary.read(r, order),
+    virtual_address: @binary.read(r, order),
+    size_of_raw_data: @binary.read(r, order),
+    pointer_to_raw_data: @binary.read(r, order),
+    pointer_to_relocations: @binary.read(r, order),
+    pointer_to_line_numbers: @binary.read(r, order),
+    number_of_relocations: @binary.read(r, order),
+    number_of_line_numbers: @binary.read(r, order),
+    characteristics: @binary.read(r, order),
   }
 }
 

@@ -1264,55 +1264,55 @@ pub(all) struct SectionFlag(UInt)
 
 ///|
 /// Section contains writable data.
-pub const SHF_WRITE : UInt = 0x1
+pub let shfWrite : SectionFlag = 0x1
 
 ///|
 /// Section occupies memory.
-pub const SHF_ALLOC : UInt = 0x2
+pub let shfAlloc : SectionFlag = 0x2
 
 ///|
 /// Section contains instructions.
-pub const SHF_EXECINSTR : UInt = 0x4
+pub let shfExecInstr : SectionFlag = 0x4
 
 ///|
 /// Section may be merged.
-pub const SHF_MERGE : UInt = 0x10
+pub let shfMerge : SectionFlag = 0x10
 
 ///|
 /// Section contains strings.
-pub const SHF_STRINGS : UInt = 0x20
+pub let shfStrings : SectionFlag = 0x20
 
 ///|
 /// sh_info holds section index.
-pub const SHF_INFO_LINK : UInt = 0x40
+pub let shfInfoLink : SectionFlag = 0x40
 
 ///|
 /// Special ordering requirements.
-pub const SHF_LINK_ORDER : UInt = 0x80
+pub let shfLinkOrder : SectionFlag = 0x80
 
 ///|
 /// OS-specific processing required.
-pub const SHF_OS_NONCONFORMING : UInt = 0x100
+pub let shfOsNonConforming : SectionFlag = 0x100
 
 ///|
 /// Member of section group.
-pub const SHF_GROUP : UInt = 0x200
+pub let shfGroup : SectionFlag = 0x200
 
 ///|
 /// Section contains TLS data.
-pub const SHF_TLS : UInt = 0x400
+pub let shfTls : SectionFlag = 0x400
 
 ///|
 /// Section is compressed.
-pub const SHF_COMPRESSED : UInt = 0x800
+pub let shfCompressed : SectionFlag = 0x800
 
 ///|
 /// OS-specific semantics.
-pub const SHF_MASKOS : UInt = 0x0ff00000
+pub let shfMaskOs : SectionFlag = 0x0ff00000
 
 ///|
 /// Processor-specific semantics.
-pub const SHF_MASKPROC : UInt = 0xf0000000
+pub let shfMaskProc : SectionFlag = 0xf0000000
 
 ///|
 pub impl Default for SectionFlag with default() -> SectionFlag {
@@ -1333,6 +1333,11 @@ pub impl BitOr for SectionFlag with lor(self : SectionFlag, other : SectionFlag)
 }
 
 ///|
+pub impl Add for SectionFlag with add(self : SectionFlag, other : SectionFlag) -> SectionFlag {
+  SectionFlag(self.0 | other.0)
+}
+
+///|
 pub impl ToJson for SectionFlag with to_json(self : SectionFlag) -> Json {
   self.0.to_json()
 }
@@ -1343,55 +1348,37 @@ pub impl Show for SectionFlag with output(self : SectionFlag, logger : &Logger) 
 }
 
 ///|
+pub impl Eq for SectionFlag with equal(self : SectionFlag, other : SectionFlag) -> Bool {
+  self.0 == other.0
+}
+
+///|
 /// Section compression type.
-pub(all) enum CompressionType {
-  /// 0          No compression.
-  COMPRESS_NONE
-  /// 1          ZLIB compression.
-  COMPRESS_ZLIB
-  /// 2          ZSTD compression.
-  COMPRESS_ZSTD
-  /// 0x60000000 First OS-specific.
-  COMPRESS_LOOS
-  /// 0x6fffffff Last OS-specific.
-  COMPRESS_HIOS
-  /// 0x70000000 First processor-specific type.
-  COMPRESS_LOPROC
-  /// 0x7fffffff Last processor-specific type.
-  COMPRESS_HIPROC
-} derive(Eq, Show, ToJson)
+pub(all) struct CompressionType(Int) derive(Show, Default, Eq)
 
 ///|
-pub impl Default for CompressionType with default() -> CompressionType {
-  COMPRESS_NONE
-}
+/// ZLIB compression.
+pub let compressZlib : CompressionType = 1
 
 ///|
-pub fn CompressionType::to_int(self : CompressionType) -> Int {
-  match self {
-    COMPRESS_NONE => 0
-    COMPRESS_ZLIB => 1
-    COMPRESS_ZSTD => 2
-    COMPRESS_LOOS => 0x60000000
-    COMPRESS_HIOS => 0x6fffffff
-    COMPRESS_LOPROC => 0x70000000
-    COMPRESS_HIPROC => 0x7fffffff
-  }
-}
+/// ZSTD compression.
+pub let compressZstd : CompressionType = 2
 
 ///|
-pub fn CompressionType::from_int(i : Int) -> CompressionType {
-  match i {
-    0 => COMPRESS_NONE
-    1 => COMPRESS_ZLIB
-    2 => COMPRESS_ZSTD
-    0x60000000 => COMPRESS_LOOS
-    0x6fffffff => COMPRESS_HIOS
-    0x70000000 => COMPRESS_LOPROC
-    0x7fffffff => COMPRESS_HIPROC
-    _ => COMPRESS_ZLIB
-  }
-}
+/// First OS-specific.
+pub let compressLoOs = 0x60000000
+
+///|
+/// Last OS-specific.
+pub let compressHiOs = 0x6fffffff
+
+///|
+/// First processor-specific type.
+pub let compressLoProc = 0x70000000
+
+///|
+/// Last processor-specific type.
+pub let compressHiProc = 0x7fffffff
 
 ///|
 /// Prog.Type
@@ -1554,23 +1541,23 @@ pub(all) struct ProgFlag(UInt)
 
 ///|
 /// Executable.
-pub const PF_X : UInt = 0x1
+pub let progFlagExec : UInt = 0x1
 
 ///|
 /// Writable.
-pub const PF_W : UInt = 0x2
+pub let progFlagWrite : UInt = 0x2
 
 ///|
 /// Readable.
-pub const PF_R : UInt = 0x4
+pub let progFlagRead : UInt = 0x4
 
 ///|
 /// Operating system-specific.
-pub const PF_MASKOS : UInt = 0x0ff00000
+pub let progFlagMaskOs : UInt = 0x0ff00000
 
 ///|
 /// Processor-specific.
-pub const PF_MASKPROC : UInt = 0xf0000000
+pub let progFlagMaskProc : UInt = 0xf0000000
 
 ///|
 pub impl Default for ProgFlag with default() -> ProgFlag {
@@ -2121,6 +2108,241 @@ pub fn DynTag::from_int(i : Int) -> DynTag {
     0x7ffffffe => DT_USED
     0x7fffffff => DT_FILTER
     _ => DT_NULL
+  }
+}
+
+///|
+pub(all) struct DynFlag(Int)
+
+///|
+/// Indicates that the object being loaded may
+/// make reference to the
+/// $ORIGIN substitution string
+pub let dfOrigin : DynFlag = 0x0001
+
+///|
+/// Indicates "symbolic" linking.
+pub let dfSymbolic : DynFlag = 0x0002
+
+///|
+/// Indicates there may be relocations in non-writable segments.
+pub let dfTextRel : DynFlag = 0x0004
+
+///|
+/// Indicates that the dynamic linker should
+/// process all relocations for the object
+/// containing this entry before transferring
+/// control to the program.
+pub let dfBindNow : DynFlag = 0x0008
+
+///|
+/// Indicates that the shared object or
+/// executable contains code using a static
+/// thread-local storage scheme.
+pub let dfStaticTls : DynFlag = 0x0010
+
+///|
+pub impl BitAnd for DynFlag with land(self : DynFlag, other : DynFlag) -> DynFlag {
+  DynFlag(self.0 & other.0)
+}
+
+///|
+pub impl BitOr for DynFlag with lor(self : DynFlag, other : DynFlag) -> DynFlag {
+  DynFlag(self.0 | other.0)
+}
+
+///|
+pub impl Add for DynFlag with add(self : DynFlag, other : DynFlag) -> DynFlag {
+  DynFlag(self.0 + other.0)
+}
+
+///|
+pub impl Show for DynFlag with output(self : DynFlag, logger : &Logger) -> Unit {
+  match self.0 {
+    0x0001 => logger.write_string("DF_ORIGIN")
+    0x0002 => logger.write_string("DF_SYMBOLIC")
+    0x0004 => logger.write_string("DF_TEXTREL")
+    0x0008 => logger.write_string("DF_BIND_NOW")
+    0x0010 => logger.write_string("DF_STATIC_TLS")
+    value => logger.write_string(value.to_string(radix=16))
+  }
+}
+
+///|
+pub struct DynFlag1(UInt)
+
+///|
+/// Indicates that all relocations for this object must be processed before
+/// returning control to the program.
+pub let df1Now : DynFlag1 = 0x00000001
+
+///|
+/// Unused.
+pub let df1Global : DynFlag1 = 0x00000002
+
+///|
+/// Indicates that the object is a member of a group.
+pub let df1Group : DynFlag1 = 0x00000004
+
+///|
+/// Indicates that the object cannot be deleted from a process.
+pub let df1NoDelete : DynFlag1 = 0x00000008
+
+///|
+/// Meaningful only for filters. Indicates that all associated filtees be
+/// processed immediately.
+pub let df1LoadFltr : DynFlag1 = 0x00000010
+
+///|
+/// Indicates that this object's initialization section be run before any other
+/// objects loaded.
+pub let df1InitFirst : DynFlag1 = 0x00000020
+
+///|
+/// Indicates that the object cannot be added to a running process with dlopen.
+pub let df1NoOpen : DynFlag1 = 0x00000040
+
+///|
+/// Indicates the object requires $ORIGIN processing.
+pub let df1Origin : DynFlag1 = 0x00000080
+
+///|
+/// Indicates that the object should use direct binding information.
+pub let df1Direct : DynFlag1 = 0x00000100
+
+///|
+/// Unused.
+pub let df1Trans : DynFlag1 = 0x00000200
+
+///|
+/// Indicates that the objects symbol table is to interpose before all symbols
+/// except the primary load object, which is typically the executable.
+pub let df1Interpose : DynFlag1 = 0x00000400
+
+///|
+/// Indicates that the search for dependencies of this object ignores any
+/// default library search paths.
+pub let df1NoDefLib : DynFlag1 = 0x00000800
+
+///|
+/// Indicates that this object is not dumped by dldump. Candidates are objects
+/// with no relocations that might get included when generating alternative
+/// objects using.
+pub let df1NoDump : DynFlag1 = 0x00001000
+
+///|
+/// Identifies this object as a configuration alternative object generated by
+/// crle. Triggers the runtime linker to search for a configuration file $ORIGIN/ld.config.app-name.
+pub let df1ConfAlt : DynFlag1 = 0x00002000
+
+///|
+/// Meaningful only for filtees. Terminates a filters search for any
+/// further filtees.
+pub let df1EndFiltee : DynFlag1 = 0x00004000
+
+///|
+/// Indicates that this object has displacement relocations applied.
+pub let df1DisprelDne : DynFlag1 = 0x00008000
+
+///|
+/// Indicates that this object has displacement relocations pending.
+pub let df1DisprelPnd : DynFlag1 = 0x00010000
+
+///|
+/// Indicates that this object contains symbols that cannot be directly
+/// bound to.
+pub let df1NoDirect : DynFlag1 = 0x00020000
+
+///|
+/// Reserved for internal use by the kernel runtime-linker.
+pub let df1IgnMulDef : DynFlag1 = 0x00040000
+
+///|
+/// Reserved for internal use by the kernel runtime-linker.
+pub let df1NoKsyms : DynFlag1 = 0x00080000
+
+///|
+/// Reserved for internal use by the kernel runtime-linker.
+pub let df1NoHdr : DynFlag1 = 0x00100000
+
+///|
+/// Indicates that this object has been edited or has been modified since the
+/// objects original construction by the link-editor.
+pub let df1Edited : DynFlag1 = 0x00200000
+
+///|
+/// Reserved for internal use by the kernel runtime-linker.
+pub let df1NoReloc : DynFlag1 = 0x00400000
+
+///|
+/// Indicates that the object contains individual symbols that should interpose
+/// before all symbols except the primary load object, which is typically the
+/// executable.
+pub let df1SymInterpose : DynFlag1 = 0x00800000
+
+///|
+/// Indicates that the executable requires global auditing.
+pub let df1GlobalAudit : DynFlag1 = 0x01000000
+
+///|
+/// Indicates that the object defines, or makes reference to singleton symbols.
+pub let df1Singleton : DynFlag1 = 0x02000000
+
+///|
+/// Indicates that the object is a stub.
+pub let df1Stub : DynFlag1 = 0x04000000
+
+///|
+/// Indicates that the object is a position-independent executable.
+pub let df1Pie : DynFlag1 = 0x08000000
+
+///|
+/// Indicates that the object is a kernel module.
+pub let df1Kmod : DynFlag1 = 0x10000000
+
+///|
+/// Indicates that the object is a weak standard filter.
+pub let df1WeakFilter : DynFlag1 = 0x20000000
+
+///|
+/// Unused.
+pub let df1NoCommon : DynFlag1 = 0x40000000
+
+///|
+pub impl Show for DynFlag1 with output(self : DynFlag1, logger : &Logger) -> Unit {
+  match self.0 {
+    0x00000001 => logger.write_string("DF_1_NOW")
+    0x00000002 => logger.write_string("DF_1_GLOBAL")
+    0x00000004 => logger.write_string("DF_1_GROUP")
+    0x00000008 => logger.write_string("DF_1_NODELETE")
+    0x00000010 => logger.write_string("DF_1_LOADFLTR")
+    0x00000020 => logger.write_string("DF_1_INITFIRST")
+    0x00000040 => logger.write_string("DF_1_NOOPEN")
+    0x00000080 => logger.write_string("DF_1_ORIGIN")
+    0x00000100 => logger.write_string("DF_1_DIRECT")
+    0x00000200 => logger.write_string("DF_1_TRANS")
+    0x00000400 => logger.write_string("DF_1_INTERPOSE")
+    0x00000800 => logger.write_string("DF_1_NODEFLIB")
+    0x00001000 => logger.write_string("DF_1_NODUMP")
+    0x00002000 => logger.write_string("DF_1_CONFALT")
+    0x00004000 => logger.write_string("DF_1_ENDFILTEE")
+    0x00008000 => logger.write_string("DF_1_DISPRELDNE")
+    0x00010000 => logger.write_string("DF_1_DISPRELPND")
+    0x00020000 => logger.write_string("DF_1_NODIRECT")
+    0x00040000 => logger.write_string("DF_1_IGNMULDEF")
+    0x00080000 => logger.write_string("DF_1_NOKSYMS")
+    0x00100000 => logger.write_string("DF_1_NOHDR")
+    0x00200000 => logger.write_string("DF_1_EDITED")
+    0x00400000 => logger.write_string("DF_1_NORELOC")
+    0x00800000 => logger.write_string("DF_1_SYMINTPOSE")
+    0x01000000 => logger.write_string("DF_1_GLOBAUDIT")
+    0x02000000 => logger.write_string("DF_1_SINGLETON")
+    0x04000000 => logger.write_string("DF_1_STUB")
+    0x08000000 => logger.write_string("DF_1_PIE")
+    0x10000000 => logger.write_string("DF_1_KMOD")
+    0x20000000 => logger.write_string("DF_1_WEAKFILTER")
+    0x40000000 => logger.write_string("DF_1_NOCOMMON")
+    value => logger.write_string(value.to_string(radix=16))
   }
 }
 

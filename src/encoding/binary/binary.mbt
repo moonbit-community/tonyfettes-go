@@ -317,11 +317,16 @@ pub impl AppendByteOrder for BigEndian with append_uint64(
 
 ///|
 pub(open) trait Readable {
-  read(r : &@io.Reader, order : &ByteOrder, data : Self) -> Self raise
+  read(r : &@io.Reader, order : &ByteOrder) -> Self raise
 }
 
 ///|
-pub impl Readable for Byte with read(r : &@io.Reader, _ : &ByteOrder, _ : Byte) -> Byte raise {
+pub(open) trait ReadableN {
+  read(r : &@io.Reader, order : &ByteOrder, n : Int) -> Self raise
+}
+
+///|
+pub impl Readable for Byte with read(r : &@io.Reader, _ : &ByteOrder) -> Byte raise {
   let buf = @slice.make(1)
   let n = r.read(buf)
   if n != 1 {
@@ -331,11 +336,7 @@ pub impl Readable for Byte with read(r : &@io.Reader, _ : &ByteOrder, _ : Byte) 
 }
 
 ///|
-pub impl Readable for UInt16 with read(
-  r : &@io.Reader,
-  order : &ByteOrder,
-  _ : UInt16,
-) -> UInt16 raise {
+pub impl Readable for UInt16 with read(r : &@io.Reader, order : &ByteOrder) -> UInt16 raise {
   let buf = @slice.make(2)
   let n = r.read(buf)
   if n != 2 {
@@ -345,11 +346,7 @@ pub impl Readable for UInt16 with read(
 }
 
 ///|
-pub impl Readable for Int16 with read(
-  r : &@io.Reader,
-  order : &ByteOrder,
-  _ : Int16,
-) -> Int16 raise {
+pub impl Readable for Int16 with read(r : &@io.Reader, order : &ByteOrder) -> Int16 raise {
   let buf = @slice.make(2)
   let n = r.read(buf)
   if n != 2 {
@@ -359,11 +356,7 @@ pub impl Readable for Int16 with read(
 }
 
 ///|
-pub impl Readable for Int with read(
-  r : &@io.Reader,
-  order : &ByteOrder,
-  _ : Int,
-) -> Int raise {
+pub impl Readable for Int with read(r : &@io.Reader, order : &ByteOrder) -> Int raise {
   let buf = @slice.make(4)
   let n = r.read(buf)
   if n != 4 {
@@ -373,11 +366,7 @@ pub impl Readable for Int with read(
 }
 
 ///|
-pub impl Readable for UInt with read(
-  r : &@io.Reader,
-  order : &ByteOrder,
-  _ : UInt,
-) -> UInt raise {
+pub impl Readable for UInt with read(r : &@io.Reader, order : &ByteOrder) -> UInt raise {
   let buf = @slice.make(4)
   let n = r.read(buf)
   if n != 4 {
@@ -387,11 +376,7 @@ pub impl Readable for UInt with read(
 }
 
 ///|
-pub impl Readable for Int64 with read(
-  r : &@io.Reader,
-  order : &ByteOrder,
-  _ : Int64,
-) -> Int64 raise {
+pub impl Readable for Int64 with read(r : &@io.Reader, order : &ByteOrder) -> Int64 raise {
   let buf = @slice.make(8)
   let n = r.read(buf)
   if n != 8 {
@@ -401,11 +386,7 @@ pub impl Readable for Int64 with read(
 }
 
 ///|
-pub impl Readable for UInt64 with read(
-  r : &@io.Reader,
-  order : &ByteOrder,
-  _ : UInt64,
-) -> UInt64 raise {
+pub impl Readable for UInt64 with read(r : &@io.Reader, order : &ByteOrder) -> UInt64 raise {
   let buf = @slice.make(8)
   let n = r.read(buf)
   if n != 8 {
@@ -427,56 +408,54 @@ pub impl Readable for UInt64 with read(
 /// The error is `@io.EOF` only if no bytes were read.
 /// If an `@io.EOF` happens after reading some but not all the bytes,
 /// `read` returns `@io.ErrUnexpectedEOF`.
-pub fn[T : Readable] read(
+pub fn[T : Readable] read(r : &@io.Reader, order : &ByteOrder) -> T raise {
+  T::read(r, order)
+}
+
+///|
+pub fn[T : ReadableN] read_n(
   r : &@io.Reader,
   order : &ByteOrder,
-  data : T,
+  n : Int,
 ) -> T raise {
-  T::read(r, order, data)
+  T::read(r, order, n)
 }
 
 ///|
-pub impl[T : Readable] Readable for FixedArray[T] with read(
+pub impl[T : Readable + Default] ReadableN for FixedArray[T] with read(
   r : &@io.Reader,
   order : &ByteOrder,
-  data : FixedArray[T],
+  n : Int,
 ) -> FixedArray[T] raise {
-  for i = 0; i < data.length(); i = i + 1 {
-    data[i] = T::read(r, order, data[i])
+  let data : FixedArray[T] = FixedArray::make(n, T::default())
+  for i = 0; i < n; i = i + 1 {
+    data[i] = T::read(r, order)
   }
   data
 }
 
 ///|
-pub impl[T : Readable] Readable for Array[T] with read(
+pub impl[T : Readable + Default] ReadableN for Array[T] with read(
   r : &@io.Reader,
   order : &ByteOrder,
-  data : Array[T],
+  n : Int,
 ) -> Array[T] raise {
-  for i = 0; i < data.length(); i = i + 1 {
-    data[i] = T::read(r, order, data[i])
+  let data : Array[T] = Array::make(n, T::default())
+  for i = 0; i < n; i = i + 1 {
+    data[i] = T::read(r, order)
   }
   data
 }
 
 ///|
-pub impl[T : Readable] Readable for Ref[T] with read(
+pub impl[T : Readable + Default] ReadableN for @slice.Slice[T] with read(
   r : &@io.Reader,
   order : &ByteOrder,
-  data : Ref[T],
-) -> Ref[T] raise {
-  data.val = T::read(r, order, data.val)
-  data
-}
-
-///|
-pub impl[T : Readable] Readable for @slice.Slice[T] with read(
-  r : &@io.Reader,
-  order : &ByteOrder,
-  data : @slice.Slice[T],
+  n : Int,
 ) -> @slice.Slice[T] raise {
-  for i = 0; i < data.length(); i = i + 1 {
-    data[i] = T::read(r, order, data[i])
+  let data : @slice.Slice[T] = @slice.make(n)
+  for i = 0; i < n; i = i + 1 {
+    data[i] = T::read(r, order)
   }
   data
 }

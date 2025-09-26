@@ -48,7 +48,7 @@ let file_tests : Array[FileTest] = [
       {
         name: ".interp",
         type_: SHT_PROGBITS,
-        flags: SectionFlag(SHF_ALLOC),
+        flags: shfAlloc,
         addr: 0x80480d4,
         offset: 0xd4,
         size: 0x15,
@@ -61,7 +61,7 @@ let file_tests : Array[FileTest] = [
       {
         name: ".hash",
         type_: SHT_HASH,
-        flags: SectionFlag(SHF_ALLOC),
+        flags: shfAlloc,
         addr: 0x80480ec,
         offset: 0xec,
         size: 0x90,
@@ -71,12 +71,12 @@ let file_tests : Array[FileTest] = [
         entsize: 0x4,
         file_size: 0x90,
       },
-      // Add more sections as needed...
     ],
     progs: [
+      // Add more sections as needed...
       {
         type_: PT_PHDR,
-        flags: ProgFlag(PF_R | PF_X),
+        flags: progFlagRead | progFlagExec,
         off: 0x34,
         vaddr: 0x8048034,
         paddr: 0x8048034,
@@ -86,7 +86,7 @@ let file_tests : Array[FileTest] = [
       },
       {
         type_: PT_INTERP,
-        flags: ProgFlag(PF_R),
+        flags: progFlagRead,
         off: 0xd4,
         vaddr: 0x80480d4,
         paddr: 0x80480d4,
@@ -137,7 +137,7 @@ test "section header structure" {
   let sh : SectionHeader = {
     name: ".text",
     type_: SHT_PROGBITS,
-    flags: SectionFlag(SHF_ALLOC | SHF_EXECINSTR),
+    flags: shfAlloc | shfExecInstr,
     addr: 0x1000,
     offset: 0x200,
     size: 0x100,
@@ -159,7 +159,7 @@ test "section header structure" {
 test "program header structure" {
   let ph : ProgHeader = {
     type_: PT_LOAD,
-    flags: ProgFlag(PF_R | PF_X),
+    flags: progFlagRead | progFlagExec,
     off: 0x0,
     vaddr: 0x8048000,
     paddr: 0x8048000,
@@ -234,10 +234,10 @@ test "section types and flags" {
   @json.inspect(SectionType::SHT_PROGBITS.to_uint(), content=1)
   @json.inspect(SectionType::SHT_SYMTAB.to_uint(), content=2)
   @json.inspect(SectionType::SHT_STRTAB.to_uint(), content=3)
-  @json.inspect(SHF_WRITE, content=1)
-  @json.inspect(SHF_ALLOC, content=2)
-  @json.inspect(SHF_EXECINSTR, content=4)
-  @json.inspect(SHF_MERGE | SHF_STRINGS, content=48) // 0x10 | 0x20 = 48
+  @json.inspect(shfWrite, content=1)
+  @json.inspect(shfAlloc, content=2)
+  @json.inspect(shfExecInstr, content=4)
+  @json.inspect(shfMerge | shfStrings, content=48) // 0x10 | 0x20 = 48
 }
 
 ///|
@@ -247,9 +247,9 @@ test "program types and flags" {
   @json.inspect(ProgType::PT_LOAD.to_int(), content=1)
   @json.inspect(ProgType::PT_DYNAMIC.to_int(), content=2)
   @json.inspect(ProgType::PT_INTERP.to_int(), content=3)
-  @json.inspect(PF_X, content=1)
-  @json.inspect(PF_W, content=2)
-  @json.inspect(PF_R, content=4)
+  @json.inspect(progFlagExec, content=1)
+  @json.inspect(progFlagWrite, content=2)
+  @json.inspect(progFlagRead, content=4)
 }
 
 ///|
@@ -283,15 +283,6 @@ test "imported symbol structure" {
   @json.inspect(imported.name, content="printf")
   @json.inspect(imported.version, content="GLIBC_2.2.5")
   @json.inspect(imported.library, content="libc.so.6")
-}
-
-///|
-/// Test compression types
-test "compression types" {
-  @json.inspect(CompressionType::COMPRESS_ZLIB.to_int(), content=1)
-  @json.inspect(CompressionType::COMPRESS_ZSTD.to_int(), content=2)
-  @json.inspect(CompressionType::from_int(1), content="COMPRESS_ZLIB")
-  @json.inspect(CompressionType::from_int(2), content="COMPRESS_ZSTD")
 }
 
 ///|
