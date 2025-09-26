@@ -41,7 +41,7 @@ pub impl Show for LittleEndian with output(_ : LittleEndian, logger : &Logger) -
 }
 
 ///|
-pub impl ToJson for LittleEndian with to_json(self : LittleEndian) -> Json {
+pub impl ToJson for LittleEndian with to_json(_ : LittleEndian) -> Json {
   "LittleEndian"
 }
 
@@ -184,7 +184,7 @@ pub impl Show for BigEndian with output(_ : BigEndian, logger : &Logger) -> Unit
 }
 
 ///|
-pub impl ToJson for BigEndian with to_json(self : BigEndian) -> Json {
+pub impl ToJson for BigEndian with to_json(_ : BigEndian) -> Json {
   "BigEndian"
 }
 
