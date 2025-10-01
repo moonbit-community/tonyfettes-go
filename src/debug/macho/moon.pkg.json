@@ -4,7 +4,12 @@
     "tonyfettes/go/io",
     "tonyfettes/go/compress/zlib",
     "tonyfettes/go/bytes",
-    "tonyfettes/go/slice"
+    "tonyfettes/go/slice",
+    "tonyfettes/go/encoding/binary",
+    "tonyfettes/go/internal/saferio",
+    "tonyfettes/go/builtin",
+    "tonyfettes/go/unicode/utf8",
+    "tonyfettes/go/strings"
   ],
   "test-import": [
     "moonbitlang/x/encoding"

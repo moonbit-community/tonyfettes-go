@@ -10,6 +10,22 @@ pub struct FileHeader {
 } derive(Eq, Show)
 
 ///|
+pub impl @binary.Readable for FileHeader with read(
+  r : &@io.Reader,
+  byte_order : &@binary.ByteOrder,
+) -> FileHeader raise {
+  FileHeader::{
+    cpu: Cpu::from_uint(@binary.read(r, byte_order)),
+    sub_cpu: @binary.read(r, byte_order),
+    type_: Type::from_uint(@binary.read(r, byte_order)),
+    ncmd: @binary.read(r, byte_order),
+    cmdsz: @binary.read(r, byte_order),
+    flags: @binary.read(r, byte_order),
+    magic: @binary.read(r, byte_order),
+  }
+}
+
+///|
 pub enum ByteOrder {
   Little
   Big
@@ -29,7 +45,7 @@ pub enum LoadCommand {
   Dysymtab(Dysymtab)
   Rpath(Rpath)
   Thread(Thread)
-} derive(Show)
+}
 
 ///|
 pub impl Load for LoadCommand with raw(self) {
@@ -45,13 +61,11 @@ pub impl Load for LoadCommand with raw(self) {
 }
 
 ///|
-pub struct LoadBytes {
-  data : @slice.Slice[Byte]
-} derive(Eq, Show)
+pub struct LoadBytes(@slice.Slice[Byte])
 
 ///|
 pub impl Load for LoadBytes with raw(self) {
-  self.data
+  self.0
 }
 
 ///|
@@ -157,39 +171,36 @@ pub fn Section::data(
 ///|
 pub struct Dylib {
   load_bytes : LoadBytes
-  name : @slice.Slice[Byte]
+  name : String
   time : UInt
   current_version : UInt
   compat_version : UInt
-} derive(Eq, Show)
+}
 
 ///|
 pub impl Load for Dylib with raw(self) {
-  self.load_bytes.data
+  self.load_bytes.raw()
 }
 
 ///|
 pub struct Symbol {
-  name : @slice.Slice[Byte]
-  type_ : Int
-  sect : Int
-  desc : Int
+  name : String
+  type_ : Byte
+  sect : Byte
+  desc : UInt16
   value : UInt64
 } derive(Eq, Show)
 
 ///|
 pub struct Symtab {
   load_bytes : LoadBytes
-  symoff : UInt
-  nsyms : UInt
-  stroff : UInt
-  strsize : UInt
+  symtab_cmd : SymtabCmd
   syms : Array[Symbol]
-} derive(Eq, Show)
+}
 
 ///|
 pub impl Load for Symtab with raw(self) {
-  self.load_bytes.data
+  self.load_bytes.raw()
 }
 
 ///|
@@ -224,12 +235,12 @@ pub impl Load for Dysymtab with raw(self) {
 ///|
 pub struct Rpath {
   load_bytes : LoadBytes
-  path : @slice.Slice[Byte]
-} derive(Eq, Show)
+  path : String
+}
 
 ///|
 pub impl Load for Rpath with raw(self) {
-  self.load_bytes.data
+  self.load_bytes.raw()
 }
 
 ///|
@@ -247,38 +258,32 @@ pub impl Load for Thread with raw(self) {
 ///|
 pub struct File {
   header : FileHeader
-  byte_order : ByteOrder
+  byte_order : &@binary.ByteOrder
   loads : Array[LoadCommand]
   sections : Array[Section]
   symtab : Symtab?
   dysymtab : Dysymtab?
-} derive(Show)
-
-///|
-suberror FormatError {
-  InvalidMagic(magic~ : UInt)
-  FileTooSmall(actual_size~ : Int, required_size~ : Int)
-  CommandDataOverflow(offset~ : Int64, size~ : UInt, file_size~ : Int)
+  closer : &@io.Closer
 }
 
 ///|
-pub fn FormatError::to_string(self : FormatError) -> String {
-  match self {
-    InvalidMagic(magic~) => "Invalid magic number: 0x" + magic.to_string()
-    FileTooSmall(actual_size~, required_size~) =>
-      "File too small: got " +
-      actual_size.to_string() +
-      " bytes, need " +
-      required_size.to_string() +
-      " bytes"
-    CommandDataOverflow(offset~, size~, file_size~) =>
-      "Command data overflow at offset " +
-      offset.to_string() +
-      ": size " +
-      size.to_string() +
-      " exceeds file size " +
-      file_size.to_string()
+suberror FormatError {
+  FormatError(off~ : Int64, msg~ : String, val~ : String?)
+}
+
+///|
+fn FormatError::new(off : Int64, msg : String, val : &Show?) -> FormatError {
+  FormatError(off~, msg~, val=val.map(_.to_string()))
+}
+
+///|
+pub impl Show for FormatError with output(self : FormatError, logger : &Logger) -> Unit {
+  let FormatError(off~, msg~, val~) = self
+  logger.write_string(msg)
+  if val is Some(val) {
+    logger.write_string(" '\{val}'")
   }
+  logger.write_string(" in record at byte \{off.to_string(radix=16)}")
 }
 
 ///|
@@ -345,6 +350,21 @@ pub struct SymtabCmd {
 } derive(Eq, Show)
 
 ///|
+pub impl @binary.Readable for SymtabCmd with read(
+  r : &@io.Reader,
+  byte_order : &@binary.ByteOrder,
+) -> SymtabCmd raise {
+  SymtabCmd::{
+    cmd: @binary.read(r, byte_order),
+    len: @binary.read(r, byte_order),
+    symoff: @binary.read(r, byte_order),
+    nsyms: @binary.read(r, byte_order),
+    stroff: @binary.read(r, byte_order),
+    strsize: @binary.read(r, byte_order),
+  }
+}
+
+///|
 pub struct DysymtabCmd {
   cmd : UInt
   len : UInt
@@ -379,11 +399,38 @@ pub struct DylibCmd {
 } derive(Eq, Show)
 
 ///|
+pub impl @binary.Readable for DylibCmd with read(
+  r : &@io.Reader,
+  byte_order : &@binary.ByteOrder,
+) -> DylibCmd raise {
+  DylibCmd::{
+    cmd: @binary.read(r, byte_order),
+    len: @binary.read(r, byte_order),
+    name: @binary.read(r, byte_order),
+    time: @binary.read(r, byte_order),
+    current_version: @binary.read(r, byte_order),
+    compat_version: @binary.read(r, byte_order),
+  }
+}
+
+///|
 struct RpathCmd {
   cmd : UInt
   len : UInt
   path : UInt
 } derive(Eq, Show)
+
+///|
+pub impl @binary.Readable for RpathCmd with read(
+  r : &@io.Reader,
+  byte_order : &@binary.ByteOrder,
+) -> RpathCmd raise {
+  RpathCmd::{
+    cmd: @binary.read(r, byte_order),
+    len: @binary.read(r, byte_order),
+    path: @binary.read(r, byte_order),
+  }
+}
 
 ///|
 pub struct Section32 {
@@ -430,6 +477,34 @@ pub struct Nlist64 {
   name : UInt
   type_ : Byte
   sect : Byte
-  desc : UInt
+  desc : UInt16
   value : UInt64
 } derive(Eq, Show)
+
+///|
+pub impl @binary.Readable for Nlist32 with read(
+  r : &@io.Reader,
+  byte_order : &@binary.ByteOrder,
+) -> Nlist32 raise {
+  Nlist32::{
+    name: @binary.read(r, byte_order),
+    type_: @binary.read(r, byte_order),
+    sect: @binary.read(r, byte_order),
+    desc: @binary.read(r, byte_order),
+    value: @binary.read(r, byte_order),
+  }
+}
+
+///|
+pub impl @binary.Readable for Nlist64 with read(
+  r : &@io.Reader,
+  byte_order : &@binary.ByteOrder,
+) -> Nlist64 raise {
+  Nlist64::{
+    name: @binary.read(r, byte_order),
+    type_: @binary.read(r, byte_order),
+    sect: @binary.read(r, byte_order),
+    desc: @binary.read(r, byte_order),
+    value: @binary.read(r, byte_order),
+  }
+}
