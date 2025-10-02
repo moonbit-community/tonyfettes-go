@@ -3,10 +3,10 @@ test "SymtabCmd::parse success" {
   // Create symtab command: cmd + len + symoff + nsyms + stroff + strsize (little endian)
   let data : Bytes = b"\x02\x00\x00\x00\x18\x00\x00\x00\x00\x10\x00\x00\x64\x00\x00\x00\x00\x20\x00\x00\x00\x01\x00\x00"
   let symtab = SymtabCmd::parse(@slice.bytes(data), Little)
-  assert_eq(symtab.symoff, 0x1000_U)
-  assert_eq(symtab.nsyms, 100_U)
-  assert_eq(symtab.stroff, 0x2000_U)
-  assert_eq(symtab.strsize, 256_U)
+  assert_eq(symtab.symtab_cmd.symoff, 0x1000_U)
+  assert_eq(symtab.symtab_cmd.nsyms, 100_U)
+  assert_eq(symtab.symtab_cmd.stroff, 0x2000_U)
+  assert_eq(symtab.symtab_cmd.strsize, 256_U)
 }
 
 ///|

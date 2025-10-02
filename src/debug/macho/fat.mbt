@@ -34,7 +34,7 @@ fn is_fat(magic : UInt) -> Bool {
 ///|
 fn FatHeader::parse(data : @slice.Slice[Byte], offset : Int) -> FatHeader raise {
   if data.length() < offset + fat_header_size {
-    raise FileTooSmall(
+    raise FormatError::FileTooSmall(
       actual_size=data.length(),
       required_size=offset + fat_header_size,
     )
@@ -42,7 +42,7 @@ fn FatHeader::parse(data : @slice.Slice[Byte], offset : Int) -> FatHeader raise 
   let magic = read_uint(data, offset, Big)
   let nfat_arch = read_uint(data, offset + 4, Big)
   if not(is_fat(magic)) {
-    raise InvalidMagic(magic~)
+    raise FormatError::InvalidMagic(magic~)
   }
   { magic, nfat_arch }
 }
@@ -50,7 +50,7 @@ fn FatHeader::parse(data : @slice.Slice[Byte], offset : Int) -> FatHeader raise 
 ///|
 fn FatArch::parse(data : @slice.Slice[Byte], offset : Int) -> FatArch raise {
   if data.length() < offset + fat_arch_size {
-    raise FileTooSmall(
+    raise FormatError::FileTooSmall(
       actual_size=data.length(),
       required_size=offset + fat_arch_size,
     )
@@ -80,7 +80,7 @@ pub fn FatFile::new(data : @slice.Slice[Byte]) -> FatFile raise {
     let file_start = arch.offset.reinterpret_as_int()
     let file_size = arch.size.reinterpret_as_int()
     if data.length() < file_start + file_size {
-      raise FileTooSmall(
+      raise FormatError::FileTooSmall(
         actual_size=data.length(),
         required_size=file_start + file_size,
       )

@@ -45,7 +45,7 @@ pub enum LoadCommand {
   Dysymtab(Dysymtab)
   Rpath(Rpath)
   Thread(Thread)
-}
+} derive(Show)
 
 ///|
 pub impl Load for LoadCommand with raw(self) {
@@ -61,7 +61,7 @@ pub impl Load for LoadCommand with raw(self) {
 }
 
 ///|
-pub struct LoadBytes(@slice.Slice[Byte])
+pub struct LoadBytes(@slice.Slice[Byte]) derive(Eq, Show)
 
 ///|
 pub impl Load for LoadBytes with raw(self) {
@@ -92,7 +92,7 @@ pub struct Segment {
 
 ///|
 pub impl Load for Segment with raw(self) {
-  self.load_bytes.data
+  self.load_bytes.raw()
 }
 
 ///|
@@ -175,7 +175,7 @@ pub struct Dylib {
   time : UInt
   current_version : UInt
   compat_version : UInt
-}
+} derive(Show)
 
 ///|
 pub impl Load for Dylib with raw(self) {
@@ -196,7 +196,7 @@ pub struct Symtab {
   load_bytes : LoadBytes
   symtab_cmd : SymtabCmd
   syms : Array[Symbol]
-}
+} derive(Show)
 
 ///|
 pub impl Load for Symtab with raw(self) {
@@ -229,14 +229,14 @@ pub struct Dysymtab {
 
 ///|
 pub impl Load for Dysymtab with raw(self) {
-  self.load_bytes.data
+  self.load_bytes.raw()
 }
 
 ///|
 pub struct Rpath {
   load_bytes : LoadBytes
   path : String
-}
+} derive(Show)
 
 ///|
 pub impl Load for Rpath with raw(self) {
@@ -252,23 +252,43 @@ pub struct Thread {
 
 ///|
 pub impl Load for Thread with raw(self) {
-  self.load_bytes.data
+  self.load_bytes.raw()
 }
 
 ///|
 pub struct File {
   header : FileHeader
-  byte_order : &@binary.ByteOrder
+  byte_order : ByteOrder
   loads : Array[LoadCommand]
   sections : Array[Section]
   symtab : Symtab?
   dysymtab : Dysymtab?
-  closer : &@io.Closer
+  priv mut closer : &@io.Closer?
+}
+
+///|
+pub impl Show for File with output(self : File, logger : &Logger) -> Unit {
+  logger.write_string("File { header: ")
+  self.header.output(logger)
+  logger.write_string(", byte_order: ")
+  self.byte_order.output(logger)
+  logger.write_string(", loads: ")
+  self.loads.output(logger)
+  logger.write_string(", sections: ")
+  self.sections.output(logger)
+  logger.write_string(", symtab: ")
+  self.symtab.output(logger)
+  logger.write_string(", dysymtab: ")
+  self.dysymtab.output(logger)
+  logger.write_string(" }")
 }
 
 ///|
 suberror FormatError {
   FormatError(off~ : Int64, msg~ : String, val~ : String?)
+  FileTooSmall(actual_size~ : Int, required_size~ : Int)
+  InvalidMagic(magic~ : UInt)
+  CommandDataOverflow(offset~ : Int, size~ : UInt, file_size~ : Int)
 }
 
 ///|
@@ -278,12 +298,25 @@ fn FormatError::new(off : Int64, msg : String, val : &Show?) -> FormatError {
 
 ///|
 pub impl Show for FormatError with output(self : FormatError, logger : &Logger) -> Unit {
-  let FormatError(off~, msg~, val~) = self
-  logger.write_string(msg)
-  if val is Some(val) {
-    logger.write_string(" '\{val}'")
+  match self {
+    FormatError(off~, msg~, val~) => {
+      logger.write_string(msg)
+      if val is Some(val) {
+        logger.write_string(" '\{val}'")
+      }
+      logger.write_string(" in record at byte \{off.to_string(radix=16)}")
+    }
+    FileTooSmall(actual_size~, required_size~) =>
+      logger.write_string(
+        "file too small: actual size \{actual_size}, required \{required_size}",
+      )
+    InvalidMagic(magic~) =>
+      logger.write_string("invalid magic number: \{magic.to_string(radix=16)}")
+    CommandDataOverflow(offset~, size~, file_size~) =>
+      logger.write_string(
+        "command data overflow at offset \{offset}: size \{size}, file size \{file_size}",
+      )
   }
-  logger.write_string(" in record at byte \{off.to_string(radix=16)}")
 }
 
 ///|

@@ -129,8 +129,8 @@ test "File::parse with load commands" {
   assert_eq(file.loads.length(), 1)
   match file.loads[0] {
     LoadCommand::Symtab(symtab) => {
-      assert_eq(symtab.symoff, 0x1000_U)
-      assert_eq(symtab.nsyms, 10_U)
+      assert_eq(symtab.symtab_cmd.symoff, 0x1000_U)
+      assert_eq(symtab.symtab_cmd.nsyms, 10_U)
     }
     _ => fail("Expected Symtab load command")
   }
