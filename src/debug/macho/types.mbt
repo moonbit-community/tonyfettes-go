@@ -45,7 +45,7 @@ pub enum LoadCommand {
   Dysymtab(Dysymtab)
   Rpath(Rpath)
   Thread(Thread)
-}
+} derive(Show)
 
 ///|
 pub impl Load for LoadCommand with raw(self) {
@@ -92,7 +92,7 @@ pub struct Segment {
 
 ///|
 pub impl Load for Segment with raw(self) {
-  self.load_bytes.data
+  self.load_bytes.raw()
 }
 
 ///|
@@ -175,7 +175,7 @@ pub struct Dylib {
   time : UInt
   current_version : UInt
   compat_version : UInt
-}
+} derive(Show)
 
 ///|
 pub impl Load for Dylib with raw(self) {
@@ -196,7 +196,7 @@ pub struct Symtab {
   load_bytes : LoadBytes
   symtab_cmd : SymtabCmd
   syms : Array[Symbol]
-}
+} derive(Show)
 
 ///|
 pub impl Load for Symtab with raw(self) {
@@ -229,14 +229,14 @@ pub struct Dysymtab {
 
 ///|
 pub impl Load for Dysymtab with raw(self) {
-  self.load_bytes.data
+  self.load_bytes.raw()
 }
 
 ///|
 pub struct Rpath {
   load_bytes : LoadBytes
   path : String
-}
+} derive(Show)
 
 ///|
 pub impl Load for Rpath with raw(self) {
@@ -252,19 +252,36 @@ pub struct Thread {
 
 ///|
 pub impl Load for Thread with raw(self) {
-  self.load_bytes.data
+  self.load_bytes.raw()
 }
 
 ///|
 pub struct File {
   header : FileHeader
-  byte_order : &@binary.ByteOrder
+  byte_order : ByteOrder
   loads : Array[LoadCommand]
   sections : Array[Section]
   symtab : Symtab?
   dysymtab : Dysymtab?
   priv mut closer : &@io.Closer?
-} derive(Show)
+}
+
+///|
+pub impl Show for File with output(self : File, logger : &Logger) -> Unit {
+  logger.write_string("File { header: ")
+  self.header.output(logger)
+  logger.write_string(", byte_order: ")
+  self.byte_order.output(logger)
+  logger.write_string(", loads: ")
+  self.loads.output(logger)
+  logger.write_string(", sections: ")
+  self.sections.output(logger)
+  logger.write_string(", symtab: ")
+  self.symtab.output(logger)
+  logger.write_string(", dysymtab: ")
+  self.dysymtab.output(logger)
+  logger.write_string(" }")
+}
 
 ///|
 suberror FormatError {

@@ -78,7 +78,7 @@ fn parse_file_with_header(
   if header_size.reinterpret_as_uint() + header.cmdsz >
     data.length().reinterpret_as_uint() {
     raise FormatError::CommandDataOverflow(
-      offset=header_size.to_int64(),
+      offset=header_size,
       size=header.cmdsz,
       file_size=data.length(),
     )
@@ -157,7 +157,7 @@ fn parse_load_commands(
         let rpath = RpathCmd::parse(cmddat, byte_order)
         loads.push(LoadCommand::Rpath(rpath))
       }
-      _ => loads.push(LoadCommand::LoadBytes({ data: cmddat }))
+      _ => loads.push(LoadCommand::LoadBytes(LoadBytes(cmddat)))
     }
     offset = offset + siz.reinterpret_as_int()
     cmd_count = cmd_count + 1_U
@@ -183,28 +183,25 @@ fn Symtab::parse(
   is_64bit : Bool,
   byte_order : ByteOrder,
 ) -> Symtab raise {
-  let symdata_offset = symtab.symoff.reinterpret_as_int()
-  let string_table_offset = symtab.stroff.reinterpret_as_int()
-  let string_table_size = symtab.strsize.reinterpret_as_int()
+  let symdata_offset = symtab.symtab_cmd.symoff.reinterpret_as_int()
+  let string_table_offset = symtab.symtab_cmd.stroff.reinterpret_as_int()
+  let string_table_size = symtab.symtab_cmd.strsize.reinterpret_as_int()
   let symdata = read_bytes(
     file_data,
     symdata_offset,
-    symtab.nsyms.reinterpret_as_int() * (if is_64bit { 16 } else { 12 }),
+    symtab.symtab_cmd.nsyms.reinterpret_as_int() * (if is_64bit { 16 } else { 12 }),
   )
   let strtab = read_bytes(file_data, string_table_offset, string_table_size)
   let symbols = parse_symbols(
     symdata,
     strtab,
-    symtab.nsyms,
+    symtab.symtab_cmd.nsyms,
     is_64bit,
     byte_order,
   )
   {
     load_bytes: symtab.load_bytes,
-    symoff: symtab.symoff,
-    nsyms: symtab.nsyms,
-    stroff: symtab.stroff,
-    strsize: symtab.strsize,
+    symtab_cmd: symtab.symtab_cmd,
     syms: symbols,
   }
 }
