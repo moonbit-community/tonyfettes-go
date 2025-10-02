@@ -61,7 +61,7 @@ pub impl Load for LoadCommand with raw(self) {
 }
 
 ///|
-pub struct LoadBytes(@slice.Slice[Byte])
+pub struct LoadBytes(@slice.Slice[Byte]) derive(Eq, Show)
 
 ///|
 pub impl Load for LoadBytes with raw(self) {
@@ -263,12 +263,15 @@ pub struct File {
   sections : Array[Section]
   symtab : Symtab?
   dysymtab : Dysymtab?
-  closer : &@io.Closer
-}
+  priv mut closer : &@io.Closer?
+} derive(Show)
 
 ///|
 suberror FormatError {
   FormatError(off~ : Int64, msg~ : String, val~ : String?)
+  FileTooSmall(actual_size~ : Int, required_size~ : Int)
+  InvalidMagic(magic~ : UInt)
+  CommandDataOverflow(offset~ : Int, size~ : UInt, file_size~ : Int)
 }
 
 ///|
@@ -278,12 +281,25 @@ fn FormatError::new(off : Int64, msg : String, val : &Show?) -> FormatError {
 
 ///|
 pub impl Show for FormatError with output(self : FormatError, logger : &Logger) -> Unit {
-  let FormatError(off~, msg~, val~) = self
-  logger.write_string(msg)
-  if val is Some(val) {
-    logger.write_string(" '\{val}'")
+  match self {
+    FormatError(off~, msg~, val~) => {
+      logger.write_string(msg)
+      if val is Some(val) {
+        logger.write_string(" '\{val}'")
+      }
+      logger.write_string(" in record at byte \{off.to_string(radix=16)}")
+    }
+    FileTooSmall(actual_size~, required_size~) =>
+      logger.write_string(
+        "file too small: actual size \{actual_size}, required \{required_size}",
+      )
+    InvalidMagic(magic~) =>
+      logger.write_string("invalid magic number: \{magic.to_string(radix=16)}")
+    CommandDataOverflow(offset~, size~, file_size~) =>
+      logger.write_string(
+        "command data overflow at offset \{offset}: size \{size}, file size \{file_size}",
+      )
   }
-  logger.write_string(" in record at byte \{off.to_string(radix=16)}")
 }
 
 ///|

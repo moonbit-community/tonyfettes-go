@@ -27,7 +27,7 @@ test "FatHeader::parse/file-too-small" {
     let _ = FatHeader::parse(data, 0)
     fail("Expected FileTooSmall error")
   } catch {
-    FileTooSmall(actual_size~, required_size~) => {
+    FormatError::FileTooSmall(actual_size~, required_size~) => {
       assert_eq(actual_size, 3)
       assert_eq(required_size, 8)
     }
@@ -42,7 +42,7 @@ test "FatHeader::parse/invalid-magic" {
     let _ = FatHeader::parse(data, 0)
     fail("Expected InvalidMagic error")
   } catch {
-    InvalidMagic(magic~) => assert_eq(magic, 0x12345678_U)
+    FormatError::InvalidMagic(magic~) => assert_eq(magic, 0x12345678_U)
     _ => fail("Expected InvalidMagic error")
   }
 }
@@ -68,7 +68,7 @@ test "FatArch::parse/file-too-small" {
     let _ = FatArch::parse(data, 0)
     fail("Expected FileTooSmall error")
   } catch {
-    FileTooSmall(actual_size~, required_size~) => {
+    FormatError::FileTooSmall(actual_size~, required_size~) => {
       assert_eq(actual_size, 15)
       assert_eq(required_size, 20)
     }
@@ -101,7 +101,7 @@ test "FatFile::new/file-too-small-for-embedded macho" {
     let _ = FatFile::new(@slice.bytes(short_data))
     fail("Expected FileTooSmall error")
   } catch {
-    FileTooSmall(actual_size~, required_size~) => {
+    FormatError::FileTooSmall(actual_size~, required_size~) => {
       assert_eq(actual_size, 33) // 8 + 20 + 5 bytes
       assert_eq(required_size, 284) // 28 + 256 bytes
     }

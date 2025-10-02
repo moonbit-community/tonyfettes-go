@@ -30,7 +30,7 @@ fn Segment32::parse(
     nsect,
     flag,
   }
-  let segment = { load_bytes: { data, }, header, data: None }
+  let segment = { load_bytes: LoadBytes(data), header, data: None }
   let sections = Array::new()
   let section_offset = 56
   for i = 0; i < nsect.reinterpret_as_int(); i = i + 1 {
@@ -79,7 +79,7 @@ fn Segment64::parse(
     nsect,
     flag,
   }
-  let segment = { load_bytes: { data, }, header, data: None }
+  let segment = { load_bytes: LoadBytes(data), header, data: None }
   let sections = Array::new()
   let section_offset = 72
   for i = 0; i < nsect.reinterpret_as_int(); i = i + 1 {
@@ -166,11 +166,14 @@ fn SymtabCmd::parse(
   if data.length() < 24 {
     raise ParseError::MissingData(offset=0L, expected="SymtabCmd (24 bytes)")
   }
+  let cmd = read_uint(data, 0, byte_order)
+  let len = read_uint(data, 4, byte_order)
   let symoff = read_uint(data, 8, byte_order)
   let nsyms = read_uint(data, 12, byte_order)
   let stroff = read_uint(data, 16, byte_order)
   let strsize = read_uint(data, 20, byte_order)
-  { load_bytes: { data, }, symoff, nsyms, stroff, strsize, syms: Array::new() }
+  let symtab_cmd : SymtabCmd = { cmd, len, symoff, nsyms, stroff, strsize }
+  { load_bytes: LoadBytes(data), symtab_cmd, syms: Array::new() }
 }
 
 ///|
@@ -200,7 +203,7 @@ fn DysymtabCmd::parse(
   let locreloff = read_uint(data, 72, byte_order)
   let nlocrel = read_uint(data, 76, byte_order)
   {
-    load_bytes: { data, },
+    load_bytes: LoadBytes(data),
     ilocalsym,
     nlocalsym,
     iextdefsym,
@@ -242,8 +245,9 @@ fn DylibCmd::parse(
       context="dylib name offset",
     )
   }
-  let name = read_cstring(data, name_offset.reinterpret_as_int())
-  { load_bytes: { data, }, name, time, current_version, compat_version }
+  let name_bytes = read_cstring(data, name_offset.reinterpret_as_int())
+  let name = @utf8.decode_lossy(name_bytes)
+  { load_bytes: LoadBytes(data), name, time, current_version, compat_version }
 }
 
 ///|
@@ -262,6 +266,7 @@ fn RpathCmd::parse(
       context="rpath path offset",
     )
   }
-  let path = read_cstring(data, path_offset.reinterpret_as_int())
-  { load_bytes: { data, }, path }
+  let path_bytes = read_cstring(data, path_offset.reinterpret_as_int())
+  let path = @utf8.decode_lossy(path_bytes)
+  { load_bytes: LoadBytes(data), path }
 }
