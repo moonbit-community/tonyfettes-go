@@ -101,7 +101,7 @@ pub struct Regexp {
   op : Op // operator
   flags : Flags // flags
   sub : Array[Regexp] // subexpressions, if any
-  rune : Array[Int] // matched runes, for OpLiteral, OpCharClass
+  mut rune : Array[Int] // matched runes, for OpLiteral, OpCharClass
   min : Int // min for OpRepeat
   max : Int // max for OpRepeat (-1 means no limit)
   cap : Int // capturing index, for OpCapture

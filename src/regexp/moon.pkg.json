@@ -1,9 +1,10 @@
 {
   "import": [
     "tonyfettes/go/io",
-    "tonyfettes/go/unicode/utf8", 
+    "tonyfettes/go/unicode/utf8",
     "tonyfettes/go/strings",
     "tonyfettes/go/builtin",
-    "tonyfettes/go/bytes"
+    "tonyfettes/go/bytes",
+    "tonyfettes/go/regexp/syntax"
   ]
 }

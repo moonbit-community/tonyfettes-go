@@ -72,8 +72,8 @@ pub fn Prog::prefix(self : Prog) -> (String, Bool) {
     let first = self.inst[self.start]
     match first.op {
       InstRune1 => {
-        let char = @utf8.from_rune(first.rune[0])
-        (String::from_char(char), false)
+        let char = first.rune[0].unsafe_to_char()
+        (String::make(1, char), false)
       }
       _ => ("", false)
     }

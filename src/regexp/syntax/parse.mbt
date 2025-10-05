@@ -19,14 +19,7 @@ struct Parser {
 ///|
 /// Create a new parser
 fn Parser::new() -> Parser {
-  {
-    flags: 0,
-    stack: [],
-    free: [],
-    num_cap: 0,
-    wholeregexp: "",
-    tmp_class: [],
-  }
+  { flags: 0, stack: [], free: [], num_cap: 0, wholeregexp: "", tmp_class: [] }
 }
 
 ///|
@@ -43,7 +36,6 @@ pub fn parse(s : String, flags : Flags) -> Result[Regexp, Error] {
   let parser = Parser::new()
   parser.flags = flags
   parser.wholeregexp = s
-  
   if (flags & literal) != 0 {
     // Treat as literal string
     parse_literal(s)
@@ -57,13 +49,12 @@ pub fn parse(s : String, flags : Flags) -> Result[Regexp, Error] {
 /// Parse a literal string (no regexp metacharacters)
 fn parse_literal(s : String) -> Result[Regexp, Error] {
   let mut re = Regexp::new(OpLiteral)
-  
+
   // Convert string to array of runes
   let runes : Array[Int] = []
   for char in s {
     runes.push(char.to_int())
   }
-  
   re.rune = runes
   Ok(re)
 }
@@ -73,7 +64,7 @@ fn parse_literal(s : String) -> Result[Regexp, Error] {
 fn parse_regexp(parser : Parser, s : String) -> Result[Regexp, Error] {
   // For now, implement a basic skeleton
   // This would need full implementation of the Go parser logic
-  
+
   if s == "" {
     let re = Regexp::new(OpEmptyMatch)
     Ok(re)
@@ -93,8 +84,11 @@ fn parse_regexp(parser : Parser, s : String) -> Result[Regexp, Error] {
 
 ///|
 /// Check if character is word character
-pub fn is_word_char(r : Int) -> Bool {
-  ('a' <= r && r <= 'z') || ('A' <= r && r <= 'Z') || ('0' <= r && r <= '9') || r == '_'
+pub fn is_word_char(r : Char) -> Bool {
+  ('a' <= r && r <= 'z') ||
+  ('A' <= r && r <= 'Z') ||
+  ('0' <= r && r <= '9') ||
+  r == '_'
 }
 
 ///|

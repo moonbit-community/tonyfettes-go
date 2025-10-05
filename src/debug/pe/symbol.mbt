@@ -21,7 +21,7 @@ pub(all) struct COFFSymbol {
 ///|
 pub impl @binary.Readable for COFFSymbol with read(
   r : &@io.Reader,
-  order : &@binary.ByteOrder,
+  order : @binary.ByteOrder,
 ) -> COFFSymbol raise {
   let name : FixedArray[Byte] = @binary.read_n(r, order, 8)
   let value : UInt = @binary.read(r, order)
@@ -84,7 +84,7 @@ fn read_coff_symbols(
   }
   let syms = []
   for k in 0U..<fh.number_of_symbols {
-    let sym : COFFSymbol = @binary.read(r, @binary.little_endian) catch {
+    let sym : COFFSymbol = @binary.read(r, @binary.LittleEndian) catch {
       err => fail("failed to read symbol table: \{err}")
     }
     syms.push(sym)
@@ -187,7 +187,7 @@ pub struct COFFSymbolAuxFormat5 {
 ///|
 pub impl @binary.Readable for COFFSymbolAuxFormat5 with read(
   r : &@io.Reader,
-  order : &@binary.ByteOrder,
+  order : @binary.ByteOrder,
 ) -> COFFSymbolAuxFormat5 raise {
   let size : UInt = @binary.read(r, order)
   let num_relocs : UInt16 = @binary.read(r, order)

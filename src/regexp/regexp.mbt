@@ -10,11 +10,11 @@
 ///|
 /// Input interface for different input types
 trait Input {
-  step(Self, Int) -> (Int, Int)  // advance one rune, return (rune, width)
+  step(Self, Int) -> (Int, Int) // advance one rune, return (rune, width)
   can_check_prefix(Self) -> Bool
   has_prefix(Self, Regexp) -> Bool
   index(Self, Regexp, Int) -> Int
-  context(Self, Int) -> Int  // lazy flag
+  context(Self, Int) -> Int // lazy flag
 }
 
 ///|
@@ -39,11 +39,13 @@ impl Input for InputString with step(self, pos) {
 }
 
 ///|
-impl Input for InputString with can_check_prefix(self) { true }
+impl Input for InputString with can_check_prefix(self) {
+  true
+}
 
 ///|
 impl Input for InputString with has_prefix(self, re) {
-  @strings.has_prefix(self.str, re.prefix)
+  self.str.has_prefix(re.prefix)
 }
 
 ///|
@@ -78,7 +80,9 @@ impl Input for InputBytes with step(self, pos) {
 }
 
 ///|
-impl Input for InputBytes with can_check_prefix(self) { true }
+impl Input for InputBytes with can_check_prefix(self) {
+  true
+}
 
 ///|
 impl Input for InputBytes with has_prefix(self, re) {
@@ -101,16 +105,16 @@ impl Input for InputBytes with context(self, pos) {
 /// Regexp is the representation of a compiled regular expression.
 /// A Regexp is safe for concurrent use by multiple goroutines.
 pub struct Regexp {
-  expr : String              // as passed to Compile
-  prog : @syntax.Prog        // compiled program  
-  num_subexp : Int           // number of subexpressions
+  expr : String // as passed to Compile
+  prog : @syntax.Prog // compiled program  
+  num_subexp : Int // number of subexpressions
   subexp_names : Array[String] // names of capturing groups
-  prefix : String            // required prefix in unanchored matches
-  prefix_bytes : Bytes       // prefix, as bytes
-  prefix_complete : Bool     // prefix is the entire regexp
-  cond : @syntax.EmptyOp     // empty-width conditions required at start
-  min_input_len : Int        // minimum length of input in bytes
-  longest : Bool             // whether regexp prefers leftmost-longest match
+  prefix : String // required prefix in unanchored matches
+  prefix_bytes : Bytes // prefix, as bytes
+  prefix_complete : Bool // prefix is the entire regexp
+  cond : @syntax.EmptyOp // empty-width conditions required at start
+  min_input_len : Int // minimum length of input in bytes
+  longest : Bool // whether regexp prefers leftmost-longest match
 } derive(Show)
 
 ///|
@@ -143,32 +147,34 @@ pub fn compile_posix(expr : String) -> Result[Regexp, @syntax.Error] {
 
 ///|
 /// Internal compilation function
-fn compile_internal(expr : String, mode : @syntax.Flags, longest : Bool) -> Result[Regexp, @syntax.Error] {
+fn compile_internal(
+  expr : String,
+  mode : @syntax.Flags,
+  longest : Bool,
+) -> Result[Regexp, @syntax.Error] {
   // Parse the regexp
   let re_ast = try? @syntax.parse(expr, mode)
   let max_cap = re_ast.max_cap()
   let cap_names = re_ast.cap_names()
-  
+
   // Simplify and compile
   let simplified = re_ast.simplify()
   let prog = try? @syntax.compile(simplified)
-  
+
   // Calculate prefix
   let (prefix, prefix_complete) = prog.prefix()
-  
   let regexp = {
-    expr: expr,
-    prog: prog,
+    expr,
+    prog,
     num_subexp: max_cap,
     subexp_names: cap_names,
-    prefix: prefix,
+    prefix,
     prefix_bytes: prefix.to_bytes(),
-    prefix_complete: prefix_complete,
+    prefix_complete,
     cond: prog.start_cond(),
     min_input_len: min_input_len(re_ast),
-    longest: longest,
+    longest,
   }
-  
   Ok(regexp)
 }
 
@@ -178,12 +184,18 @@ fn min_input_len(re : @syntax.Regexp) -> Int {
   match re.op {
     @syntax.OpLiteral => re.rune.length()
     @syntax.OpAnyChar | @syntax.OpAnyCharNotNL | @syntax.OpCharClass => 1
-    @syntax.OpCapture | @syntax.OpPlus => {
-      if re.sub.length() > 0 { min_input_len(re.sub[0]) } else { 0 }
-    }
-    @syntax.OpRepeat => {
-      if re.sub.length() > 0 { re.min * min_input_len(re.sub[0]) } else { 0 }
-    }
+    @syntax.OpCapture | @syntax.OpPlus =>
+      if re.sub.length() > 0 {
+        min_input_len(re.sub[0])
+      } else {
+        0
+      }
+    @syntax.OpRepeat =>
+      if re.sub.length() > 0 {
+        re.min * min_input_len(re.sub[0])
+      } else {
+        0
+      }
     @syntax.OpConcat => {
       let mut total = 0
       for sub in re.sub {
@@ -191,7 +203,7 @@ fn min_input_len(re : @syntax.Regexp) -> Int {
       }
       total
     }
-    @syntax.OpAlternate => {
+    @syntax.OpAlternate =>
       if re.sub.length() > 0 {
         let mut min_len = min_input_len(re.sub[0])
         for i = 1; i < re.sub.length(); i = i + 1 {
@@ -204,7 +216,6 @@ fn min_input_len(re : @syntax.Regexp) -> Int {
       } else {
         0
       }
-    }
     _ => 0
   }
 }
@@ -278,10 +289,15 @@ fn Regexp::do_match_bytes(self : Regexp, b : Bytes) -> Bool {
 
 ///|
 /// Internal execution with input interface
-fn Regexp::do_execute_input[T : Input](self : Regexp, input : T, pos : Int, ncap : Int) -> Array[Int]? {
+fn[T : Input] Regexp::do_execute_input(
+  self : Regexp,
+  input : T,
+  pos : Int,
+  ncap : Int,
+) -> Array[Int]? {
   // Simple NFA execution - placeholder implementation
   // This would need full NFA execution logic
-  
+
   if input.has_prefix(self) {
     // Found a match at the beginning
     Some([0, self.prefix.length()])
@@ -295,7 +311,8 @@ fn Regexp::do_execute_input[T : Input](self : Regexp, input : T, pos : Int, ncap
 pub fn must_compile(str : String) -> Regexp {
   match compile(str) {
     Ok(regexp) => regexp
-    Err(err) => @builtin.panic("regexp: Compile(" + str + "): " + err.to_string())
+    Err(err) =>
+      @builtin.panic("regexp: Compile(" + str + "): " + err.to_string())
   }
 }
 
@@ -304,7 +321,8 @@ pub fn must_compile(str : String) -> Regexp {
 pub fn must_compile_posix(str : String) -> Regexp {
   match compile_posix(str) {
     Ok(regexp) => regexp
-    Err(err) => @builtin.panic("regexp: CompilePOSIX(" + str + "): " + err.to_string())
+    Err(err) =>
+      @builtin.panic("regexp: CompilePOSIX(" + str + "): " + err.to_string())
   }
 }
 
@@ -313,7 +331,10 @@ pub fn must_compile_posix(str : String) -> Regexp {
 
 ///|
 /// MatchString reports whether the string s contains any match of the regular expression pattern.
-pub fn match_string(pattern : String, s : String) -> Result[Bool, @syntax.Error] {
+pub fn match_string(
+  pattern : String,
+  s : String,
+) -> Result[Bool, @syntax.Error] {
   let re = try? compile(pattern)
   Ok(re.match_string(s))
 }

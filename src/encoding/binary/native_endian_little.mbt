@@ -1,2 +1,2 @@
 ///|
-pub let native_endian : LittleEndian = little_endian
+pub let native_endian : ByteOrder = LittleEndian

@@ -1,5 +1,5 @@
 ///|
-trait ToUInt64 {
+pub(open) trait ToUInt64 {
   to_uint64(self : Self) -> UInt64
 }
 

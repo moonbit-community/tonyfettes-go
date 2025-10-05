@@ -70,7 +70,7 @@ struct Machine {
   prog : @syntax.Prog // compiled program
   q0 : Queue // current queue
   q1 : Queue // next queue  
-  matched : Bool // whether a match was found
+  mut matched : Bool // whether a match was found
   match_cap : Array[Int] // capture information for the match
 } derive(Show)
 
@@ -170,7 +170,7 @@ fn Machine::step(
             if c != '\n' {
               nextq.add(inst.out, Some(t))
             }
-          _ => {} // Handle other instruction types
+          _ => () // Handle other instruction types
         }
       }
     }

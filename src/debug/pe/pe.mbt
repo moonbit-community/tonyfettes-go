@@ -16,7 +16,7 @@ pub(all) struct FileHeader {
 ///|
 pub impl @binary.Readable for FileHeader with read(
   r : &@io.Reader,
-  order : &@binary.ByteOrder,
+  order : @binary.ByteOrder,
 ) -> FileHeader raise {
   FileHeader::{
     machine: @binary.read(r, order),
@@ -43,7 +43,7 @@ pub(all) struct DataDirectory {
 ///|
 impl @binary.Readable for DataDirectory with read(
   r : &@io.Reader,
-  order : &@binary.ByteOrder,
+  order : @binary.ByteOrder,
 ) -> DataDirectory raise {
   DataDirectory::{
     virtual_address: @binary.read(r, order),

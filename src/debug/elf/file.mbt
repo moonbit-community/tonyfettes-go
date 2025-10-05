@@ -20,7 +20,7 @@ pub(all) struct FileHeader {
   mut version : Version
   mut osabi : OSABI
   mut abi_version : Byte
-  mut byte_order : &@binary.ByteOrder
+  mut byte_order : @binary.ByteOrder
   mut type_ : Type
   mut machine : Machine
   mut entry : UInt64
@@ -64,7 +64,7 @@ pub fn File::abi_version(self : File) -> Byte {
 }
 
 ///|
-pub fn File::byte_order(self : File) -> &@binary.ByteOrder {
+pub fn File::byte_order(self : File) -> @binary.ByteOrder {
   self.file_header.byte_order
 }
 
@@ -165,7 +165,7 @@ pub fn Section::open(self : Section) -> &@io.ReadSeeker raise {
     }
     self.compression_offset = 12
     self.compression_type = compressZlib
-    self.section_header.size = @binary.big_endian.uint64(b[4:12])
+    self.section_header.size = @binary.BigEndian.uint64(b[4:12])
     zrd = Some(r => @zlib.new_reader(@bufio.new_reader(r)))
   } else if (self.section_header.flags & sectionFlagAlloc) != 0 {
     return ErrorReader::new(
@@ -351,7 +351,7 @@ pub fn new_file(r : &@io.ReaderAt) -> File raise {
       version: Version::from_byte(ident[EI_VERSION]),
       osabi: OSABI::from_byte(ident[EI_OSABI]),
       abi_version: ident[EI_ABIVERSION],
-      byte_order: @binary.little_endian, // will be set correctly below
+      byte_order: @binary.LittleEndian, // will be set correctly below
       type_: Type::from_uint16(0), // will be read from header
       machine: Machine::from_uint16(0), // will be read from header
       entry: 0UL, // will be read from header
@@ -373,8 +373,8 @@ pub fn new_file(r : &@io.ReaderAt) -> File raise {
       )
   }
   let bo = match f.file_header.data {
-    ELFDATA2LSB => @binary.little_endian as &@binary.ByteOrder
-    ELFDATA2MSB => @binary.big_endian
+    ELFDATA2LSB => @binary.LittleEndian
+    ELFDATA2MSB => @binary.BigEndian
     _ =>
       raise FormatError::new(
         off=0,

@@ -10,7 +10,8 @@
     "tonyfettes/go/builtin",
     "tonyfettes/go/unicode/utf8",
     "tonyfettes/go/strings",
-    "tonyfettes/go/os"
+    "tonyfettes/go/os",
+    "tonyfettes/go/debug/dwarf"
   ],
   "test-import": [
     "moonbitlang/x/encoding"

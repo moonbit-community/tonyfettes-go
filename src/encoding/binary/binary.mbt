@@ -7,14 +7,125 @@ impl Show for BufferTooSmall with output(_ : BufferTooSmall, output : &Logger) -
 }
 
 ///|
-pub(all) enum ByteOrderView {
+pub(all) enum ByteOrder {
   LittleEndian
   BigEndian
 }
 
 ///|
-pub trait ByteOrder: Show + ToJson {
-  view(self : Self) -> ByteOrderView
+pub impl Show for ByteOrder with output(self : ByteOrder, logger : &Logger) -> Unit {
+  match self {
+    LittleEndian => logger.write_string("LittleEndian")
+    BigEndian => logger.write_string("BigEndian")
+  }
+}
+
+///|
+pub impl ToJson for ByteOrder with to_json(self : ByteOrder) -> Json {
+  match self {
+    LittleEndian => "LittleEndian"
+    BigEndian => "BigEndian"
+  }
+}
+
+///|
+pub fn ByteOrder::uint16(self : ByteOrder, b : @slice.Slice[Byte]) -> UInt16 {
+  match self {
+    LittleEndian => LittleEndian.uint16(b)
+    BigEndian => BigEndian.uint16(b)
+  }
+}
+
+///|
+pub fn ByteOrder::uint32(self : ByteOrder, b : @slice.Slice[Byte]) -> UInt {
+  match self {
+    LittleEndian => LittleEndian.uint32(b)
+    BigEndian => BigEndian.uint32(b)
+  }
+}
+
+///|
+pub fn ByteOrder::uint64(self : ByteOrder, b : @slice.Slice[Byte]) -> UInt64 {
+  match self {
+    LittleEndian => LittleEndian.uint64(b)
+    BigEndian => BigEndian.uint64(b)
+  }
+}
+
+///|
+pub fn ByteOrder::put_uint16(
+  self : ByteOrder,
+  b : @slice.Slice[Byte],
+  v : UInt16,
+) -> Unit {
+  match self {
+    LittleEndian => LittleEndian.put_uint16(b, v)
+    BigEndian => BigEndian.put_uint16(b, v)
+  }
+}
+
+///|
+pub fn ByteOrder::put_uint32(
+  self : ByteOrder,
+  b : @slice.Slice[Byte],
+  v : UInt,
+) -> Unit {
+  match self {
+    LittleEndian => LittleEndian.put_uint32(b, v)
+    BigEndian => BigEndian.put_uint32(b, v)
+  }
+}
+
+///|
+pub fn ByteOrder::put_uint64(
+  self : ByteOrder,
+  b : @slice.Slice[Byte],
+  v : UInt64,
+) -> Unit {
+  match self {
+    LittleEndian => LittleEndian.put_uint64(b, v)
+    BigEndian => BigEndian.put_uint64(b, v)
+  }
+}
+
+///|
+pub fn ByteOrder::append_uint16(
+  self : ByteOrder,
+  b : @slice.Slice[Byte],
+  v : UInt16,
+) -> @slice.Slice[Byte] {
+  match self {
+    LittleEndian => LittleEndian.append_uint16(b, v)
+    BigEndian => BigEndian.append_uint16(b, v)
+  }
+}
+
+///|
+pub fn ByteOrder::append_uint32(
+  self : ByteOrder,
+  b : @slice.Slice[Byte],
+  v : UInt,
+) -> @slice.Slice[Byte] {
+  match self {
+    LittleEndian => LittleEndian.append_uint32(b, v)
+    BigEndian => BigEndian.append_uint32(b, v)
+  }
+}
+
+///|
+pub fn ByteOrder::append_uint64(
+  self : ByteOrder,
+  b : @slice.Slice[Byte],
+  v : UInt64,
+) -> @slice.Slice[Byte] {
+  match self {
+    LittleEndian => LittleEndian.append_uint64(b, v)
+    BigEndian => BigEndian.append_uint64(b, v)
+  }
+}
+
+///|
+pub trait IByteOrder: Show + ToJson {
   uint16(self : Self, b : @slice.Slice[Byte]) -> UInt16
   uint32(self : Self, b : @slice.Slice[Byte]) -> UInt
   uint64(self : Self, b : @slice.Slice[Byte]) -> UInt64
@@ -40,9 +151,6 @@ pub trait AppendByteOrder {
 struct LittleEndian {}
 
 ///|
-pub let little_endian : LittleEndian = LittleEndian::{  }
-
-///|
 pub impl Show for LittleEndian with output(_ : LittleEndian, logger : &Logger) -> Unit {
   logger.write_string("LittleEndian")
 }
@@ -53,12 +161,7 @@ pub impl ToJson for LittleEndian with to_json(_ : LittleEndian) -> Json {
 }
 
 ///|
-pub impl ByteOrder for LittleEndian with view(_ : LittleEndian) -> ByteOrderView {
-  LittleEndian
-}
-
-///|
-pub impl ByteOrder for LittleEndian with uint16(
+pub impl IByteOrder for LittleEndian with uint16(
   _ : LittleEndian,
   b : @slice.Slice[Byte],
 ) -> UInt16 {
@@ -66,7 +169,7 @@ pub impl ByteOrder for LittleEndian with uint16(
 }
 
 ///|
-pub impl ByteOrder for LittleEndian with put_uint16(
+pub impl IByteOrder for LittleEndian with put_uint16(
   _ : LittleEndian,
   b : @slice.Slice[Byte],
   v : UInt16,
@@ -90,7 +193,7 @@ pub impl AppendByteOrder for LittleEndian with append_uint16(
 }
 
 ///|
-pub impl ByteOrder for LittleEndian with uint32(
+pub impl IByteOrder for LittleEndian with uint32(
   _ : LittleEndian,
   b : @slice.Slice[Byte],
 ) -> UInt {
@@ -101,7 +204,7 @@ pub impl ByteOrder for LittleEndian with uint32(
 }
 
 ///|
-pub impl ByteOrder for LittleEndian with put_uint32(
+pub impl IByteOrder for LittleEndian with put_uint32(
   _ : LittleEndian,
   b : @slice.Slice[Byte],
   v : UInt,
@@ -129,7 +232,7 @@ pub impl AppendByteOrder for LittleEndian with append_uint32(
 }
 
 ///|
-pub impl ByteOrder for LittleEndian with uint64(
+pub impl IByteOrder for LittleEndian with uint64(
   _ : LittleEndian,
   b : @slice.Slice[Byte],
 ) -> UInt64 {
@@ -145,7 +248,7 @@ pub impl ByteOrder for LittleEndian with uint64(
 }
 
 ///|
-pub impl ByteOrder for LittleEndian with put_uint64(
+pub impl IByteOrder for LittleEndian with put_uint64(
   _ : LittleEndian,
   b : @slice.Slice[Byte],
   v : UInt64,
@@ -188,9 +291,6 @@ pub impl AppendByteOrder for LittleEndian with append_uint64(
 struct BigEndian {}
 
 ///|
-pub let big_endian : BigEndian = BigEndian::{  }
-
-///|
 pub impl Show for BigEndian with output(_ : BigEndian, logger : &Logger) -> Unit {
   logger.write_string("BigEndian")
 }
@@ -201,12 +301,7 @@ pub impl ToJson for BigEndian with to_json(_ : BigEndian) -> Json {
 }
 
 ///|
-pub impl ByteOrder for BigEndian with view(_ : BigEndian) -> ByteOrderView {
-  BigEndian
-}
-
-///|
-pub impl ByteOrder for BigEndian with uint16(
+pub impl IByteOrder for BigEndian with uint16(
   _ : BigEndian,
   b : @slice.Slice[Byte],
 ) -> UInt16 {
@@ -214,7 +309,7 @@ pub impl ByteOrder for BigEndian with uint16(
 }
 
 ///|
-pub impl ByteOrder for BigEndian with put_uint16(
+pub impl IByteOrder for BigEndian with put_uint16(
   _ : BigEndian,
   b : @slice.Slice[Byte],
   v : UInt16,
@@ -238,7 +333,7 @@ pub impl AppendByteOrder for BigEndian with append_uint16(
 }
 
 ///|
-pub impl ByteOrder for BigEndian with uint32(
+pub impl IByteOrder for BigEndian with uint32(
   _ : BigEndian,
   b : @slice.Slice[Byte],
 ) -> UInt {
@@ -249,7 +344,7 @@ pub impl ByteOrder for BigEndian with uint32(
 }
 
 ///|
-pub impl ByteOrder for BigEndian with put_uint32(
+pub impl IByteOrder for BigEndian with put_uint32(
   _ : BigEndian,
   b : @slice.Slice[Byte],
   v : UInt,
@@ -277,7 +372,7 @@ pub impl AppendByteOrder for BigEndian with append_uint32(
 }
 
 ///|
-pub impl ByteOrder for BigEndian with uint64(
+pub impl IByteOrder for BigEndian with uint64(
   _ : BigEndian,
   b : @slice.Slice[Byte],
 ) -> UInt64 {
@@ -293,7 +388,7 @@ pub impl ByteOrder for BigEndian with uint64(
 }
 
 ///|
-pub impl ByteOrder for BigEndian with put_uint64(
+pub impl IByteOrder for BigEndian with put_uint64(
   _ : BigEndian,
   b : @slice.Slice[Byte],
   v : UInt64,
@@ -334,16 +429,16 @@ pub impl AppendByteOrder for BigEndian with append_uint64(
 
 ///|
 pub(open) trait Readable {
-  read(r : &@io.Reader, order : &ByteOrder) -> Self raise
+  read(r : &@io.Reader, order : ByteOrder) -> Self raise
 }
 
 ///|
 pub(open) trait ReadableN {
-  read(r : &@io.Reader, order : &ByteOrder, n : Int) -> Self raise
+  read(r : &@io.Reader, order : ByteOrder, n : Int) -> Self raise
 }
 
 ///|
-pub impl Readable for Byte with read(r : &@io.Reader, _ : &ByteOrder) -> Byte raise {
+pub impl Readable for Byte with read(r : &@io.Reader, _ : ByteOrder) -> Byte raise {
   let buf = @slice.make(1)
   let n = r.read(buf)
   if n != 1 {
@@ -353,7 +448,7 @@ pub impl Readable for Byte with read(r : &@io.Reader, _ : &ByteOrder) -> Byte ra
 }
 
 ///|
-pub impl Readable for UInt16 with read(r : &@io.Reader, order : &ByteOrder) -> UInt16 raise {
+pub impl Readable for UInt16 with read(r : &@io.Reader, order : ByteOrder) -> UInt16 raise {
   let buf = @slice.make(2)
   let n = r.read(buf)
   if n != 2 {
@@ -363,7 +458,7 @@ pub impl Readable for UInt16 with read(r : &@io.Reader, order : &ByteOrder) -> U
 }
 
 ///|
-pub impl Readable for Int16 with read(r : &@io.Reader, order : &ByteOrder) -> Int16 raise {
+pub impl Readable for Int16 with read(r : &@io.Reader, order : ByteOrder) -> Int16 raise {
   let buf = @slice.make(2)
   let n = r.read(buf)
   if n != 2 {
@@ -373,7 +468,7 @@ pub impl Readable for Int16 with read(r : &@io.Reader, order : &ByteOrder) -> In
 }
 
 ///|
-pub impl Readable for Int with read(r : &@io.Reader, order : &ByteOrder) -> Int raise {
+pub impl Readable for Int with read(r : &@io.Reader, order : ByteOrder) -> Int raise {
   let buf = @slice.make(4)
   let n = r.read(buf)
   if n != 4 {
@@ -383,7 +478,7 @@ pub impl Readable for Int with read(r : &@io.Reader, order : &ByteOrder) -> Int 
 }
 
 ///|
-pub impl Readable for UInt with read(r : &@io.Reader, order : &ByteOrder) -> UInt raise {
+pub impl Readable for UInt with read(r : &@io.Reader, order : ByteOrder) -> UInt raise {
   let buf = @slice.make(4)
   let n = r.read(buf)
   if n != 4 {
@@ -393,7 +488,7 @@ pub impl Readable for UInt with read(r : &@io.Reader, order : &ByteOrder) -> UIn
 }
 
 ///|
-pub impl Readable for Int64 with read(r : &@io.Reader, order : &ByteOrder) -> Int64 raise {
+pub impl Readable for Int64 with read(r : &@io.Reader, order : ByteOrder) -> Int64 raise {
   let buf = @slice.make(8)
   let n = r.read(buf)
   if n != 8 {
@@ -403,7 +498,7 @@ pub impl Readable for Int64 with read(r : &@io.Reader, order : &ByteOrder) -> In
 }
 
 ///|
-pub impl Readable for UInt64 with read(r : &@io.Reader, order : &ByteOrder) -> UInt64 raise {
+pub impl Readable for UInt64 with read(r : &@io.Reader, order : ByteOrder) -> UInt64 raise {
   let buf = @slice.make(8)
   let n = r.read(buf)
   if n != 8 {
@@ -425,14 +520,14 @@ pub impl Readable for UInt64 with read(r : &@io.Reader, order : &ByteOrder) -> U
 /// The error is `@io.EOF` only if no bytes were read.
 /// If an `@io.EOF` happens after reading some but not all the bytes,
 /// `read` returns `@io.ErrUnexpectedEOF`.
-pub fn[T : Readable] read(r : &@io.Reader, order : &ByteOrder) -> T raise {
+pub fn[T : Readable] read(r : &@io.Reader, order : ByteOrder) -> T raise {
   T::read(r, order)
 }
 
 ///|
 pub fn[T : ReadableN] read_n(
   r : &@io.Reader,
-  order : &ByteOrder,
+  order : ByteOrder,
   n : Int,
 ) -> T raise {
   T::read(r, order, n)
@@ -441,7 +536,7 @@ pub fn[T : ReadableN] read_n(
 ///|
 pub impl[T : Readable + Default] ReadableN for FixedArray[T] with read(
   r : &@io.Reader,
-  order : &ByteOrder,
+  order : ByteOrder,
   n : Int,
 ) -> FixedArray[T] raise {
   let data : FixedArray[T] = FixedArray::make(n, T::default())
@@ -454,7 +549,7 @@ pub impl[T : Readable + Default] ReadableN for FixedArray[T] with read(
 ///|
 pub impl[T : Readable + Default] ReadableN for Array[T] with read(
   r : &@io.Reader,
-  order : &ByteOrder,
+  order : ByteOrder,
   n : Int,
 ) -> Array[T] raise {
   let data : Array[T] = Array::make(n, T::default())
@@ -467,7 +562,7 @@ pub impl[T : Readable + Default] ReadableN for Array[T] with read(
 ///|
 pub impl[T : Readable + Default] ReadableN for @slice.Slice[T] with read(
   r : &@io.Reader,
-  order : &ByteOrder,
+  order : ByteOrder,
   n : Int,
 ) -> @slice.Slice[T] raise {
   let data : @slice.Slice[T] = @slice.make(n)

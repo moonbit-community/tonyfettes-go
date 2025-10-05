@@ -20,7 +20,7 @@ struct SectionHeader32 {
 ///|
 pub impl @binary.Readable for SectionHeader32 with read(
   r : &@io.Reader,
-  order : &@binary.ByteOrder,
+  order : @binary.ByteOrder,
 ) -> SectionHeader32 raise {
   SectionHeader32::{
     name: @binary.read_n(r, order, 8),
@@ -67,7 +67,7 @@ pub struct Reloc {
 ///|
 pub impl @binary.Readable for Reloc with read(
   r : &@io.Reader,
-  order : &@binary.ByteOrder,
+  order : @binary.ByteOrder,
 ) -> Reloc raise {
   Reloc::{
     virtual_address: @binary.read(r, order),
@@ -84,7 +84,7 @@ fn read_relocs(sh : SectionHeader, r : &@io.ReadSeeker) -> Array[Reloc] raise {
   let _ = r.seek(int64(sh.pointer_to_relocations), @io.SeekStart)
   let relocs = @binary.read_n(
     r,
-    @binary.little_endian,
+    @binary.LittleEndian,
     int(sh.number_of_relocations),
   ) catch {
     error => fail("failed to read section relocations: \{error}")

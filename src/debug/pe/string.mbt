@@ -26,7 +26,7 @@ fn read_string_table(fh : FileHeader, r : &@io.ReadSeeker) -> StringTable raise 
   let offset = fh.pointer_to_symbol_table +
     COFF_SYMBOL_SIZE * fh.number_of_symbols
   let _ = r.seek(int64(offset), @io.SeekStart)
-  let l : UInt = @binary.read(r, @binary.little_endian)
+  let l : UInt = @binary.read(r, @binary.LittleEndian)
   if l <= 4 {
     return StringTable(@slice.make(0))
   }
