@@ -2,6 +2,9 @@
 package "tonyfettes/go/debug/macho"
 
 import(
+  "tonyfettes/go/debug/dwarf"
+  "tonyfettes/go/encoding/binary"
+  "tonyfettes/go/io"
   "tonyfettes/go/slice"
 )
 
@@ -64,26 +67,21 @@ const Magic64 : UInt = 0xfeedfacf
 
 const MagicFat : UInt = 0xcafebabe
 
-fn extract_thread_state(Thread, Cpu, ByteOrder) -> ThreadState raise
+fn new_fat_file(&@io.ReaderAt) -> FatFile raise
 
-let fat_arch_size : Int
+fn new_file(&@io.ReaderAt) -> File raise
 
-let fat_header_size : Int
+let not_fat : FormatError
 
-fn open_file(String) -> File raise
+fn open(String) -> File raise
+
+fn open_fat(String) -> FatFile raise
 
 // Errors
 type FormatError
-fn FormatError::to_string(Self) -> String
+impl Show for FormatError
 
 // Types and methods
-pub enum ByteOrder {
-  Little
-  Big
-}
-impl Eq for ByteOrder
-impl Show for ByteOrder
-
 pub enum Cpu {
   I386
   Amd64
@@ -91,32 +89,23 @@ pub enum Cpu {
   Arm64
   Ppc
   Ppc64
-  Unknown(UInt)
+  Cpu(UInt)
 }
 fn Cpu::from_uint(UInt) -> Self
 fn Cpu::to_string(Self) -> String
 fn Cpu::to_uint(Self) -> UInt
+impl Default for Cpu
 impl Eq for Cpu
 impl Show for Cpu
-
-pub struct DwarfData {
-  sections : Map[Bytes, @slice.Slice[Byte]]
-}
-fn DwarfData::get_section(Self, Bytes) -> @slice.Slice[Byte]?
-fn DwarfData::get_section_names(Self) -> Array[Bytes]
-fn DwarfData::has_section(Self, Bytes) -> Bool
-impl Show for DwarfData
+impl @tonyfettes/go/builtin.ToUInt64 for Cpu
 
 pub struct Dylib {
   load_bytes : LoadBytes
-  name : @slice.Slice[Byte]
+  name : String
   time : UInt
   current_version : UInt
   compat_version : UInt
 }
-impl Eq for Dylib
-impl Show for Dylib
-impl Load for Dylib
 
 pub struct DylibCmd {
   cmd : UInt
@@ -128,35 +117,16 @@ pub struct DylibCmd {
 }
 impl Eq for DylibCmd
 impl Show for DylibCmd
+impl @binary.Readable for DylibCmd
 
 pub struct Dysymtab {
   load_bytes : LoadBytes
-  ilocalsym : UInt
-  nlocalsym : UInt
-  iextdefsym : UInt
-  nextdefsym : UInt
-  iundefsym : UInt
-  nundefsym : UInt
-  tocoffset : UInt
-  ntoc : UInt
-  modtaboff : UInt
-  nmodtab : UInt
-  extrefsymoff : UInt
-  nextrefsyms : UInt
-  indirectsymoff : UInt
-  nindirectsyms : UInt
-  extreloff : UInt
-  nextrel : UInt
-  locreloff : UInt
-  nlocrel : UInt
+  dysymtab_cmd : DysymtabCmd
   indirect_syms : Array[UInt]
 }
-impl Eq for Dysymtab
-impl Show for Dysymtab
-impl Load for Dysymtab
 
 pub struct DysymtabCmd {
-  cmd : UInt
+  cmd : LoadCmd
   len : UInt
   ilocalsym : UInt
   nlocalsym : UInt
@@ -179,47 +149,46 @@ pub struct DysymtabCmd {
 }
 impl Eq for DysymtabCmd
 impl Show for DysymtabCmd
+impl @binary.Readable for DysymtabCmd
 
 pub struct FatArch {
+  header : FatArchHeader
+  file : File
+}
+
+pub struct FatArchHeader {
   cpu : Cpu
   sub_cpu : UInt
   offset : UInt
   size : UInt
   align : UInt
 }
-impl Eq for FatArch
-impl Show for FatArch
+impl @binary.Readable for FatArchHeader
 
 pub struct FatFile {
   magic : UInt
   arches : Array[FatArch]
-  files : Array[File]
+  mut closer : &@io.Closer?
 }
-fn FatFile::new(@slice.Slice[Byte]) -> Self raise
-impl Show for FatFile
-
-pub struct FatHeader {
-  magic : UInt
-  nfat_arch : UInt
-}
-impl Eq for FatHeader
-impl Show for FatHeader
+impl @io.Closer for FatFile
 
 pub struct File {
   header : FileHeader
-  byte_order : ByteOrder
-  loads : Array[LoadCommand]
+  byte_order : @binary.ByteOrder
+  loads : Array[Load]
   sections : Array[Section]
   symtab : Symtab?
   dysymtab : Dysymtab?
+  mut closer : &@io.Closer?
 }
-fn File::dwarf(Self, @slice.Slice[Byte]) -> DwarfData? raise
-fn File::imported_libraries(Self) -> Array[@slice.Slice[Byte]]
-fn File::imported_symbols(Self) -> Array[@slice.Slice[Byte]]
-fn File::new(@slice.Slice[Byte]) -> Self raise
-fn File::section(Self, @slice.Slice[Byte]) -> Section?
-fn File::segment(Self, @slice.Slice[Byte]) -> Segment?
-impl Show for File
+fn File::dwarf(Self) -> @dwarf.Data raise
+fn File::imported_libraries(Self) -> Array[String]
+fn File::imported_symbols(Self) -> Array[String] raise
+fn File::magic(Self) -> UInt
+fn File::section(Self, String) -> Section?
+fn File::segment(Self, String) -> Segment?
+fn File::type_(Self) -> Type
+impl @io.Closer for File
 
 pub struct FileHeader {
   magic : UInt
@@ -230,15 +199,23 @@ pub struct FileHeader {
   cmdsz : UInt
   flags : UInt
 }
+impl Default for FileHeader
 impl Eq for FileHeader
 impl Show for FileHeader
+impl @binary.Readable for FileHeader
 
-pub struct LoadBytes {
-  data : @slice.Slice[Byte]
+pub enum Load {
+  LoadBytes(LoadBytes)
+  Segment(Segment)
+  Dylib(Dylib)
+  Symtab(Symtab)
+  Dysymtab(Dysymtab)
+  Rpath(Rpath)
 }
-impl Eq for LoadBytes
-impl Show for LoadBytes
-impl Load for LoadBytes
+
+pub struct LoadBytes(@slice.Slice[Byte])
+#deprecated
+fn LoadBytes::inner(Self) -> @slice.Slice[Byte]
 
 pub enum LoadCmd {
   Segment
@@ -250,39 +227,30 @@ pub enum LoadCmd {
   Dylinker
   Segment64
   Rpath
-  Unknown(UInt)
+  LoadCmd(UInt)
 }
 fn LoadCmd::from_uint(UInt) -> Self
 fn LoadCmd::to_string(Self) -> String
 fn LoadCmd::to_uint(Self) -> UInt
 impl Eq for LoadCmd
 impl Show for LoadCmd
-
-pub enum LoadCommand {
-  LoadBytes(LoadBytes)
-  Segment(Segment)
-  Dylib(Dylib)
-  Symtab(Symtab)
-  Dysymtab(Dysymtab)
-  Rpath(Rpath)
-  Thread(Thread)
-}
-impl Show for LoadCommand
-impl Load for LoadCommand
+impl @binary.Readable for LoadCmd
 
 type Nlist32
 impl Eq for Nlist32
 impl Show for Nlist32
+impl @binary.Readable for Nlist32
 
 pub struct Nlist64 {
   name : UInt
   type_ : Byte
   sect : Byte
-  desc : UInt
+  desc : UInt16
   value : UInt64
 }
 impl Eq for Nlist64
 impl Show for Nlist64
+impl @binary.Readable for Nlist64
 
 pub struct Regs386 {
   ax : UInt
@@ -334,8 +302,8 @@ impl Show for RegsAMD64
 pub struct Reloc {
   addr : UInt
   value : UInt
-  type_ : Int
-  len : Int
+  type_ : Byte
+  len : Byte
   pcrel : Bool
   is_extern : Bool
   scattered : Bool
@@ -406,24 +374,22 @@ fn RelocTypeX86_64::to_string(Self) -> String
 
 pub struct Rpath {
   load_bytes : LoadBytes
-  path : @slice.Slice[Byte]
+  path : String
 }
-impl Eq for Rpath
-impl Show for Rpath
-impl Load for Rpath
 
 type RpathCmd
 impl Eq for RpathCmd
 impl Show for RpathCmd
+impl @binary.Readable for RpathCmd
 
 pub struct Section {
   header : SectionHeader
   relocs : Array[Reloc]
-  data : @slice.Slice[Byte]?
+  reader_at : &@io.ReaderAt
+  sr : @io.SectionReader
 }
-fn Section::data(Self, @slice.Slice[Byte]) -> @slice.Slice[Byte] raise
-impl Eq for Section
-impl Show for Section
+fn Section::data(Self) -> @slice.Slice[Byte] raise
+fn Section::open(Self) -> &@io.ReadSeeker
 
 pub struct Section32 {
   name : FixedArray[Byte]
@@ -440,6 +406,7 @@ pub struct Section32 {
 }
 impl Eq for Section32
 impl Show for Section32
+impl @binary.Readable for Section32
 
 pub struct Section64 {
   name : FixedArray[Byte]
@@ -457,10 +424,11 @@ pub struct Section64 {
 }
 impl Eq for Section64
 impl Show for Section64
+impl @binary.Readable for Section64
 
 pub struct SectionHeader {
-  name : @slice.Slice[Byte]
-  seg : @slice.Slice[Byte]
+  name : String
+  seg : String
   addr : UInt64
   size : UInt64
   offset : UInt
@@ -475,15 +443,14 @@ impl Show for SectionHeader
 pub struct Segment {
   load_bytes : LoadBytes
   header : SegmentHeader
-  data : @slice.Slice[Byte]?
+  reader_at : &@io.ReaderAt
+  sr : @io.SectionReader
 }
-fn Segment::data(Self, @slice.Slice[Byte]) -> @slice.Slice[Byte] raise
-impl Eq for Segment
-impl Show for Segment
-impl Load for Segment
+fn Segment::data(Self) -> @slice.Slice[Byte] raise
+fn Segment::open(Self) -> &@io.ReadSeeker
 
 pub struct Segment32 {
-  cmd : UInt
+  cmd : LoadCmd
   len : UInt
   name : FixedArray[Byte]
   addr : UInt
@@ -497,9 +464,10 @@ pub struct Segment32 {
 }
 impl Eq for Segment32
 impl Show for Segment32
+impl @binary.Readable for Segment32
 
 pub struct Segment64 {
-  cmd : UInt
+  cmd : LoadCmd
   len : UInt
   name : FixedArray[Byte]
   addr : UInt64
@@ -513,11 +481,12 @@ pub struct Segment64 {
 }
 impl Eq for Segment64
 impl Show for Segment64
+impl @binary.Readable for Segment64
 
 pub struct SegmentHeader {
   cmd : LoadCmd
   len : UInt
-  name : @slice.Slice[Byte]
+  name : String
   addr : UInt64
   memsz : UInt64
   offset : UInt64
@@ -531,10 +500,10 @@ impl Eq for SegmentHeader
 impl Show for SegmentHeader
 
 pub struct Symbol {
-  name : @slice.Slice[Byte]
-  type_ : Int
-  sect : Int
-  desc : Int
+  name : String
+  type_ : Byte
+  sect : Byte
+  desc : UInt16
   value : UInt64
 }
 impl Eq for Symbol
@@ -542,18 +511,12 @@ impl Show for Symbol
 
 pub struct Symtab {
   load_bytes : LoadBytes
-  symoff : UInt
-  nsyms : UInt
-  stroff : UInt
-  strsize : UInt
+  symtab_cmd : SymtabCmd
   syms : Array[Symbol]
 }
-impl Eq for Symtab
-impl Show for Symtab
-impl Load for Symtab
 
 pub struct SymtabCmd {
-  cmd : UInt
+  cmd : LoadCmd
   len : UInt
   symoff : UInt
   nsyms : UInt
@@ -562,40 +525,31 @@ pub struct SymtabCmd {
 }
 impl Eq for SymtabCmd
 impl Show for SymtabCmd
+impl @binary.Readable for SymtabCmd
 
 pub struct Thread {
-  load_bytes : LoadBytes
+  cmd : LoadCmd
+  len : UInt
   type_ : UInt
   data : Array[UInt]
 }
-impl Eq for Thread
-impl Show for Thread
-impl Load for Thread
-
-pub enum ThreadState {
-  I386(Regs386)
-  AMD64(RegsAMD64)
-  Unknown(@slice.Slice[Byte])
-}
-impl Show for ThreadState
+impl @binary.Readable for Thread
 
 pub enum Type {
-  Object
+  Obj
   Exec
   Dylib
   Bundle
-  Unknown(UInt)
+  Type(UInt)
 }
 fn Type::from_uint(UInt) -> Self
 fn Type::to_string(Self) -> String
 fn Type::to_uint(Self) -> UInt
+impl Default for Type
 impl Eq for Type
 impl Show for Type
 
 // Type aliases
 
 // Traits
-pub trait Load {
-  raw(Self) -> @slice.Slice[Byte]
-}
 

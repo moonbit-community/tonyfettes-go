@@ -4,10 +4,10 @@
 ///|
 /// An instruction in the compiled regexp program
 pub struct Inst {
-  pub op : InstOp
-  pub out : Int // next instruction index
-  pub arg : Int // argument (depends on instruction)
-  pub rune : Array[Int] // runes for character matching
+  op : InstOp
+  mut out : Int // next instruction index
+  arg : Int // argument (depends on instruction)
+  mut rune : Array[Int] // runes for character matching
 } derive(Show, ToJson)
 
 ///|
@@ -91,42 +91,36 @@ pub fn Prog::start_cond(self : Prog) -> EmptyOp {
 
 ///|
 /// Compile a regexp AST to instruction program
-pub fn compile(re : Regexp) -> Result[Prog, Error] {
-  let mut inst : Array[Inst] = []
-  let result = compile_regexp(re, inst)
-  match result {
-    Ok(start) => {
-      let prog = { inst, start, num_cap: re.max_cap() + 1 }
-      Ok(prog)
-    }
-    Err(e) => Err(e)
-  }
+pub fn compile(re : Regexp) -> Prog {
+  let inst : Array[Inst] = []
+  let start = compile_regexp(re, inst)
+  { inst, start, num_cap: re.max_cap() + 1 }
 }
 
 ///|
 /// Recursively compile a regexp node
-fn compile_regexp(re : Regexp, inst : Array[Inst]) -> Result[Int, Error] {
+fn compile_regexp(re : Regexp, inst : Array[Inst]) -> Int {
   match re.op {
     OpEmptyMatch => {
       let i = Inst::new(InstNop)
       inst.push(i)
-      Ok(inst.length() - 1)
+      inst.length() - 1
     }
     OpLiteral =>
       if re.rune.length() == 0 {
         let i = Inst::new(InstNop)
         inst.push(i)
-        Ok(inst.length() - 1)
+        inst.length() - 1
       } else if re.rune.length() == 1 {
-        let mut i = Inst::new(InstRune1)
+        let i = Inst::new(InstRune1)
         i.rune = [re.rune[0]]
         inst.push(i)
-        Ok(inst.length() - 1)
+        inst.length() - 1
       } else {
         // Multiple runes - create a sequence
         let mut start = -1
         for j = 0; j < re.rune.length(); j = j + 1 {
-          let mut i = Inst::new(InstRune1)
+          let i = Inst::new(InstRune1)
           i.rune = [re.rune[j]]
           inst.push(i)
           if j == 0 {
@@ -135,29 +129,29 @@ fn compile_regexp(re : Regexp, inst : Array[Inst]) -> Result[Int, Error] {
             inst[inst.length() - 2].out = inst.length() - 1
           }
         }
-        Ok(start)
+        start
       }
     OpAnyChar => {
       let i = Inst::new(InstRuneAny)
       inst.push(i)
-      Ok(inst.length() - 1)
+      inst.length() - 1
     }
     OpAnyCharNotNL => {
       let i = Inst::new(InstRuneAnyNotNL)
       inst.push(i)
-      Ok(inst.length() - 1)
+      inst.length() - 1
     }
     OpCharClass => {
       let i = Inst::new(InstRune)
       i.rune = re.rune
       inst.push(i)
-      Ok(inst.length() - 1)
+      inst.length() - 1
     }
     _ => {
       // For now, placeholder for complex operations
       let i = Inst::new(InstFail)
       inst.push(i)
-      Ok(inst.length() - 1)
+      inst.length() - 1
     }
   }
 }

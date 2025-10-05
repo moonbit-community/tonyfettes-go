@@ -7,6 +7,8 @@ import(
 )
 
 // Values
+fn has_prefix(String, String) -> Bool
+
 fn new_reader(String) -> Reader
 
 // Errors

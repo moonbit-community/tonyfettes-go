@@ -58,6 +58,7 @@ pub(open) trait Len {
   len(Self) -> Int
 }
 impl Len for Bytes
+impl[T] Len for Array[T]
 impl Len for BytesView
 
 pub(open) trait ToChar {
@@ -116,7 +117,9 @@ impl ToUInt16 for Int64
 impl ToUInt16 for UInt
 impl ToUInt16 for UInt64
 
-trait ToUInt64
+pub(open) trait ToUInt64 {
+  to_uint64(Self) -> UInt64
+}
 impl ToUInt64 for Byte
 impl ToUInt64 for Char
 impl ToUInt64 for Int

@@ -100,7 +100,7 @@ pub let empty_no_word_boundary : EmptyOp = 32
 pub struct Regexp {
   op : Op // operator
   flags : Flags // flags
-  sub : Array[Regexp] // subexpressions, if any
+  mut sub : Array[Regexp] // subexpressions, if any
   mut rune : Array[Int] // matched runes, for OpLiteral, OpCharClass
   min : Int // min for OpRepeat
   max : Int // max for OpRepeat (-1 means no limit)

@@ -32,7 +32,7 @@ let max_size : Int = 1000000
 
 ///|
 /// Parse a regular expression and return the AST
-pub fn parse(s : String, flags : Flags) -> Result[Regexp, Error] {
+pub fn parse(s : String, flags : Flags) -> Regexp {
   let parser = Parser::new()
   parser.flags = flags
   parser.wholeregexp = s
@@ -47,8 +47,8 @@ pub fn parse(s : String, flags : Flags) -> Result[Regexp, Error] {
 
 ///|
 /// Parse a literal string (no regexp metacharacters)
-fn parse_literal(s : String) -> Result[Regexp, Error] {
-  let mut re = Regexp::new(OpLiteral)
+fn parse_literal(s : String) -> Regexp {
+  let re = Regexp::new(OpLiteral)
 
   // Convert string to array of runes
   let runes : Array[Int] = []
@@ -56,26 +56,26 @@ fn parse_literal(s : String) -> Result[Regexp, Error] {
     runes.push(char.to_int())
   }
   re.rune = runes
-  Ok(re)
+  re
 }
 
 ///|
 /// Parse a full regexp pattern
-fn parse_regexp(parser : Parser, s : String) -> Result[Regexp, Error] {
+fn parse_regexp(_ : Parser, s : String) -> Regexp {
   // For now, implement a basic skeleton
   // This would need full implementation of the Go parser logic
 
   if s == "" {
     let re = Regexp::new(OpEmptyMatch)
-    Ok(re)
+    re
   } else if s == "." {
     let re = Regexp::new(OpAnyCharNotNL)
-    Ok(re)
+    re
   } else if s == ".*" {
-    let mut re = Regexp::new(OpStar)
+    let re = Regexp::new(OpStar)
     let sub = Regexp::new(OpAnyCharNotNL)
     re.sub = [sub]
-    Ok(re)
+    re
   } else {
     // For now, treat as literal for basic functionality
     parse_literal(s)

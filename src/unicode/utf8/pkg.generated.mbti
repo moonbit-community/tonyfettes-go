@@ -10,7 +10,7 @@ const MaxRune : Char = '􏿿'
 
 const RuneError : Char = '�'
 
-const RuneSelf : Char = ''
+const RuneSelf : Byte = 0x80
 
 const UTFMax : Int = 4
 

@@ -207,8 +207,6 @@ fn new_file(&@io.ReaderAt) -> File raise
 
 fn open(String) -> File raise
 
-fn string_table_string(StringTable, Int64) -> String raise
-
 // Errors
 
 // Types and methods
@@ -264,7 +262,7 @@ fn File::close(Self) -> Unit raise
 fn File::coff_symbol_read_section_def_aux(Self, Int) -> COFFSymbolAuxFormat5 raise
 fn File::dwarf(Self) -> @dwarf.Data raise
 fn File::imported_libraries(Self) -> Array[String]
-fn File::imported_symbols(Self) -> Array[String]
+fn File::imported_symbols(Self) -> Array[String] raise
 fn File::section(Self, String) -> Section?
 
 pub(all) struct FileHeader {
@@ -404,8 +402,8 @@ pub struct Section {
   reader_at : &@io.ReaderAt
   sr : @io.SectionReader
 }
-fn Section::data(Self) -> @slice.Slice[Byte]
-fn Section::open(Self) -> String
+fn Section::data(Self) -> @slice.Slice[Byte] raise
+fn Section::open(Self) -> &@io.ReadSeeker
 
 pub(all) struct SectionHeader {
   name : String
@@ -433,6 +431,7 @@ impl @binary.Readable for SectionHeader32
 pub struct StringTable(@slice.Slice[Byte])
 #deprecated
 fn StringTable::inner(Self) -> @slice.Slice[Byte]
+fn StringTable::string(Self, UInt) -> String raise
 impl Eq for StringTable
 impl Show for StringTable
 impl ToJson for StringTable

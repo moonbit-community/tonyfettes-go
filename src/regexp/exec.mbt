@@ -110,14 +110,20 @@ fn[T : Input] Machine::execute(self : Machine, input : T, pos : Int) -> Bool {
 
   // Add start state
   runq.val.add(self.prog.start, None)
-  while current_pos.val <= input.context(0) { // simplified end condition
+  while current_pos.val <= input.context(0).0.map(_.to_int()).unwrap_or(-1) { // simplified end condition
     let step_result = input.step(current_pos.val)
     let r = step_result.0
     let width = step_result.1
-    if r == -1 { // end of text
+    guard r is Some(r) else { // end of text
       break
     }
-    self.step(runq.val, nextq.val, current_pos.val, current_pos.val + width, r)
+    self.step(
+      runq.val,
+      nextq.val,
+      current_pos.val,
+      current_pos.val + width,
+      r.to_int(),
+    )
     if self.matched {
       return true
     }
@@ -179,7 +185,7 @@ fn Machine::step(
 
 ///|
 /// Execute regexp on input and return match information
-pub fn[T : Input] Regexp::do_execute(
+fn[T : Input] Regexp::do_execute(
   self : Regexp,
   input : T,
   pos : Int,

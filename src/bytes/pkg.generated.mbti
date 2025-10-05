@@ -9,6 +9,8 @@ import(
 // Values
 fn clone(@slice.Slice[Byte]) -> @slice.Slice[Byte]
 
+fn has_prefix(@slice.Slice[Byte], @slice.Slice[Byte]) -> Bool
+
 fn index_byte(@slice.Slice[Byte], Byte) -> Int
 
 fn new_buffer(@slice.Slice[Byte]) -> Buffer

@@ -1,6 +1,6 @@
 ///|
 /// MoonBit translation of Go's regexp package
-/// 
+///
 /// Package regexp implements regular expression search.
 ///
 /// The syntax of the regular expressions accepted is the same
@@ -8,97 +8,142 @@
 /// More precisely, it is the syntax accepted by RE2.
 
 ///|
-/// Input interface for different input types
-trait Input {
-  step(Self, Int) -> (Int, Int) // advance one rune, return (rune, width)
-  can_check_prefix(Self) -> Bool
-  has_prefix(Self, Regexp) -> Bool
-  index(Self, Regexp, Int) -> Int
-  context(Self, Int) -> Int // lazy flag
+/// A `LazyFlag` is a lazily-evaluated syntax.EmptyOp,
+/// for checking zero-width flags like ^ $ \A \z \B \b.
+/// It records the pair of relevant runes and does not
+/// determine the implied flags until absolutely necessary
+/// (most of the time, that means never).
+priv struct LazyFlag(Char?, Char?)
+
+///|
+fn new_lazy_flag(r1 : Char?, r2 : Char?) -> LazyFlag {
+  LazyFlag(r1, r2)
 }
 
 ///|
-/// String input implementation
-struct InputString {
-  str : String
-} derive(Show)
+/// input abstracts different representations of the input text. It provides
+/// one-character lookahead.
+priv trait Input {
+  /// advance one rune, return (rune, width)
+  step(Self, Int) -> (Char?, Int)
+  /// can we look ahead without losing info?
+  can_check_prefix(Self) -> Bool
+  has_prefix(Self, re : Regexp) -> Bool
+  index(Self, re : Regexp, pos : Int) -> Int
+  context(Self, Int) -> LazyFlag
+}
 
 ///|
-impl Input for InputString with step(self, pos) {
+/// `InputString` scans a string.
+priv struct InputString {
+  str : String
+}
+
+///|
+impl Input for InputString with step(self : InputString, pos : Int) -> (
+  Char?,
+  Int,
+) {
   if pos < self.str.length() {
     let c = self.str[pos]
-    if c < 128 { // ASCII
-      (c, 1)
+    if c.is_leading_surrogate() {
+      if pos + 1 >= self.str.length() {
+        return (Some(@utf16.RuneError), 0)
+      } else {
+        let d = self.str[pos + 1]
+        if d.is_trailing_surrogate() {
+          return (
+            Some(
+              (0x10000 + (c - 0xD800) * 0x400 + (d - 0xDC00)).unsafe_to_char(),
+            ),
+            2,
+          )
+        } else {
+          return (Some(@utf16.RuneError), 0)
+        }
+      }
     } else {
-      // Simple implementation - just return the character
-      (self.str[pos], 1)
+      (Some(c.unsafe_to_char()), 1)
     }
   } else {
-    (-1, 0) // endOfText
+    (None, 0)
   }
 }
 
 ///|
-impl Input for InputString with can_check_prefix(self) {
+impl Input for InputString with can_check_prefix(_ : InputString) -> Bool {
   true
 }
 
 ///|
 impl Input for InputString with has_prefix(self, re) {
-  self.str.has_prefix(re.prefix)
+  @strings.has_prefix(self.str, re.prefix)
 }
 
 ///|
 impl Input for InputString with index(self, re, pos) {
-  @strings.index_from(self.str, re.prefix, pos)
+  (try! self.str[pos:]).find(re.prefix).unwrap()
 }
 
 ///|
-impl Input for InputString with context(self, pos) {
-  // Simplified context calculation
-  0
+impl Input for InputString with context(self : InputString, pos : Int) -> LazyFlag {
+  let r1 = if uint(pos - 1) < uint(self.str.length()) {
+    let (r1, _) = @utf16.decode_last_rune_in_string(try! self.str[:pos])
+    Some(r1)
+  } else {
+    None
+  }
+  let r2 = if uint(pos) < uint(self.str.length()) {
+    let (r2, _) = @utf16.decode_rune_in_string(try! self.str[pos:])
+    Some(r2)
+  } else {
+    None
+  }
+  return new_lazy_flag(r1, r2)
 }
 
 ///|
-/// Bytes input implementation  
-struct InputBytes {
-  str : Bytes
-} derive(Show)
+/// Bytes input implementation
+priv struct InputBytes {
+  str : @slice.Slice[Byte]
+}
 
 ///|
 impl Input for InputBytes with step(self, pos) {
   if pos < self.str.length() {
     let c = self.str[pos]
-    if c < 128 { // ASCII
-      (c.to_int(), 1)
+    if c < @utf8.RuneSelf { // ASCII
+      return (Some(c.to_char()), 1)
     } else {
-      @utf8.decode_rune(self.str, pos)
+      let (c, width) = @utf8.decode_rune(self.str[pos:])
+      return (Some(c), width)
     }
   } else {
-    (-1, 0) // endOfText
+    (None, 0)
   }
 }
 
 ///|
-impl Input for InputBytes with can_check_prefix(self) {
+impl Input for InputBytes with can_check_prefix(_ : InputBytes) {
   true
 }
 
 ///|
 impl Input for InputBytes with has_prefix(self, re) {
-  // Convert prefix to bytes and check
   @bytes.has_prefix(self.str, re.prefix_bytes)
 }
 
 ///|
 impl Input for InputBytes with index(self, re, pos) {
-  @bytes.index_from(self.str, re.prefix_bytes, pos)
+  return self.str.bytesview()[pos:]
+    .find(re.prefix_bytes.bytesview())
+    .unwrap_or(-1)
 }
 
 ///|
 impl Input for InputBytes with context(self, pos) {
   // Simplified context calculation
-  0
+  new_lazy_flag(None, None)
 }
 
 ///|
@@ -106,11 +151,13 @@ impl Input for InputBytes with context(self, pos) {
 /// A Regexp is safe for concurrent use by multiple goroutines.
 pub struct Regexp {
   expr : String // as passed to Compile
-  prog : @syntax.Prog // compiled program  
+  prog : @syntax.Prog // compiled program
   num_subexp : Int // number of subexpressions
   subexp_names : Array[String] // names of capturing groups
-  prefix : String // required prefix in unanchored matches
-  prefix_bytes : Bytes // prefix, as bytes
+  /// required prefix in unanchored matches
+  prefix : String
+  /// prefix, as bytes
+  prefix_bytes : @slice.Slice[Byte]
   prefix_complete : Bool // prefix is the entire regexp
   cond : @syntax.EmptyOp // empty-width conditions required at start
   min_input_len : Int // minimum length of input in bytes
@@ -133,7 +180,7 @@ pub fn Regexp::copy(self : Regexp) -> Regexp {
 ///|
 /// Compile parses a regular expression and returns, if successful,
 /// a Regexp object that can be used to match against text.
-pub fn compile(expr : String) -> Result[Regexp, @syntax.Error] {
+pub fn compile(expr : String) -> Regexp {
   compile_internal(expr, @syntax.perl, false)
 }
 
@@ -141,7 +188,7 @@ pub fn compile(expr : String) -> Result[Regexp, @syntax.Error] {
 /// CompilePOSIX is like Compile but restricts the regular expression
 /// to POSIX ERE (egrep) syntax and changes the match semantics to
 /// leftmost-longest.
-pub fn compile_posix(expr : String) -> Result[Regexp, @syntax.Error] {
+pub fn compile_posix(expr : String) -> Regexp {
   compile_internal(expr, @syntax.posix, true)
 }
 
@@ -151,15 +198,15 @@ fn compile_internal(
   expr : String,
   mode : @syntax.Flags,
   longest : Bool,
-) -> Result[Regexp, @syntax.Error] {
+) -> Regexp {
   // Parse the regexp
-  let re_ast = try? @syntax.parse(expr, mode)
+  let re_ast = @syntax.parse(expr, mode)
   let max_cap = re_ast.max_cap()
   let cap_names = re_ast.cap_names()
 
   // Simplify and compile
   let simplified = re_ast.simplify()
-  let prog = try? @syntax.compile(simplified)
+  let prog = @syntax.compile(simplified)
 
   // Calculate prefix
   let (prefix, prefix_complete) = prog.prefix()
@@ -169,13 +216,13 @@ fn compile_internal(
     num_subexp: max_cap,
     subexp_names: cap_names,
     prefix,
-    prefix_bytes: prefix.to_bytes(),
+    prefix_bytes: @slice.bytes(@utf8.encode(prefix)),
     prefix_complete,
     cond: prog.start_cond(),
     min_input_len: min_input_len(re_ast),
     longest,
   }
-  Ok(regexp)
+  regexp
 }
 
 ///|
@@ -269,7 +316,7 @@ pub fn Regexp::match_string(self : Regexp, s : String) -> Bool {
 
 ///|
 /// Match reports whether the byte slice b contains any match of the regular expression re.
-pub fn Regexp::match_bytes(self : Regexp, b : Bytes) -> Bool {
+pub fn Regexp::match_bytes(self : Regexp, b : @slice.Slice[Byte]) -> Bool {
   self.do_match_bytes(b)
 }
 
@@ -282,7 +329,7 @@ fn Regexp::do_match_string(self : Regexp, s : String) -> Bool {
 
 ///|
 /// Internal bytes matching
-fn Regexp::do_match_bytes(self : Regexp, b : Bytes) -> Bool {
+fn Regexp::do_match_bytes(self : Regexp, b : @slice.Slice[Byte]) -> Bool {
   let input = InputBytes::{ str: b }
   self.do_execute_input(input, 0, 0).is_some()
 }
@@ -307,41 +354,18 @@ fn[T : Input] Regexp::do_execute_input(
 }
 
 ///|
-/// MustCompile is like Compile but panics if the expression cannot be parsed.
-pub fn must_compile(str : String) -> Regexp {
-  match compile(str) {
-    Ok(regexp) => regexp
-    Err(err) =>
-      @builtin.panic("regexp: Compile(" + str + "): " + err.to_string())
-  }
-}
-
-///|
-/// MustCompilePOSIX is like CompilePOSIX but panics if the expression cannot be parsed.
-pub fn must_compile_posix(str : String) -> Regexp {
-  match compile_posix(str) {
-    Ok(regexp) => regexp
-    Err(err) =>
-      @builtin.panic("regexp: CompilePOSIX(" + str + "): " + err.to_string())
-  }
-}
-
-///|
 /// Package-level convenience functions
 
 ///|
 /// MatchString reports whether the string s contains any match of the regular expression pattern.
-pub fn match_string(
-  pattern : String,
-  s : String,
-) -> Result[Bool, @syntax.Error] {
-  let re = try? compile(pattern)
-  Ok(re.match_string(s))
+pub fn match_string(pattern : String, s : String) -> Bool {
+  let re = compile(pattern)
+  re.match_string(s)
 }
 
 ///|
 /// Match reports whether the byte slice b contains any match of the regular expression pattern.
-pub fn match_bytes(pattern : String, b : Bytes) -> Result[Bool, @syntax.Error] {
-  let re = try? compile(pattern)
-  Ok(re.match_bytes(b))
+pub fn match_bytes(pattern : String, b : @slice.Slice[Byte]) -> Bool {
+  let re = compile(pattern)
+  re.match_bytes(b)
 }

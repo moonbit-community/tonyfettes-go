@@ -86,7 +86,7 @@ pub impl @io.RuneReader for Reader with read_rune(self : Reader) -> (Rune, Int) 
     raise @io.EOF
   }
   self.prev_rune = int(self.i)
-  if self.s[int(self.i)] is c && c.to_char() < @utf8.RuneSelf {
+  if self.s[int(self.i)] is c && c < @utf8.RuneSelf {
     self.i += 1
     return (c.to_char(), 1)
   }

@@ -1,0 +1,59 @@
+// Generated using `moon info`, DON'T EDIT IT
+package "tonyfettes/go/regexp"
+
+import(
+  "tonyfettes/go/regexp/syntax"
+  "tonyfettes/go/slice"
+)
+
+// Values
+fn compile(String) -> Regexp
+
+fn compile_posix(String) -> Regexp
+
+fn match_bytes(String, @slice.Slice[Byte]) -> Bool
+
+fn match_string(String, String) -> Bool
+
+// Errors
+
+// Types and methods
+type Entry
+impl Show for Entry
+
+type Machine
+impl Show for Machine
+
+type Queue
+impl Show for Queue
+
+pub struct Regexp {
+  expr : String
+  prog : @syntax.Prog
+  num_subexp : Int
+  subexp_names : Array[String]
+  prefix : String
+  prefix_bytes : @slice.Slice[Byte]
+  prefix_complete : Bool
+  cond : Int
+  min_input_len : Int
+  longest : Bool
+}
+fn Regexp::copy(Self) -> Self
+fn Regexp::literal_prefix(Self) -> (String, Bool)
+fn Regexp::longest(Self) -> Unit
+fn Regexp::match_bytes(Self, @slice.Slice[Byte]) -> Bool
+fn Regexp::match_string(Self, String) -> Bool
+fn Regexp::num_subexp(Self) -> Int
+fn Regexp::subexp_index(Self, String) -> Int
+fn Regexp::subexp_names(Self) -> Array[String]
+fn Regexp::to_string(Self) -> String
+impl Show for Regexp
+
+type Thread
+impl Show for Thread
+
+// Type aliases
+
+// Traits
+

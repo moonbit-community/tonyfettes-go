@@ -290,13 +290,13 @@ pub fn encode(string : @string.View) -> Bytes {
 }
 
 ///|
-pub const RuneError : @builtin.Rune = '\u{FFFD}'
+pub const RuneError : Char = '\u{FFFD}'
 
 ///|
-pub const RuneSelf : @builtin.Rune = '\u{80}'
+pub const RuneSelf : Byte = 0x80
 
 ///|
-pub const MaxRune : @builtin.Rune = '\u{10FFFF}'
+pub const MaxRune : Char = '\u{10FFFF}'
 
 ///|
 pub const UTFMax : Int = 4

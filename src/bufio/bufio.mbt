@@ -384,7 +384,7 @@ pub fn Reader::read_rune(self : Reader) -> (Rune, Int) raise {
   }
   let mut r = self.buf[self.r].to_char()
   let mut size = 1
-  if r >= @utf8.RuneSelf {
+  if r.to_int().to_byte() >= @utf8.RuneSelf {
     let (rr, sz) = @utf8.decode_rune(self.buf[self.r:self.w])
     r = rr
     size = sz

@@ -5,6 +5,8 @@
     "tonyfettes/go/strings",
     "tonyfettes/go/builtin",
     "tonyfettes/go/bytes",
-    "tonyfettes/go/regexp/syntax"
+    "tonyfettes/go/regexp/syntax",
+    "tonyfettes/go/unicode/utf16",
+    "tonyfettes/go/slice"
   ]
 }

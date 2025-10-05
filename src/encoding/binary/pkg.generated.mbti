@@ -7,15 +7,11 @@ import(
 )
 
 // Values
-let big_endian : BigEndian
+let native_endian : ByteOrder
 
-let little_endian : LittleEndian
+fn[T : Readable] read(&@io.Reader, ByteOrder) -> T raise
 
-let native_endian : LittleEndian
-
-fn[T : Readable] read(&@io.Reader, &ByteOrder) -> T raise
-
-fn[T : ReadableN] read_n(&@io.Reader, &ByteOrder, Int) -> T raise
+fn[T : ReadableN] read_n(&@io.Reader, ByteOrder, Int) -> T raise
 
 fn[T : Sized] size(T) -> Int
 
@@ -26,13 +22,29 @@ type BigEndian
 impl Show for BigEndian
 impl ToJson for BigEndian
 impl AppendByteOrder for BigEndian
-impl ByteOrder for BigEndian
+impl IByteOrder for BigEndian
+
+pub(all) enum ByteOrder {
+  LittleEndian
+  BigEndian
+}
+fn ByteOrder::append_uint16(Self, @slice.Slice[Byte], UInt16) -> @slice.Slice[Byte]
+fn ByteOrder::append_uint32(Self, @slice.Slice[Byte], UInt) -> @slice.Slice[Byte]
+fn ByteOrder::append_uint64(Self, @slice.Slice[Byte], UInt64) -> @slice.Slice[Byte]
+fn ByteOrder::put_uint16(Self, @slice.Slice[Byte], UInt16) -> Unit
+fn ByteOrder::put_uint32(Self, @slice.Slice[Byte], UInt) -> Unit
+fn ByteOrder::put_uint64(Self, @slice.Slice[Byte], UInt64) -> Unit
+fn ByteOrder::uint16(Self, @slice.Slice[Byte]) -> UInt16
+fn ByteOrder::uint32(Self, @slice.Slice[Byte]) -> UInt
+fn ByteOrder::uint64(Self, @slice.Slice[Byte]) -> UInt64
+impl Show for ByteOrder
+impl ToJson for ByteOrder
 
 type LittleEndian
 impl Show for LittleEndian
 impl ToJson for LittleEndian
 impl AppendByteOrder for LittleEndian
-impl ByteOrder for LittleEndian
+impl IByteOrder for LittleEndian
 
 // Type aliases
 
@@ -43,7 +55,7 @@ pub trait AppendByteOrder {
   append_uint64(Self, @slice.Slice[Byte], UInt64) -> @slice.Slice[Byte]
 }
 
-pub trait ByteOrder : Show + ToJson {
+pub trait IByteOrder : Show + ToJson {
   uint16(Self, @slice.Slice[Byte]) -> UInt16
   uint32(Self, @slice.Slice[Byte]) -> UInt
   uint64(Self, @slice.Slice[Byte]) -> UInt64
@@ -53,7 +65,7 @@ pub trait ByteOrder : Show + ToJson {
 }
 
 pub(open) trait Readable {
-  read(&@io.Reader, &ByteOrder) -> Self raise
+  read(&@io.Reader, ByteOrder) -> Self raise
 }
 impl Readable for Byte
 impl Readable for Int
@@ -64,7 +76,7 @@ impl Readable for UInt16
 impl Readable for UInt64
 
 pub(open) trait ReadableN {
-  read(&@io.Reader, &ByteOrder, Int) -> Self raise
+  read(&@io.Reader, ByteOrder, Int) -> Self raise
 }
 impl[T : Readable + Default] ReadableN for FixedArray[T]
 impl[T : Readable + Default] ReadableN for Array[T]

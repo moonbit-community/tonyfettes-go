@@ -47,23 +47,3 @@ pub fn ErrorCode::to_string(self : ErrorCode) -> String {
     ErrLarge => "expression too large"
   }
 }
-
-///|
-/// An Error describes a failure to parse a regular expression
-/// and gives the offending expression.
-pub(all) struct Error {
-  pub code : ErrorCode
-  pub expr : String
-} derive(Eq, Show, ToJson)
-
-///|
-/// Convert Error to string
-pub fn Error::to_string(self : Error) -> String {
-  "error parsing regexp: " + self.code.to_string() + ": `" + self.expr + "`"
-}
-
-///|
-/// Create a new Error
-pub fn Error::new(code : ErrorCode, expr : String) -> Error {
-  { code: code, expr: expr }
-}

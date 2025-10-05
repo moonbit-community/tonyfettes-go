@@ -433,7 +433,7 @@ pub struct File {
   // private fields
 }
 fn File::abi_version(Self) -> Byte
-fn File::byte_order(Self) -> &@binary.ByteOrder
+fn File::byte_order(Self) -> @binary.ByteOrder
 fn File::class(Self) -> Class
 fn File::close(Self) -> Unit raise
 fn File::data(Self) -> Data
@@ -458,7 +458,7 @@ pub(all) struct FileHeader {
   mut version : Version
   mut osabi : OSABI
   mut abi_version : Byte
-  mut byte_order : &@binary.ByteOrder
+  mut byte_order : @binary.ByteOrder
   mut type_ : Type
   mut machine : Machine
   mut entry : UInt64

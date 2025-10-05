@@ -1,0 +1,165 @@
+// Generated using `moon info`, DON'T EDIT IT
+package "tonyfettes/go/regexp/syntax"
+
+// Values
+let class_nl : Int
+
+fn compile(Regexp) -> Prog
+
+let dot_nl : Int
+
+let empty_begin_line : Int
+
+let empty_begin_text : Int
+
+let empty_end_line : Int
+
+let empty_end_text : Int
+
+let empty_no_word_boundary : Int
+
+let empty_word_boundary : Int
+
+fn equal(Regexp?, Regexp?) -> Bool
+
+let fold_case : Int
+
+fn is_word_char(Char) -> Bool
+
+let literal : Int
+
+let match_nl : Int
+
+let non_greedy : Int
+
+let one_line : Int
+
+fn parse(String, Int) -> Regexp
+
+let perl : Int
+
+let perl_x : Int
+
+let posix : Int
+
+let simple : Int
+
+let unicode_groups : Int
+
+let was_dollar : Int
+
+// Errors
+
+// Types and methods
+pub enum ErrorCode {
+  ErrInternalError
+  ErrInvalidCharClass
+  ErrInvalidCharRange
+  ErrInvalidEscape
+  ErrInvalidNamedCapture
+  ErrInvalidPerlOp
+  ErrInvalidRepeatOp
+  ErrInvalidRepeatSize
+  ErrInvalidUTF8
+  ErrMissingBracket
+  ErrMissingParen
+  ErrMissingRepeatArgument
+  ErrTrailingBackslash
+  ErrUnexpectedParen
+  ErrNestingDepth
+  ErrLarge
+}
+fn ErrorCode::to_string(Self) -> String
+impl Eq for ErrorCode
+impl Show for ErrorCode
+impl ToJson for ErrorCode
+
+pub struct Inst {
+  op : InstOp
+  mut out : Int
+  arg : Int
+  mut rune : Array[Int]
+}
+fn Inst::match_rune(Self, Int) -> Bool
+fn Inst::new(InstOp) -> Self
+impl Show for Inst
+impl ToJson for Inst
+
+pub enum InstOp {
+  InstAlt
+  InstAltMatch
+  InstCapture
+  InstEmptyWidth
+  InstMatch
+  InstFail
+  InstNop
+  InstRune
+  InstRune1
+  InstRuneAny
+  InstRuneAnyNotNL
+}
+impl Eq for InstOp
+impl Show for InstOp
+impl ToJson for InstOp
+
+pub enum Op {
+  OpNoMatch
+  OpEmptyMatch
+  OpLiteral
+  OpCharClass
+  OpAnyCharNotNL
+  OpAnyChar
+  OpBeginLine
+  OpEndLine
+  OpBeginText
+  OpEndText
+  OpWordBoundary
+  OpNoWordBoundary
+  OpCapture
+  OpStar
+  OpPlus
+  OpQuest
+  OpRepeat
+  OpConcat
+  OpAlternate
+}
+impl Eq for Op
+impl Show for Op
+impl ToJson for Op
+
+type Parser
+
+pub struct Prog {
+  inst : Array[Inst]
+  start : Int
+  num_cap : Int
+}
+fn Prog::prefix(Self) -> (String, Bool)
+fn Prog::start_cond(Self) -> Int
+impl Show for Prog
+impl ToJson for Prog
+
+pub struct Regexp {
+  op : Op
+  flags : Int
+  mut sub : Array[Regexp]
+  mut rune : Array[Int]
+  min : Int
+  max : Int
+  cap : Int
+  name : String
+}
+fn Regexp::cap_names(Self) -> Array[String]
+fn Regexp::max_cap(Self) -> Int
+fn Regexp::new(Op) -> Self
+fn Regexp::simplify(Self) -> Self
+impl Show for Regexp
+impl ToJson for Regexp
+
+// Type aliases
+pub typealias Int as EmptyOp
+
+pub typealias Int as Flags
+
+// Traits
+
