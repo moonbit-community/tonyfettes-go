@@ -61,26 +61,29 @@ fn parse_single_symbol(
 }
 
 ///|
-pub fn File::imported_symbols(self : File) -> Array[@slice.Slice[Byte]] {
-  let imported : Array[@slice.Slice[Byte]] = []
-  match (self.symtab, self.dysymtab) {
-    (Some(st), Some(dt)) => {
-      let start_index = dt.iundefsym.reinterpret_as_int()
-      let count = dt.nundefsym.reinterpret_as_int()
-      let end_index = start_index + count
-      for i = start_index; i < end_index && i < st.syms.length(); i = i + 1 {
-        imported.push(st.syms[i].name)
+/// `imported_symbols` returns the names of all symbols
+/// referred to by the binary `f` that are expected to be
+/// satisfied by other libraries at dynamic load time.
+pub fn File::imported_symbols(self : File) -> Array[String] raise {
+  guard self.symtab is Some(st) else {
+    raise FormatError::new(0, "missing symbol table", None)
+  }
+  let all = []
+  if self.dysymtab is Some(dt) {
+    for
+      s in st.syms[int(dt.dysymtab_cmd.iundefsym):int(dt.dysymtab_cmd.iundefsym) +
+      int(dt.dysymtab_cmd.nundefsym)] {
+      all.push(s.name)
+    }
+  } else {
+    // From Darwin's include/mach-o/nlist.h
+    for s in st.syms {
+      if (s.type_ & 0x0e) == 0x0 && (s.type_ & 0x01) != 0 {
+        all.push(s.name)
       }
     }
-    (Some(st), None) =>
-      for symbol in st.syms {
-        if (symbol.type_ & 0x0e) == 0x0 && symbol.sect == 0 {
-          imported.push(symbol.name)
-        }
-      }
-    _ => ()
   }
-  imported
+  all
 }
 
 ///|

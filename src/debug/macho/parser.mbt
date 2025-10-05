@@ -1,36 +1,4 @@
 ///|
-fn File::parse(r : &@io.ReaderAt) -> File raise {
-  let ident = @slice.make(4)
-  let _ = r.read_at(ident[0:], 0)
-  if data.length() < 4 {
-    raise FormatError::FileTooSmall(actual_size=data.length(), required_size=4)
-  }
-  let magic = read_uint(data, 0, Little)
-  let byte_order = match determine_byte_order(magic) {
-    Some(order) => order
-    None => raise FormatError::InvalidMagic(magic~)
-  }
-  let magic = read_uint(data, 0, byte_order)
-  let header = FileHeader::parse(data, byte_order, magic)
-  parse_file_with_header(data, header, byte_order)
-}
-
-///|
-fnalias @builtin.int64
-
-///|
-fnalias @builtin.uint64
-
-///|
-fnalias @builtin.uint as uint32
-
-///|
-fnalias @builtin.int
-
-///|
-fnalias @builtin.len
-
-///|
 fn cstring(b : @slice.Slice[Byte]) -> String {
   let mut i = @bytes.index_byte(b, 0)
   if i == -1 {
@@ -40,7 +8,13 @@ fn cstring(b : @slice.Slice[Byte]) -> String {
 }
 
 ///|
-fn new_file(r : &@io.ReaderAt) -> File raise {
+pub fn open(name : String) -> File raise {
+  let f = @os.open(name)
+  new_file(f, closer=f)
+}
+
+///|
+pub fn new_file(r : &@io.ReaderAt, closer? : &@io.Closer) -> File raise {
   let sr = @io.new_section_reader(r, 0, (1 << 63) - 1)
   let ident = @slice.make(4)
   let _ = r.read_at(ident[0:], 0)
@@ -61,6 +35,9 @@ fn new_file(r : &@io.ReaderAt) -> File raise {
   }
   let mut dat = @saferio.read_data_at(r, uint64(file_header.cmdsz), offset)
   let loads : Array[&Load] = []
+  let mut symtab = None
+  let mut dysymtab = None
+  let sections = []
   for i in 0U..<file_header.ncmd {
     if len(dat) < 8 {
       raise FormatError::new(offset, "command block too small", None)
@@ -123,31 +100,202 @@ fn new_file(r : &@io.ReaderAt) -> File raise {
           uint64(hdr.nsyms) * uint64(symsz),
           int64(hdr.symoff),
         )
-        let st = {
-          ...
+        let st = File::parse_symtab(
+          bo, magic, symdat, strtab, cmddat, hdr, offset,
+        )
+        loads.push(st)
+        symtab = Some(st)
+      }
+      Dysymtab => {
+        let b = @bytes.new_reader(cmddat)
+        let hdr : DysymtabCmd = @binary.read(b, bo)
+        guard symtab is Some(symtab) else {
+          raise FormatError::new(
+            offset,
+            "dynamic symbol table seen before any ordinary symbol table",
+            None,
+          )
         }
-
+        guard hdr.iundefsym > uint32(len(symtab.syms)) else {
+          raise FormatError::new(
+            offset,
+            "undefined symbols index in dynamic symbol table command is greater than symbol table length (\{hdr.iundefsym} > \{len(symtab.syms)})",
+            None,
+          )
+        }
+        guard hdr.iundefsym + hdr.nundefsym > uint32(len(symtab.syms)) else {
+          raise FormatError::new(
+            offset,
+            "number of undefined symbols after index in dynamic symbol table command is greater than symbol table length (\{hdr.iundefsym + hdr.nundefsym} > \{len(symtab.syms)})",
+            None,
+          )
+        }
+        let dat = @saferio.read_data_at(
+          r,
+          uint64(hdr.nindirectsyms) * 4,
+          int64(hdr.indirectsymoff),
+        )
+        let x : Array[UInt] = @binary.read_n(
+          @bytes.new_reader(dat),
+          bo,
+          int(hdr.nindirectsyms),
+        )
+        let st : Dysymtab = {
+          load_bytes: LoadBytes::LoadBytes(cmddat),
+          dysymtab_cmd: hdr,
+          indirect_syms: x,
+        }
+        loads.push(st)
+        dysymtab = Some(st)
+      }
+      Segment => {
+        let b = @bytes.new_reader(cmddat)
+        let seg32 : Segment32 = @binary.read(b, bo)
+        let sh : SegmentHeader = {
+          cmd,
+          len: siz,
+          name: cstring(@slice.fixedarray(seg32.name)[0:]),
+          addr: uint64(seg32.addr),
+          memsz: uint64(seg32.memsz),
+          offset: uint64(seg32.offset),
+          filesz: uint64(seg32.filesz),
+          maxprot: seg32.maxprot,
+          prot: seg32.prot,
+          nsect: seg32.nsect,
+          flag: seg32.flag,
+        }
+        if int64(sh.offset) < 0 {
+          raise FormatError::new(
+            offset,
+            "invalid section offset",
+            Some(sh.offset),
+          )
+        }
+        if int64(sh.filesz) < 0 {
+          raise FormatError::new(
+            offset,
+            "invalid section file size",
+            Some(sh.filesz),
+          )
+        }
+        let sr = @io.new_section_reader(r, int64(sh.offset), int64(sh.filesz))
+        let s : Segment = {
+          load_bytes: LoadBytes::LoadBytes(cmddat),
+          header: sh,
+          reader_at: sr,
+          sr,
+        }
+        loads.push(s)
+        for i in 0..<int(seg32.nsect) {
+          let sh32 : Section32 = @binary.read(b, bo)
+          let sh : SectionHeader = {
+            name: cstring(@slice.fixedarray(sh32.name)[0:]),
+            seg: cstring(@slice.fixedarray(sh32.seg)[0:]),
+            addr: uint64(sh32.addr),
+            size: uint64(sh32.size),
+            offset: sh32.offset,
+            align: sh32.align,
+            reloff: sh32.reloff,
+            nreloc: sh32.nreloc,
+            flags: sh32.flags,
+          }
+          let sh : Section = {
+            header: sh,
+            relocs: File::push_section(bo, sh, r),
+            reader_at: sr,
+            sr,
+          }
+          sections.push(sh)
+        }
+      }
+      Segment64 => {
+        let b = @bytes.new_reader(cmddat)
+        let seg64 : Segment64 = @binary.read(b, bo)
+        let sh : SegmentHeader = {
+          cmd,
+          len: siz,
+          name: cstring(@slice.fixedarray(seg64.name)[0:]),
+          addr: seg64.addr,
+          memsz: seg64.memsz,
+          offset: seg64.offset,
+          filesz: seg64.filesz,
+          maxprot: seg64.maxprot,
+          prot: seg64.prot,
+          nsect: seg64.nsect,
+          flag: seg64.flag,
+        }
+        if int64(sh.offset) < 0 {
+          raise FormatError::new(
+            offset,
+            "invalid section offset",
+            Some(sh.offset),
+          )
+        }
+        if int64(sh.filesz) < 0 {
+          raise FormatError::new(
+            offset,
+            "invalid section file size",
+            Some(sh.filesz),
+          )
+        }
+        let sr = @io.new_section_reader(r, int64(sh.offset), int64(sh.filesz))
+        let s : Segment = {
+          load_bytes: LoadBytes::LoadBytes(cmddat),
+          header: sh,
+          reader_at: sr,
+          sr,
+        }
+        loads.push(s)
+        for i in 0..<int(seg64.nsect) {
+          let sh64 : Section64 = @binary.read(b, bo)
+          let sh : SectionHeader = {
+            name: cstring(@slice.fixedarray(sh64.name)[0:]),
+            seg: cstring(@slice.fixedarray(sh64.seg)[0:]),
+            addr: sh64.addr,
+            size: sh64.size,
+            offset: sh64.offset,
+            align: sh64.align,
+            reloff: sh64.reloff,
+            nreloc: sh64.nreloc,
+            flags: sh64.flags,
+          }
+          let sh : Section = {
+            header: sh,
+            relocs: File::push_section(bo, sh, r),
+            reader_at: sr,
+            sr,
+          }
+          sections.push(sh)
+        }
       }
       _ => loads.push(LoadBytes::LoadBytes(cmddat))
     }
   }
-  ...
+  File::{
+    header: file_header,
+    byte_order: bo,
+    loads,
+    sections,
+    symtab,
+    dysymtab,
+    closer,
+  }
 }
 
 ///|
 fn File::parse_symtab(
-  f : File,
+  bo : &@binary.ByteOrder,
+  magic : UInt,
   symdat : @slice.Slice[Byte],
   strtab : @slice.Slice[Byte],
   cmddat : @slice.Slice[Byte],
   hdr : SymtabCmd,
   offset : Int64,
 ) -> Symtab raise {
-  let bo = f.byte_order
   let symtab = []
   let b = @bytes.new_reader(symdat)
   for i in 0..<hdr.nsyms.reinterpret_as_int() {
-    let n : Nlist64 = if f.header.magic == Magic64 {
+    let n : Nlist64 = if magic == Magic64 {
       @binary.read(b, bo)
     } else {
       let n32 : Nlist32 = @binary.read(b, bo)
@@ -189,172 +337,71 @@ fn File::parse_symtab(
 }
 
 ///|
-fn FileHeader::parse(
-  data : @slice.Slice[Byte],
-  byte_order : ByteOrder,
-  magic : UInt,
-) -> FileHeader raise {
-  let header_size = if magic == Magic64 {
-    FileHeaderSize64
-  } else {
-    FileHeaderSize32
-  }
-  if data.length() < header_size {
-    raise FormatError::FileTooSmall(
-      actual_size=data.length(),
-      required_size=header_size,
-    )
-  }
-  let cpu = Cpu::from_uint(read_uint(data, 4, byte_order))
-  let sub_cpu = read_uint(data, 8, byte_order)
-  let type_ = Type::from_uint(read_uint(data, 12, byte_order))
-  let ncmd = read_uint(data, 16, byte_order)
-  let cmdsz = read_uint(data, 20, byte_order)
-  let flags = read_uint(data, 24, byte_order)
-  { magic, cpu, sub_cpu, type_, ncmd, cmdsz, flags }
+priv struct RelocInfo {
+  addr : UInt
+  symnum : UInt
 }
 
 ///|
-fn parse_file_with_header(
-  data : @slice.Slice[Byte],
-  header : FileHeader,
-  byte_order : ByteOrder,
-) -> File raise {
-  let header_size = if header.magic == Magic64 {
-    FileHeaderSize64
-  } else {
-    FileHeaderSize32
-  }
-  if header_size.reinterpret_as_uint() + header.cmdsz >
-    data.length().reinterpret_as_uint() {
-    raise FormatError::CommandDataOverflow(
-      offset=header_size.to_int64(),
-      size=header.cmdsz,
-      file_size=data.length(),
-    )
-  }
-  let cmd_data = read_bytes(
-    data,
-    header_size,
-    header.cmdsz.reinterpret_as_int(),
-  )
-  let (loads, sections, symtab, dysymtab) = parse_load_commands(
-    cmd_data,
-    byte_order,
-    header.ncmd,
-  )
-  let final_symtab = match symtab {
-    Some(st) => {
-      let is_64bit = header.magic == Magic64
-      Some(Symtab::parse(data, st, is_64bit, byte_order)) catch {
-        _ => Some(st) // Fall back to original symtab if parsing fails
-      }
-    }
-    None => None
-  }
-  { header, byte_order, loads, sections, symtab: final_symtab, dysymtab }
+impl @binary.Readable for RelocInfo with read(
+  r : &@io.Reader,
+  bo : &@binary.ByteOrder,
+) -> RelocInfo {
+  RelocInfo::{ addr: @binary.read(r, bo), symnum: @binary.read(r, bo) }
 }
 
 ///|
-fn parse_load_commands(
-  data : @slice.Slice[Byte],
-  byte_order : ByteOrder,
-  ncmd : UInt,
-) -> (Array[LoadCommand], Array[Section], Symtab?, Dysymtab?) raise {
-  let loads = Array::new()
-  let sections = Array::new()
-  let mut symtab : Symtab? = None
-  let mut dysymtab : Dysymtab? = None
-  let mut offset = 0
-  let mut cmd_count = 0_U
-  while cmd_count < ncmd && offset + 8 <= data.length() {
-    let cmd = LoadCmd::from_uint(read_uint(data, offset, byte_order))
-    let siz = read_uint(data, offset + 4, byte_order)
-    if siz < 8_U || offset + siz.reinterpret_as_int() > data.length() {
-      raise ParseError::InvalidCommandSize(offset~, size=siz)
-    }
-    let cmddat = read_bytes(data, offset, siz.reinterpret_as_int())
-    match cmd {
-      LoadCmd::Segment => {
-        let (segment, segment_sections) = Segment32::parse(cmddat, byte_order)
-        loads.push(LoadCommand::Segment(segment))
-        for section in segment_sections {
-          sections.push(section)
+fn File::push_section(
+  bo : &@binary.ByteOrder,
+  sh : SectionHeader,
+  r : &@io.ReaderAt,
+) -> Array[Reloc] raise {
+  let relocs = []
+  if sh.nreloc > 0 {
+    let reldat = @saferio.read_data_at(
+      r,
+      uint64(sh.nreloc) * 8,
+      int64(sh.reloff),
+    )
+    let b = @bytes.new_reader(reldat)
+    for i in 0..<int(sh.nreloc) {
+      let ri : RelocInfo = @binary.read(b, bo)
+      let rel = if (ri.addr & (1 << 31)) != 0 {
+        Reloc::{
+          addr: ri.addr,
+          type_: ((ri.addr >> 24) & ((1 << 4) - 1)).to_byte(),
+          len: ((ri.addr >> 28) & ((1 << 2) - 1)).to_byte(),
+          pcrel: (ri.addr & (1 << 30)) != 0,
+          value: ri.symnum,
+          scattered: true,
+          is_extern: false,
+        }
+      } else {
+        match bo.view() {
+          @binary.LittleEndian =>
+            Reloc::{
+              addr: ri.addr,
+              value: ri.symnum & ((1 << 24) - 1),
+              pcrel: (ri.addr & (1 << 24)) != 0,
+              len: ((ri.addr >> 25) & ((1 << 2) - 1)).to_byte(),
+              is_extern: (ri.symnum & (1 << 27)) != 0,
+              type_: ((ri.addr >> 28) & ((1 << 4) - 1)).to_byte(),
+              scattered: false,
+            }
+          @binary.BigEndian =>
+            Reloc::{
+              addr: ri.addr,
+              value: ri.symnum >> 8,
+              pcrel: (ri.symnum & (1 << 7)) != 0,
+              len: ((ri.symnum >> 5) & ((1 << 2) - 1)).to_byte(),
+              is_extern: (ri.symnum & (1 << 4)) != 0,
+              type_: (ri.symnum & ((1 << 4) - 1)).to_byte(),
+              scattered: false,
+            }
         }
       }
-      LoadCmd::Segment64 => {
-        let (segment, segment_sections) = Segment64::parse(cmddat, byte_order)
-        loads.push(LoadCommand::Segment(segment))
-        for section in segment_sections {
-          sections.push(section)
-        }
-      }
-      LoadCmd::Symtab => {
-        let st = SymtabCmd::parse(cmddat, byte_order)
-        loads.push(LoadCommand::Symtab(st))
-        symtab = Some(st)
-      }
-      LoadCmd::Dysymtab => {
-        let dst = DysymtabCmd::parse(cmddat, byte_order)
-        loads.push(LoadCommand::Dysymtab(dst))
-        dysymtab = Some(dst)
-      }
-      LoadCmd::Dylib => {
-        let dylib = DylibCmd::parse(cmddat, byte_order)
-        loads.push(LoadCommand::Dylib(dylib))
-      }
-      LoadCmd::Rpath => {
-        let rpath = RpathCmd::parse(cmddat, byte_order)
-        loads.push(LoadCommand::Rpath(rpath))
-      }
-      _ => loads.push(LoadCommand::LoadBytes({ data: cmddat }))
+      relocs.push(rel)
     }
-    offset = offset + siz.reinterpret_as_int()
-    cmd_count = cmd_count + 1_U
   }
-  (loads, sections, symtab, dysymtab)
-}
-
-///|
-pub fn File::new(data : @slice.Slice[Byte]) -> File raise {
-  File::parse(data)
-}
-
-///|
-pub fn open_file(path : String) -> File raise {
-  let data = @fs.read_file_to_bytes(path)
-  File::parse(@slice.bytes(data))
-}
-
-///|
-fn Symtab::parse(
-  file_data : @slice.Slice[Byte],
-  symtab : Symtab,
-  is_64bit : Bool,
-  byte_order : ByteOrder,
-) -> Symtab raise {
-  let symdata_offset = symtab.symoff.reinterpret_as_int()
-  let string_table_offset = symtab.stroff.reinterpret_as_int()
-  let string_table_size = symtab.strsize.reinterpret_as_int()
-  let symdata = read_bytes(
-    file_data,
-    symdata_offset,
-    symtab.nsyms.reinterpret_as_int() * (if is_64bit { 16 } else { 12 }),
-  )
-  let strtab = read_bytes(file_data, string_table_offset, string_table_size)
-  let symbols = parse_symbols(
-    symdata,
-    strtab,
-    symtab.nsyms,
-    is_64bit,
-    byte_order,
-  )
-  {
-    load_bytes: symtab.load_bytes,
-    symoff: symtab.symoff,
-    nsyms: symtab.nsyms,
-    stroff: symtab.stroff,
-    strsize: symtab.strsize,
-    syms: symbols,
-  }
+  relocs
 }

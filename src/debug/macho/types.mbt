@@ -7,7 +7,7 @@ pub struct FileHeader {
   ncmd : UInt
   cmdsz : UInt
   flags : UInt
-} derive(Eq, Show)
+} derive(Eq, Show, Default)
 
 ///|
 pub impl @binary.Readable for FileHeader with read(
@@ -24,12 +24,6 @@ pub impl @binary.Readable for FileHeader with read(
     magic: @binary.read(r, byte_order),
   }
 }
-
-///|
-pub enum ByteOrder {
-  Little
-  Big
-} derive(Eq, Show)
 
 ///|
 pub trait Load {
@@ -72,7 +66,7 @@ pub impl Load for LoadBytes with raw(self) {
 pub struct SegmentHeader {
   cmd : LoadCmd
   len : UInt
-  name : @slice.Slice[Byte]
+  name : String
   addr : UInt64
   memsz : UInt64
   offset : UInt64
@@ -84,42 +78,35 @@ pub struct SegmentHeader {
 } derive(Eq, Show)
 
 ///|
+// A `Segment` represents a Mach-O 32-bit or 64-bit load segment command.
 pub struct Segment {
   load_bytes : LoadBytes
   header : SegmentHeader
-  data : @slice.Slice[Byte]?
-} derive(Eq, Show)
-
-///|
-pub impl Load for Segment with raw(self) {
-  self.load_bytes.data
+  reader_at : &@io.ReaderAt
+  sr : @io.SectionReader
 }
 
 ///|
-pub fn Segment::data(
-  self : Segment,
-  file_data : @slice.Slice[Byte],
-) -> @slice.Slice[Byte] raise {
-  match self.data {
-    Some(data) => data
-    None => {
-      let offset = self.header.offset.to_uint().reinterpret_as_int()
-      let size = self.header.filesz.to_uint().reinterpret_as_int()
-      if file_data.length() < offset + size {
-        raise ParseError::MissingData(
-          offset=offset.to_int64(),
-          expected="Segment data (" + size.to_string() + " bytes)",
-        )
-      }
-      read_bytes(file_data, offset, size)
-    }
-  }
+pub impl Load for Segment with raw(self) {
+  self.load_bytes.raw()
+}
+
+///|
+/// `data` reads and returns the contents of the segment.
+pub fn Segment::data(self : Segment) -> @slice.Slice[Byte] raise {
+  @saferio.read_data_at(self.sr, self.header.filesz, 0)
+}
+
+///|
+/// `open` returns a new `&@io.ReadSeeker` reading the segment.
+pub fn Segment::open(self : Segment) -> &@io.ReadSeeker {
+  return @io.new_section_reader(self.sr, 0, (1 << 63) - 1)
 }
 
 ///|
 pub struct SectionHeader {
-  name : @slice.Slice[Byte]
-  seg : @slice.Slice[Byte]
+  name : String
+  seg : String
   addr : UInt64
   size : UInt64
   offset : UInt
@@ -133,8 +120,8 @@ pub struct SectionHeader {
 pub struct Reloc {
   addr : UInt
   value : UInt
-  type_ : Int
-  len : Int
+  type_ : Byte
+  len : Byte
   pcrel : Bool
   is_extern : Bool
   scattered : Bool
@@ -144,28 +131,20 @@ pub struct Reloc {
 pub struct Section {
   header : SectionHeader
   relocs : Array[Reloc]
-  data : @slice.Slice[Byte]?
-} derive(Eq, Show)
+  reader_at : &@io.ReaderAt
+  sr : @io.SectionReader
+}
 
 ///|
-pub fn Section::data(
-  self : Section,
-  file_data : @slice.Slice[Byte],
-) -> @slice.Slice[Byte] raise {
-  match self.data {
-    Some(data) => data
-    None => {
-      let offset = self.header.offset.reinterpret_as_int()
-      let size = self.header.size.to_uint().reinterpret_as_int()
-      if file_data.length() < offset + size {
-        raise ParseError::MissingData(
-          offset=offset.to_int64(),
-          expected="Section data (" + size.to_string() + " bytes)",
-        )
-      }
-      read_bytes(file_data, offset, size)
-    }
-  }
+/// `data` reads and returns the contents of the Mach-O section.
+pub fn Section::data(self : Section) -> @slice.Slice[Byte] raise {
+  @saferio.read_data_at(self.sr, self.header.size, 0)
+}
+
+///|
+/// `open` returns a new `&@io.ReadSeeker` reading the Mach-O section.
+pub fn Section::open(self : Section) -> &@io.ReadSeeker {
+  return @io.new_section_reader(self.sr, 0, (1 << 63) - 1)
 }
 
 ///|
@@ -206,30 +185,13 @@ pub impl Load for Symtab with raw(self) {
 ///|
 pub struct Dysymtab {
   load_bytes : LoadBytes
-  ilocalsym : UInt
-  nlocalsym : UInt
-  iextdefsym : UInt
-  nextdefsym : UInt
-  iundefsym : UInt
-  nundefsym : UInt
-  tocoffset : UInt
-  ntoc : UInt
-  modtaboff : UInt
-  nmodtab : UInt
-  extrefsymoff : UInt
-  nextrefsyms : UInt
-  indirectsymoff : UInt
-  nindirectsyms : UInt
-  extreloff : UInt
-  nextrel : UInt
-  locreloff : UInt
-  nlocrel : UInt
+  dysymtab_cmd : DysymtabCmd
   indirect_syms : Array[UInt]
-} derive(Eq, Show)
+}
 
 ///|
 pub impl Load for Dysymtab with raw(self) {
-  self.load_bytes.data
+  self.load_bytes.raw()
 }
 
 ///|
@@ -248,22 +210,23 @@ pub struct Thread {
   load_bytes : LoadBytes
   type_ : UInt
   data : Array[UInt]
-} derive(Eq, Show)
-
-///|
-pub impl Load for Thread with raw(self) {
-  self.load_bytes.data
 }
 
 ///|
+pub impl Load for Thread with raw(self) {
+  self.load_bytes.raw()
+}
+
+///|
+/// A `File` represents an open Mach-O file.
 pub struct File {
   header : FileHeader
   byte_order : &@binary.ByteOrder
-  loads : Array[LoadCommand]
+  loads : Array[&Load]
   sections : Array[Section]
   symtab : Symtab?
   dysymtab : Dysymtab?
-  closer : &@io.Closer
+  closer : &@io.Closer?
 }
 
 ///|
@@ -311,7 +274,7 @@ priv suberror InvalidDataError {
 
 ///|
 pub struct Segment32 {
-  cmd : UInt
+  cmd : LoadCmd
   len : UInt
   name : FixedArray[Byte]
   addr : UInt
@@ -323,6 +286,26 @@ pub struct Segment32 {
   nsect : UInt
   flag : UInt
 } derive(Eq, Show)
+
+///|
+pub impl @binary.Readable for Segment32 with read(
+  r : &@io.Reader,
+  order : &@binary.ByteOrder,
+) -> Segment32 {
+  Segment32::{
+    cmd: @binary.read(r, order),
+    len: @binary.read(r, order),
+    name: @binary.read_n(r, order, 16),
+    addr: @binary.read(r, order),
+    memsz: @binary.read(r, order),
+    offset: @binary.read(r, order),
+    filesz: @binary.read(r, order),
+    maxprot: @binary.read(r, order),
+    prot: @binary.read(r, order),
+    nsect: @binary.read(r, order),
+    flag: @binary.read(r, order),
+  }
+}
 
 ///|
 pub struct Segment64 {
@@ -340,8 +323,28 @@ pub struct Segment64 {
 } derive(Eq, Show)
 
 ///|
+pub impl @binary.Readable for Segment64 with read(
+  r : &@io.Reader,
+  order : &@binary.ByteOrder,
+) -> Segment64 raise {
+  Segment64::{
+    cmd: @binary.read(r, order),
+    len: @binary.read(r, order),
+    name: @binary.read_n(r, order, 16),
+    addr: @binary.read(r, order),
+    memsz: @binary.read(r, order),
+    offset: @binary.read(r, order),
+    filesz: @binary.read(r, order),
+    maxprot: @binary.read(r, order),
+    prot: @binary.read(r, order),
+    nsect: @binary.read(r, order),
+    flag: @binary.read(r, order),
+  }
+}
+
+///|
 pub struct SymtabCmd {
-  cmd : UInt
+  cmd : LoadCmd
   len : UInt
   symoff : UInt
   nsyms : UInt
@@ -366,7 +369,7 @@ pub impl @binary.Readable for SymtabCmd with read(
 
 ///|
 pub struct DysymtabCmd {
-  cmd : UInt
+  cmd : LoadCmd
   len : UInt
   ilocalsym : UInt
   nlocalsym : UInt
@@ -387,6 +390,35 @@ pub struct DysymtabCmd {
   locreloff : UInt
   nlocrel : UInt
 } derive(Eq, Show)
+
+///|
+pub impl @binary.Readable for DysymtabCmd with read(
+  r : &@io.Reader,
+  order : &@binary.ByteOrder,
+) -> DysymtabCmd {
+  DysymtabCmd::{
+    cmd: @binary.read(r, order),
+    len: @binary.read(r, order),
+    ilocalsym: @binary.read(r, order),
+    nlocalsym: @binary.read(r, order),
+    iextdefsym: @binary.read(r, order),
+    nextdefsym: @binary.read(r, order),
+    iundefsym: @binary.read(r, order),
+    nundefsym: @binary.read(r, order),
+    tocoffset: @binary.read(r, order),
+    ntoc: @binary.read(r, order),
+    modtaboff: @binary.read(r, order),
+    nmodtab: @binary.read(r, order),
+    extrefsymoff: @binary.read(r, order),
+    nextrefsyms: @binary.read(r, order),
+    indirectsymoff: @binary.read(r, order),
+    nindirectsyms: @binary.read(r, order),
+    extreloff: @binary.read(r, order),
+    nextrel: @binary.read(r, order),
+    locreloff: @binary.read(r, order),
+    nlocrel: @binary.read(r, order),
+  }
+}
 
 ///|
 pub struct DylibCmd {
@@ -448,6 +480,26 @@ pub struct Section32 {
 } derive(Eq, Show)
 
 ///|
+pub impl @binary.Readable for Section32 with read(
+  r : &@io.Reader,
+  byte_order : &@binary.ByteOrder,
+) -> Section32 raise {
+  Section32::{
+    name: @binary.read_n(r, byte_order, 16),
+    seg: @binary.read_n(r, byte_order, 16),
+    addr: @binary.read(r, byte_order),
+    size: @binary.read(r, byte_order),
+    offset: @binary.read(r, byte_order),
+    align: @binary.read(r, byte_order),
+    reloff: @binary.read(r, byte_order),
+    nreloc: @binary.read(r, byte_order),
+    flags: @binary.read(r, byte_order),
+    reserve1: @binary.read(r, byte_order),
+    reserve2: @binary.read(r, byte_order),
+  }
+}
+
+///|
 pub struct Section64 {
   name : FixedArray[Byte]
   seg : FixedArray[Byte]
@@ -463,12 +515,32 @@ pub struct Section64 {
   reserve3 : UInt
 } derive(Eq, Show)
 
+pub impl @binary.Readable for Section64 with read(
+  r : &@io.Reader,
+  byte_order : &@binary.ByteOrder,
+) -> Section64 raise {
+  Section64::{
+    name: @binary.read_n(r, byte_order, 16),
+    seg: @binary.read_n(r, byte_order, 16),
+    addr: @binary.read(r, byte_order),
+    size: @binary.read(r, byte_order),
+    offset: @binary.read(r, byte_order),
+    align: @binary.read(r, byte_order),
+    reloff: @binary.read(r, byte_order),
+    nreloc: @binary.read(r, byte_order),
+    flags: @binary.read(r, byte_order),
+    reserve1: @binary.read(r, byte_order),
+    reserve2: @binary.read(r, byte_order),
+    reserve3: @binary.read(r, byte_order),
+  }
+}
+
 ///|
 struct Nlist32 {
   name : UInt
   type_ : Byte
   sect : Byte
-  desc : UInt
+  desc : UInt16
   value : UInt
 } derive(Eq, Show)
 

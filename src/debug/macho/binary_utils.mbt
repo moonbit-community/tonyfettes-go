@@ -66,17 +66,6 @@ fn read_bytes(
 }
 
 ///|
-fn determine_byte_order(magic : UInt) -> ByteOrder? {
-  if magic == Magic32 || magic == Magic64 {
-    Some(Little)
-  } else if magic == 0xfacefeed_U || magic == 0xcffaedfe_U {
-    Some(Big)
-  } else {
-    None
-  }
-}
-
-///|
 fn read_cstring(
   data : @slice.Slice[Byte],
   offset : Int,

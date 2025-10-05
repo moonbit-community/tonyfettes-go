@@ -18,7 +18,7 @@ pub struct FatFile {
   magic : UInt
   arches : Array[FatArch]
   files : Array[File]
-} derive(Show)
+}
 
 ///|
 pub let fat_header_size : Int = 2 * 4

@@ -17,3 +17,8 @@ pub impl Len for BytesView with len(self : BytesView) -> Int {
 pub fn[T : Len] len(v : T) -> Int {
   T::len(v)
 }
+
+///|
+pub impl[T] Len for Array[T] with len(self : Array[T]) -> Int {
+  self.length()
+}

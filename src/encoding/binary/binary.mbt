@@ -7,7 +7,14 @@ impl Show for BufferTooSmall with output(_ : BufferTooSmall, output : &Logger) -
 }
 
 ///|
+pub(all) enum ByteOrderView {
+  LittleEndian
+  BigEndian
+}
+
+///|
 pub trait ByteOrder: Show + ToJson {
+  view(self : Self) -> ByteOrderView
   uint16(self : Self, b : @slice.Slice[Byte]) -> UInt16
   uint32(self : Self, b : @slice.Slice[Byte]) -> UInt
   uint64(self : Self, b : @slice.Slice[Byte]) -> UInt64
@@ -43,6 +50,11 @@ pub impl Show for LittleEndian with output(_ : LittleEndian, logger : &Logger) -
 ///|
 pub impl ToJson for LittleEndian with to_json(_ : LittleEndian) -> Json {
   "LittleEndian"
+}
+
+///|
+pub impl ByteOrder for LittleEndian with view(_ : LittleEndian) -> ByteOrderView {
+  LittleEndian
 }
 
 ///|
@@ -186,6 +198,11 @@ pub impl Show for BigEndian with output(_ : BigEndian, logger : &Logger) -> Unit
 ///|
 pub impl ToJson for BigEndian with to_json(_ : BigEndian) -> Json {
   "BigEndian"
+}
+
+///|
+pub impl ByteOrder for BigEndian with view(_ : BigEndian) -> ByteOrderView {
+  BigEndian
 }
 
 ///|

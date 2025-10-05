@@ -26,6 +26,11 @@ pub enum Type {
 } derive(Eq, Show)
 
 ///|
+pub impl Default for Type with default() {
+  Unknown(0)
+}
+
+///|
 pub fn Type::from_uint(value : UInt) -> Type {
   match value {
     1_U => Object
@@ -68,6 +73,11 @@ pub enum Cpu {
   Ppc64
   Unknown(UInt)
 } derive(Eq, Show)
+
+///|
+pub impl Default for Cpu with default() {
+  Unknown(0)
+}
 
 ///|
 pub fn Cpu::from_uint(value : UInt) -> Cpu {
@@ -121,6 +131,14 @@ pub enum LoadCmd {
   Rpath
   Unknown(UInt)
 } derive(Eq, Show)
+
+///|
+pub impl @binary.Readable for LoadCmd with read(
+  r : &@io.Reader,
+  bo : &@binary.ByteOrder,
+) -> LoadCmd {
+  LoadCmd::from_uint(@binary.read(r, bo))
+}
 
 ///|
 pub fn LoadCmd::from_uint(value : UInt) -> LoadCmd {

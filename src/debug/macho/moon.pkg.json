@@ -9,7 +9,8 @@
     "tonyfettes/go/internal/saferio",
     "tonyfettes/go/builtin",
     "tonyfettes/go/unicode/utf8",
-    "tonyfettes/go/strings"
+    "tonyfettes/go/strings",
+    "tonyfettes/go/os"
   ],
   "test-import": [
     "moonbitlang/x/encoding"
