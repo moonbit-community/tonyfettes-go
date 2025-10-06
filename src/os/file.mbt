@@ -63,12 +63,11 @@ pub fn open_file(name : String, flag : Int, perm : FileMode) -> File raise {
     @uv.OpenFlags::read_only()
   }
   let pfd = uv
-    .unwrap_or_error()
-    .fs_open_sync(
-      @utf8.encode(name),
-      flags,
-      perm.to_uint().reinterpret_as_int(),
-    )
+  .unwrap_or_error()
+  .fs_open_sync(@utf8.encode(name), flags, perm.to_uint().reinterpret_as_int()) catch {
+    ENOENT => raise NotExist
+    err => raise err
+  }
   return File::{ pfd, name, append_mode: (flag & O_APPEND) != 0 }
 }
 
@@ -81,7 +80,18 @@ fn File::wrap_error(self : File, op : String, err : Error) -> Error {
 }
 
 ///|
-/// ReadAt reads len(b) bytes from the File starting at byte offset off.
+/// Read reads up to len(b) bytes from the File and stores them in b.
+/// It returns the number of bytes read and any error encountered.
+/// At end of file, Read returns 0, io.EOF.
+pub impl @io.Reader for File with read(self : File, b : @slice.Slice[Byte]) -> Int raise {
+  uv.unwrap_or_error().fs_read_sync(self.pfd, [b.bytesview()]) catch {
+    @uv.ENOENT => raise NotExist
+    err => raise err
+  }
+}
+
+///|
+/// `read_at` reads len(b) bytes from the File starting at byte offset off.
 /// It returns the number of bytes read and the error, if any.
 /// ReadAt always returns a non-nil error when n < len(b).
 /// At end of file, that error is io.EOF.
@@ -119,4 +129,10 @@ pub impl @io.Closer for File with close(self : File) -> Unit raise {
     err => raise self.wrap_error("close", err)
   }
   return
+}
+
+///|
+pub fn temp_dir() -> String {
+  let tmpdir = try! @uv.os_tmpdir()
+  try! @encoding/utf8.decode(tmpdir)
 }

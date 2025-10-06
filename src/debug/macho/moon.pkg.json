@@ -15,5 +15,9 @@
   ],
   "test-import": [
     "moonbitlang/x/encoding"
+  ],
+  "wbtest-import": [
+    "tonyfettes/go/internal/obscuretestdata",
+    "tonyfettes/uv"
   ]
 }

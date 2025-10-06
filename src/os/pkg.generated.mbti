@@ -23,9 +23,21 @@ const O_TRUNC : Int = 0x40
 
 const O_WRONLY : Int = 0x1
 
+fn create_temp(String, String) -> File raise
+
+fn getenv(String) -> String
+
+fn is_exist(Error) -> Bool
+
+fn is_path_separator(Char) -> Bool
+
+fn join_path(String, StringView) -> String
+
 fn open(String) -> File raise
 
 fn open_file(String, Int, @fs.FileMode) -> File raise
+
+fn temp_dir() -> String
 
 // Errors
 pub(all) suberror Closed
@@ -45,6 +57,7 @@ pub(all) suberror Permission
 // Types and methods
 type File
 impl @tonyfettes/go/io.Closer for File
+impl @tonyfettes/go/io.Reader for File
 impl @tonyfettes/go/io.ReaderAt for File
 
 // Type aliases

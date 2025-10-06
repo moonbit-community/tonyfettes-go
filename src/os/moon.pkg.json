@@ -5,6 +5,7 @@
     "tonyfettes/go/io",
     "tonyfettes/go/slice",
     "tonyfettes/uv",
-    "tonyfettes/go/unicode/utf8"
+    "tonyfettes/go/unicode/utf8",
+    "tonyfettes/go/runtime"
   ]
 }

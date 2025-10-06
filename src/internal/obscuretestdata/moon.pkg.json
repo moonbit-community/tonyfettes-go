@@ -1,0 +1,8 @@
+{
+  "import": [
+    "tonyfettes/go/slice",
+    "tonyfettes/go/os",
+    "tonyfettes/go/io",
+    "tonyfettes/go/encoding/base64"
+  ]
+}

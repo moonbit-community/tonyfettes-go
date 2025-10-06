@@ -12,7 +12,7 @@ fn PathError::unwrap(Self) -> Error
 impl Show for PathError
 
 // Types and methods
-pub struct FileMode(UInt)
+pub(all) struct FileMode(UInt)
 fn FileMode::append() -> Self
 fn FileMode::char_device() -> Self
 fn FileMode::device() -> Self

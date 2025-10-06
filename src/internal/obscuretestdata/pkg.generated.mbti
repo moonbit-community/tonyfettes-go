@@ -1,0 +1,22 @@
+// Generated using `moon info`, DON'T EDIT IT
+package "tonyfettes/go/internal/obscuretestdata"
+
+import(
+  "tonyfettes/go/slice"
+)
+
+// Values
+fn decode_to_temp_file(String) -> String raise
+
+fn read_file(String) -> @slice.Slice[Byte] raise
+
+fn rot13(@slice.Slice[Byte]) -> @slice.Slice[Byte]
+
+// Errors
+
+// Types and methods
+
+// Type aliases
+
+// Traits
+

@@ -1,0 +1,8 @@
+{
+  "import": [
+    "tonyfettes/go/slice",
+    "tonyfettes/go/io",
+    "tonyfettes/go/builtin",
+    "tonyfettes/go/encoding/binary"
+  ]
+}

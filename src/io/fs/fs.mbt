@@ -19,7 +19,7 @@ pub typealias @oserror.Closed
 /// information about files can be moved from one system
 /// to another portably. Not all bits apply to all systems.
 /// The only required bit is [ModeDir] for directories.
-pub struct FileMode(UInt)
+pub(all) struct FileMode(UInt)
 
 ///|
 pub impl Default for FileMode with default() -> FileMode {
