@@ -1,39 +1,41 @@
 // Generated using `moon info`, DON'T EDIT IT
 package "tonyfettes/go/unicode/utf8"
 
-import(
-  "tonyfettes/go/slice"
-)
+import {
+  "tonyfettes/go/slice",
+}
 
 // Values
-const MaxRune : Char = '􏿿'
+pub const MaxRune : Char = '􏿿'
 
-const RuneError : Char = '�'
+pub const RuneError : Char = '�'
 
-const RuneSelf : Byte = 0x80
+pub const RuneSelf : Byte = 0x80
 
-const UTFMax : Int = 4
+pub const UTFMax : Int = 4
 
-fn decode(BytesView) -> String raise Malformed
+pub fn decode(BytesView) -> String raise Malformed
 
-fn decode_lossy(@slice.Slice[Byte], ignore_bom? : Bool) -> String
+pub fn decode_lossy(@slice.Slice[Byte], ignore_bom? : Bool) -> String
 
-fn decode_rune(@slice.Slice[Byte]) -> (Char, Int)
+pub fn decode_rune(@slice.Slice[Byte]) -> (Char, Int)
 
-fn encode(StringView) -> Bytes
+pub fn encode(StringView) -> Bytes
 
-fn full_rune(@slice.Slice[Byte]) -> Bool
+pub fn full_rune(@slice.Slice[Byte]) -> Bool
 
-fn new(Bytes) -> Utf8 raise Malformed
+pub fn new(Bytes) -> Utf8 raise Malformed
 
 // Errors
-pub(all) suberror Malformed BytesView
-impl ToJson for Malformed
+pub(all) suberror Malformed {
+  Malformed(BytesView)
+}
+pub impl ToJson for Malformed
 
 // Types and methods
 type Utf8
-fn Utf8::to_bytes(Self) -> Bytes
-fn Utf8::to_string(Self) -> String
+pub fn Utf8::to_bytes(Self) -> Bytes
+pub fn Utf8::to_string(Self) -> String
 
 // Type aliases
 

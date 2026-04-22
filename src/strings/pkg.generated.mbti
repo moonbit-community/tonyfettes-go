@@ -1,38 +1,38 @@
 // Generated using `moon info`, DON'T EDIT IT
 package "tonyfettes/go/strings"
 
-import(
-  "tonyfettes/go/io"
-  "tonyfettes/go/slice"
-)
+import {
+  "tonyfettes/go/io",
+  "tonyfettes/go/slice",
+}
 
 // Values
-fn has_prefix(String, String) -> Bool
+pub fn has_prefix(String, String) -> Bool
 
-fn new_reader(String) -> Reader
+pub fn new_reader(String) -> Reader
 
 // Errors
 
 // Types and methods
 type Builder
-fn Builder::cap(Self) -> Int
-fn Builder::grow(Self, Int) -> Unit
-fn Builder::len(Self) -> Int
-fn Builder::reset(Self) -> Unit
-fn Builder::string(Self) -> String
-impl @io.Writer for Builder
+pub fn Builder::cap(Self) -> Int
+pub fn Builder::grow(Self, Int) -> Unit
+pub fn Builder::len(Self) -> Int
+pub fn Builder::reset(Self) -> Unit
+pub fn Builder::string(Self) -> String
+pub impl @io.Writer for Builder
 
 type Reader
-fn Reader::size(Self) -> Int64
-impl @tonyfettes/go/builtin.Len for Reader
-impl @io.ByteReader for Reader
-impl @io.ByteScanner for Reader
-impl @io.Reader for Reader
-impl @io.ReaderAt for Reader
-impl @io.RuneReader for Reader
-impl @io.RuneScanner for Reader
-impl @io.Seeker for Reader
-impl @io.WriterTo for Reader
+pub fn Reader::size(Self) -> Int64
+pub impl @tonyfettes/go/builtin.Len for Reader
+pub impl @io.ByteReader for Reader
+pub impl @io.ByteScanner for Reader
+pub impl @io.Reader for Reader
+pub impl @io.ReaderAt for Reader
+pub impl @io.RuneReader for Reader
+pub impl @io.RuneScanner for Reader
+pub impl @io.Seeker for Reader
+pub impl @io.WriterTo for Reader
 
 // Type aliases
 

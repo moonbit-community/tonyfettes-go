@@ -1,31 +1,28 @@
 // Generated using `moon info`, DON'T EDIT IT
 package "tonyfettes/go/regexp"
 
-import(
-  "tonyfettes/go/regexp/syntax"
-  "tonyfettes/go/slice"
-)
+import {
+  "tonyfettes/go/regexp/syntax",
+  "tonyfettes/go/slice",
+}
 
 // Values
-fn compile(String) -> Regexp
+pub fn compile(String) -> Regexp
 
-fn compile_posix(String) -> Regexp
+pub fn compile_posix(String) -> Regexp
 
-fn match_bytes(String, @slice.Slice[Byte]) -> Bool
+pub fn match_bytes(String, @slice.Slice[Byte]) -> Bool
 
-fn match_string(String, String) -> Bool
+pub fn match_string(String, String) -> Bool
 
 // Errors
 
 // Types and methods
-type Entry
-impl Show for Entry
+type Entry derive(Show)
 
-type Machine
-impl Show for Machine
+type Machine derive(Show)
 
-type Queue
-impl Show for Queue
+type Queue derive(Show)
 
 pub struct Regexp {
   expr : String
@@ -38,20 +35,18 @@ pub struct Regexp {
   cond : Int
   min_input_len : Int
   longest : Bool
-}
-fn Regexp::copy(Self) -> Self
-fn Regexp::literal_prefix(Self) -> (String, Bool)
-fn Regexp::longest(Self) -> Unit
-fn Regexp::match_bytes(Self, @slice.Slice[Byte]) -> Bool
-fn Regexp::match_string(Self, String) -> Bool
-fn Regexp::num_subexp(Self) -> Int
-fn Regexp::subexp_index(Self, String) -> Int
-fn Regexp::subexp_names(Self) -> Array[String]
-fn Regexp::to_string(Self) -> String
-impl Show for Regexp
+} derive(Show)
+pub fn Regexp::copy(Self) -> Self
+pub fn Regexp::literal_prefix(Self) -> (String, Bool)
+pub fn Regexp::longest(Self) -> Unit
+pub fn Regexp::match_bytes(Self, @slice.Slice[Byte]) -> Bool
+pub fn Regexp::match_string(Self, String) -> Bool
+pub fn Regexp::num_subexp(Self) -> Int
+pub fn Regexp::subexp_index(Self, String) -> Int
+pub fn Regexp::subexp_names(Self) -> Array[String]
+pub fn Regexp::to_string(Self) -> String
 
-type Thread
-impl Show for Thread
+type Thread derive(Show)
 
 // Type aliases
 

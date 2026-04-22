@@ -1,182 +1,182 @@
 // Generated using `moon info`, DON'T EDIT IT
 package "tonyfettes/go/debug/elf"
 
-import(
-  "tonyfettes/go/encoding/binary"
-  "tonyfettes/go/io"
-  "tonyfettes/go/slice"
-)
+import {
+  "tonyfettes/go/encoding/binary",
+  "tonyfettes/go/io",
+  "tonyfettes/go/slice",
+}
 
 // Values
-const EI_ABIVERSION : Int = 8
+pub const EI_ABIVERSION : Int = 8
 
-const EI_CLASS : Int = 4
+pub const EI_CLASS : Int = 4
 
-const EI_DATA : Int = 5
+pub const EI_DATA : Int = 5
 
-const EI_NIDENT : Int = 16
+pub const EI_NIDENT : Int = 16
 
-const EI_OSABI : Int = 7
+pub const EI_OSABI : Int = 7
 
-const EI_PAD : Int = 9
+pub const EI_PAD : Int = 9
 
-const EI_VERSION : Int = 6
+pub const EI_VERSION : Int = 6
 
-const ELFMAG : Bytes = \x7FELF
+pub const ELFMAG : Bytes = b"\x7FELF"
 
-const Sym32Size : Int = 16
+pub const Sym32Size : Int = 16
 
-const Sym64Size : Int = 24
+pub const Sym64Size : Int = 24
 
-const VER_FLG_BASE : UInt = 0x1
+pub const VER_FLG_BASE : UInt = 0x1
 
-const VER_FLG_INFO : UInt = 0x4
+pub const VER_FLG_INFO : UInt = 0x4
 
-const VER_FLG_WEAK : UInt = 0x2
+pub const VER_FLG_WEAK : UInt = 0x2
 
-let compressHiOs : Int
+pub let compressHiOs : Int
 
-let compressHiProc : Int
+pub let compressHiProc : Int
 
-let compressLoOs : Int
+pub let compressLoOs : Int
 
-let compressLoProc : Int
+pub let compressLoProc : Int
 
-let compressZlib : CompressionType
+pub let compressZlib : CompressionType
 
-let compressZstd : CompressionType
+pub let compressZstd : CompressionType
 
-let dynFlag1ConfAlt : DynFlag1
+pub let dynFlag1ConfAlt : DynFlag1
 
-let dynFlag1Direct : DynFlag1
+pub let dynFlag1Direct : DynFlag1
 
-let dynFlag1DisprelDne : DynFlag1
+pub let dynFlag1DisprelDne : DynFlag1
 
-let dynFlag1DisprelPnd : DynFlag1
+pub let dynFlag1DisprelPnd : DynFlag1
 
-let dynFlag1Edited : DynFlag1
+pub let dynFlag1Edited : DynFlag1
 
-let dynFlag1EndFiltee : DynFlag1
+pub let dynFlag1EndFiltee : DynFlag1
 
-let dynFlag1Global : DynFlag1
+pub let dynFlag1Global : DynFlag1
 
-let dynFlag1GlobalAudit : DynFlag1
+pub let dynFlag1GlobalAudit : DynFlag1
 
-let dynFlag1Group : DynFlag1
+pub let dynFlag1Group : DynFlag1
 
-let dynFlag1IgnMulDef : DynFlag1
+pub let dynFlag1IgnMulDef : DynFlag1
 
-let dynFlag1InitFirst : DynFlag1
+pub let dynFlag1InitFirst : DynFlag1
 
-let dynFlag1Interpose : DynFlag1
+pub let dynFlag1Interpose : DynFlag1
 
-let dynFlag1Kmod : DynFlag1
+pub let dynFlag1Kmod : DynFlag1
 
-let dynFlag1LoadFltr : DynFlag1
+pub let dynFlag1LoadFltr : DynFlag1
 
-let dynFlag1NoCommon : DynFlag1
+pub let dynFlag1NoCommon : DynFlag1
 
-let dynFlag1NoDefLib : DynFlag1
+pub let dynFlag1NoDefLib : DynFlag1
 
-let dynFlag1NoDelete : DynFlag1
+pub let dynFlag1NoDelete : DynFlag1
 
-let dynFlag1NoDirect : DynFlag1
+pub let dynFlag1NoDirect : DynFlag1
 
-let dynFlag1NoDump : DynFlag1
+pub let dynFlag1NoDump : DynFlag1
 
-let dynFlag1NoHdr : DynFlag1
+pub let dynFlag1NoHdr : DynFlag1
 
-let dynFlag1NoKsyms : DynFlag1
+pub let dynFlag1NoKsyms : DynFlag1
 
-let dynFlag1NoOpen : DynFlag1
+pub let dynFlag1NoOpen : DynFlag1
 
-let dynFlag1NoReloc : DynFlag1
+pub let dynFlag1NoReloc : DynFlag1
 
-let dynFlag1Now : DynFlag1
+pub let dynFlag1Now : DynFlag1
 
-let dynFlag1Origin : DynFlag1
+pub let dynFlag1Origin : DynFlag1
 
-let dynFlag1Pie : DynFlag1
+pub let dynFlag1Pie : DynFlag1
 
-let dynFlag1Singleton : DynFlag1
+pub let dynFlag1Singleton : DynFlag1
 
-let dynFlag1Stub : DynFlag1
+pub let dynFlag1Stub : DynFlag1
 
-let dynFlag1SymInterpose : DynFlag1
+pub let dynFlag1SymInterpose : DynFlag1
 
-let dynFlag1Trans : DynFlag1
+pub let dynFlag1Trans : DynFlag1
 
-let dynFlag1WeakFilter : DynFlag1
+pub let dynFlag1WeakFilter : DynFlag1
 
-let dynFlagBindNow : DynFlag
+pub let dynFlagBindNow : DynFlag
 
-let dynFlagOrigin : DynFlag
+pub let dynFlagOrigin : DynFlag
 
-let dynFlagStaticTls : DynFlag
+pub let dynFlagStaticTls : DynFlag
 
-let dynFlagSymbolic : DynFlag
+pub let dynFlagSymbolic : DynFlag
 
-let dynFlagTextRel : DynFlag
+pub let dynFlagTextRel : DynFlag
 
-fn new_file(&@io.ReaderAt) -> File raise
+pub fn new_file(&@io.ReaderAt) -> File raise
 
-fn open(String) -> File raise
+pub fn open(String) -> File raise
 
-let progFlagExec : UInt
+pub let progFlagExec : UInt
 
-let progFlagMaskOs : UInt
+pub let progFlagMaskOs : UInt
 
-let progFlagMaskProc : UInt
+pub let progFlagMaskProc : UInt
 
-let progFlagRead : UInt
+pub let progFlagRead : UInt
 
-let progFlagWrite : UInt
+pub let progFlagWrite : UInt
 
-fn r_info(UInt, UInt) -> UInt64
+pub fn r_info(UInt, UInt) -> UInt64
 
-fn r_info32(UInt, UInt) -> UInt
+pub fn r_info32(UInt, UInt) -> UInt
 
-fn r_sym32(UInt) -> UInt
+pub fn r_sym32(UInt) -> UInt
 
-fn r_sym64(UInt64) -> UInt
+pub fn r_sym64(UInt64) -> UInt
 
-fn r_type32(UInt) -> UInt
+pub fn r_type32(UInt) -> UInt
 
-fn r_type64(UInt64) -> UInt
+pub fn r_type64(UInt64) -> UInt
 
-let sectionFlagAlloc : SectionFlag
+pub let sectionFlagAlloc : SectionFlag
 
-let sectionFlagCompressed : SectionFlag
+pub let sectionFlagCompressed : SectionFlag
 
-let sectionFlagExecInstr : SectionFlag
+pub let sectionFlagExecInstr : SectionFlag
 
-let sectionFlagGroup : SectionFlag
+pub let sectionFlagGroup : SectionFlag
 
-let sectionFlagInfoLink : SectionFlag
+pub let sectionFlagInfoLink : SectionFlag
 
-let sectionFlagLinkOrder : SectionFlag
+pub let sectionFlagLinkOrder : SectionFlag
 
-let sectionFlagMaskOs : SectionFlag
+pub let sectionFlagMaskOs : SectionFlag
 
-let sectionFlagMaskProc : SectionFlag
+pub let sectionFlagMaskProc : SectionFlag
 
-let sectionFlagMergeable : SectionFlag
+pub let sectionFlagMergeable : SectionFlag
 
-let sectionFlagOsNonConforming : SectionFlag
+pub let sectionFlagOsNonConforming : SectionFlag
 
-let sectionFlagStrings : SectionFlag
+pub let sectionFlagStrings : SectionFlag
 
-let sectionFlagTls : SectionFlag
+pub let sectionFlagTls : SectionFlag
 
-let sectionFlagWrite : SectionFlag
+pub let sectionFlagWrite : SectionFlag
 
-fn st_bind(Byte) -> SymBind
+pub fn st_bind(Byte) -> SymBind
 
-fn st_info(SymBind, SymType) -> Byte
+pub fn st_info(SymBind, SymType) -> Byte
 
-fn st_type(Byte) -> SymType
+pub fn st_type(Byte) -> SymType
 
-fn st_visibility(Byte) -> SymVis
+pub fn st_visibility(Byte) -> SymVis
 
 // Errors
 pub suberror FormatError {
@@ -190,73 +190,50 @@ pub struct Chdr32 {
   type_ : UInt
   size : UInt
   addralign : UInt
-}
-impl Show for Chdr32
-impl ToJson for Chdr32
+} derive(Show, ToJson)
 
 pub struct Chdr64 {
   type_ : UInt
   size : UInt64
   addralign : UInt64
-}
-impl Show for Chdr64
-impl ToJson for Chdr64
+} derive(Show, ToJson)
 
 pub(all) enum Class {
   None
   Class32
   Class64
-}
-fn Class::from_int(Int) -> Self
-fn Class::to_int(Self) -> Int
-impl Eq for Class
-impl Show for Class
-impl ToJson for Class
+} derive(Eq, Show, ToJson)
+pub fn Class::from_int(Int) -> Self
+pub fn Class::to_int(Self) -> Int
 
-pub(all) struct CompressionType(Int)
-#deprecated
-fn CompressionType::inner(Self) -> Int
-impl Default for CompressionType
-impl Eq for CompressionType
-impl Show for CompressionType
+pub(all) struct CompressionType(Int) derive(Default, Eq, Show)
 
 pub(all) enum Data {
   ELFDATANONE
   ELFDATA2LSB
   ELFDATA2MSB
-}
-fn Data::from_byte(Byte) -> Self
-fn Data::to_byte(Self) -> Byte
-impl Eq for Data
-impl Show for Data
-impl ToJson for Data
+} derive(Eq, Show, ToJson)
+pub fn Data::from_byte(Byte) -> Self
+pub fn Data::to_byte(Self) -> Byte
 
 pub struct Dyn32 {
   tag : Int
   val : UInt
-}
-impl Show for Dyn32
-impl ToJson for Dyn32
+} derive(Show, ToJson)
 
 pub struct Dyn64 {
   tag : Int64
   val : UInt64
-}
-impl Show for Dyn64
-impl ToJson for Dyn64
+} derive(Show, ToJson)
 
 pub(all) struct DynFlag(Int)
-#deprecated
-fn DynFlag::inner(Self) -> Int
-impl Add for DynFlag
-impl BitAnd for DynFlag
-impl BitOr for DynFlag
-impl Show for DynFlag
+pub impl Add for DynFlag
+pub impl BitAnd for DynFlag
+pub impl BitOr for DynFlag
+pub impl Show for DynFlag
 
 pub struct DynFlag1(UInt)
-#deprecated
-fn DynFlag1::inner(Self) -> UInt
-impl Show for DynFlag1
+pub impl Show for DynFlag1
 
 pub(all) enum DynTag {
   DT_NULL
@@ -388,43 +365,29 @@ pub(all) enum DynTag {
   DT_USED
   DT_FILTER
   DT_HIPROC
-}
-fn DynTag::from_int(Int) -> Self
-fn DynTag::to_int(Self) -> Int
-impl Eq for DynTag
-impl Show for DynTag
-impl ToJson for DynTag
+} derive(Eq, Show, ToJson)
+pub fn DynTag::from_int(Int) -> Self
+pub fn DynTag::to_int(Self) -> Int
 
 pub struct DynamicVersion {
   name : String
   index : UInt16
   flags : DynamicVersionFlag
   deps : Array[String]
-}
-impl Show for DynamicVersion
-impl ToJson for DynamicVersion
+} derive(Show, ToJson)
 
 pub struct DynamicVersionDep {
   flags : DynamicVersionFlag
   index : UInt16
   dep : String
-}
-impl Show for DynamicVersionDep
-impl ToJson for DynamicVersionDep
+} derive(Show, ToJson)
 
-pub(all) struct DynamicVersionFlag(UInt16)
-#deprecated
-fn DynamicVersionFlag::inner(Self) -> UInt16
-impl Eq for DynamicVersionFlag
-impl Show for DynamicVersionFlag
-impl ToJson for DynamicVersionFlag
+pub(all) struct DynamicVersionFlag(UInt16) derive(Eq, Show, ToJson)
 
 pub struct DynamicVersionNeed {
   name : String
   needs : Array[DynamicVersionDep]
-}
-impl Show for DynamicVersionNeed
-impl ToJson for DynamicVersionNeed
+} derive(Show, ToJson)
 
 pub struct File {
   file_header : FileHeader
@@ -432,25 +395,25 @@ pub struct File {
   mut progs : Array[Prog]
   // private fields
 }
-fn File::abi_version(Self) -> Byte
-fn File::byte_order(Self) -> @binary.ByteOrder
-fn File::class(Self) -> Class
-fn File::close(Self) -> Unit raise
-fn File::data(Self) -> Data
-fn File::dyn_string(Self, DynTag) -> Array[String] raise
-fn File::dynamic_symbols(Self) -> Array[Symbol] raise
-fn File::dynamic_version_needs(Self) -> Array[DynamicVersionNeed] raise
-fn File::dynamic_versions(Self) -> Array[DynamicVersion] raise
-fn File::entry(Self) -> UInt64
-fn File::imported_libraries(Self) -> Array[String] raise
-fn File::imported_symbols(Self) -> Array[ImportedSymbol] raise
-fn File::machine(Self) -> Machine
-fn File::osabi(Self) -> OSABI
-fn File::section(Self, String) -> Section?
-fn File::section_by_type(Self, SectionType) -> Section?
-fn File::symbols(Self) -> Array[Symbol] raise
-fn File::type_(Self) -> Type
-fn File::version(Self) -> Version
+pub fn File::abi_version(Self) -> Byte
+pub fn File::byte_order(Self) -> @binary.ByteOrder
+pub fn File::class(Self) -> Class
+pub fn File::close(Self) -> Unit raise
+pub fn File::data(Self) -> Data
+pub fn File::dyn_string(Self, DynTag) -> Array[String] raise
+pub fn File::dynamic_symbols(Self) -> Array[Symbol] raise
+pub fn File::dynamic_version_needs(Self) -> Array[DynamicVersionNeed] raise
+pub fn File::dynamic_versions(Self) -> Array[DynamicVersion] raise
+pub fn File::entry(Self) -> UInt64
+pub fn File::imported_libraries(Self) -> Array[String] raise
+pub fn File::imported_symbols(Self) -> Array[ImportedSymbol] raise
+pub fn File::machine(Self) -> Machine
+pub fn File::osabi(Self) -> OSABI
+pub fn File::section(Self, String) -> Section?
+pub fn File::section_by_type(Self, SectionType) -> Section?
+pub fn File::symbols(Self) -> Array[Symbol] raise
+pub fn File::type_(Self) -> Type
+pub fn File::version(Self) -> Version
 
 pub(all) struct FileHeader {
   class : Class
@@ -462,9 +425,7 @@ pub(all) struct FileHeader {
   mut type_ : Type
   mut machine : Machine
   mut entry : UInt64
-}
-impl Show for FileHeader
-impl ToJson for FileHeader
+} derive(Show, ToJson)
 
 pub struct Header32 {
   ident : FixedArray[Byte]
@@ -481,10 +442,7 @@ pub struct Header32 {
   shentsize : UInt
   shnum : UInt
   shstrndx : UInt
-}
-impl Default for Header32
-impl Show for Header32
-impl ToJson for Header32
+} derive(Default, Show, ToJson)
 
 pub struct Header64 {
   ident : @slice.Slice[Byte]
@@ -502,9 +460,9 @@ pub struct Header64 {
   shnum : UInt16
   shstrndx : UInt16
 }
-fn Header64::offsetof(Header64Field) -> Int
-fn Header64::sizeof(Header64Field) -> Int
-impl @binary.Readable for Header64
+pub fn Header64::offsetof(Header64Field) -> Int
+pub fn Header64::sizeof(Header64Field) -> Int
+pub impl @binary.Readable for Header64
 
 pub(all) enum Header64Field {
   Header64
@@ -528,9 +486,7 @@ pub struct ImportedSymbol {
   name : String
   version : String
   library : String
-}
-impl Show for ImportedSymbol
-impl ToJson for ImportedSymbol
+} derive(Show, ToJson)
 
 pub(all) enum Machine {
   EM_NONE
@@ -720,12 +676,9 @@ pub(all) enum Machine {
   EM_MIPS_RS4_BE
   EM_ALPHA_STD
   EM_ALPHA
-}
-fn Machine::from_uint16(UInt16) -> Self
-fn Machine::to_int(Self) -> Int
-impl Eq for Machine
-impl Show for Machine
-impl ToJson for Machine
+} derive(Eq, Show, ToJson)
+pub fn Machine::from_uint16(UInt16) -> Self
+pub fn Machine::to_int(Self) -> Int
 
 pub(all) enum OSABI {
   None
@@ -748,21 +701,17 @@ pub(all) enum OSABI {
   CloudABI
   ARM
   Standalone
-}
-fn OSABI::from_byte(Byte) -> Self
-fn OSABI::to_byte(Self) -> Byte
-impl Default for OSABI
-impl Eq for OSABI
-impl Show for OSABI
-impl ToJson for OSABI
+} derive(Eq, Show, ToJson)
+pub fn OSABI::from_byte(Byte) -> Self
+pub fn OSABI::to_byte(Self) -> Byte
+pub impl Default for OSABI
 
 pub struct Prog {
   mut prog_header : ProgHeader
   mut reader_at : &@io.ReaderAt?
   // private fields
-}
-fn Prog::open(Self) -> &@io.ReadSeeker raise
-impl Default for Prog
+} derive(Default)
+pub fn Prog::open(Self) -> &@io.ReadSeeker raise
 
 pub struct Prog32 {
   type_ : UInt
@@ -773,9 +722,7 @@ pub struct Prog32 {
   memsz : UInt
   flags : UInt
   align : UInt
-}
-impl Show for Prog32
-impl ToJson for Prog32
+} derive(Show, ToJson)
 
 pub struct Prog64 {
   type_ : UInt
@@ -786,18 +733,14 @@ pub struct Prog64 {
   filesz : UInt64
   memsz : UInt64
   align : UInt64
-}
-impl Show for Prog64
-impl ToJson for Prog64
+} derive(Show, ToJson)
 
 pub(all) struct ProgFlag(UInt)
-#deprecated
-fn ProgFlag::inner(Self) -> UInt
-impl BitAnd for ProgFlag
-impl BitOr for ProgFlag
-impl Default for ProgFlag
-impl Show for ProgFlag
-impl ToJson for ProgFlag
+pub impl BitAnd for ProgFlag
+pub impl BitOr for ProgFlag
+pub impl Default for ProgFlag
+pub impl Show for ProgFlag
+pub impl ToJson for ProgFlag
 
 pub struct ProgHeader {
   type_ : ProgType
@@ -808,10 +751,7 @@ pub struct ProgHeader {
   filesz : UInt64
   memsz : UInt64
   align : UInt64
-}
-impl Default for ProgHeader
-impl Show for ProgHeader
-impl ToJson for ProgHeader
+} derive(Default, Show, ToJson)
 
 pub(all) enum ProgType {
   PT_NULL
@@ -849,13 +789,10 @@ pub(all) enum ProgType {
   PT_RISCV_ATTRIBUTES
   PT_S390_PGSTE
   PT_HIPROC
-}
-fn ProgType::from_int(Int) -> Self
-fn ProgType::to_int(Self) -> Int
-impl Default for ProgType
-impl Eq for ProgType
-impl Show for ProgType
-impl ToJson for ProgType
+} derive(Eq, Show, ToJson)
+pub fn ProgType::from_int(Int) -> Self
+pub fn ProgType::to_int(Self) -> Int
+pub impl Default for ProgType
 
 pub(all) enum R_386 {
   R_386_NONE
@@ -900,12 +837,9 @@ pub(all) enum R_386 {
   R_386_TLS_DESC
   R_386_IRELATIVE
   R_386_GOT32X
-}
-fn R_386::from_int(Int) -> Self
-fn R_386::to_int(Self) -> Int
-impl Eq for R_386
-impl Show for R_386
-impl ToJson for R_386
+} derive(Eq, Show, ToJson)
+pub fn R_386::from_int(Int) -> Self
+pub fn R_386::to_int(Self) -> Int
 
 pub(all) enum R_AARCH64 {
   R_AARCH64_NONE
@@ -1041,10 +975,7 @@ pub(all) enum R_AARCH64 {
   R_AARCH64_TLS_TPREL64
   R_AARCH64_TLSDESC
   R_AARCH64_IRELATIVE
-}
-impl Eq for R_AARCH64
-impl Show for R_AARCH64
-impl ToJson for R_AARCH64
+} derive(Eq, Show, ToJson)
 
 pub(all) enum R_ALPHA {
   R_ALPHA_NONE
@@ -1075,10 +1006,7 @@ pub(all) enum R_ALPHA {
   R_ALPHA_GLOB_DAT
   R_ALPHA_JMP_SLOT
   R_ALPHA_RELATIVE
-}
-impl Eq for R_ALPHA
-impl Show for R_ALPHA
-impl ToJson for R_ALPHA
+} derive(Eq, Show, ToJson)
 
 pub(all) enum R_ARM {
   R_ARM_NONE
@@ -1225,10 +1153,7 @@ pub(all) enum R_ARM {
   R_ARM_RABS32
   R_ARM_RPC24
   R_ARM_RBASE
-}
-impl Eq for R_ARM
-impl Show for R_ARM
-impl ToJson for R_ARM
+} derive(Eq, Show, ToJson)
 
 pub(all) enum R_MIPS {
   R_MIPS_NONE
@@ -1280,12 +1205,9 @@ pub(all) enum R_MIPS {
   R_MIPS_TLS_TPREL_HI16
   R_MIPS_TLS_TPREL_LO16
   R_MIPS_PC32
-}
-fn R_MIPS::from_int(Int) -> Self
-fn R_MIPS::to_int(Self) -> Int
-impl Eq for R_MIPS
-impl Show for R_MIPS
-impl ToJson for R_MIPS
+} derive(Eq, Show, ToJson)
+pub fn R_MIPS::from_int(Int) -> Self
+pub fn R_MIPS::to_int(Self) -> Int
 
 pub(all) enum R_X86_64 {
   R_X86_64_NONE
@@ -1331,51 +1253,39 @@ pub(all) enum R_X86_64 {
   R_X86_64_PLT32_BND
   R_X86_64_GOTPCRELX
   R_X86_64_REX_GOTPCRELX
-}
-fn R_X86_64::from_int(Int) -> Self
-fn R_X86_64::to_int(Self) -> Int
-impl Eq for R_X86_64
-impl Show for R_X86_64
-impl ToJson for R_X86_64
+} derive(Eq, Show, ToJson)
+pub fn R_X86_64::from_int(Int) -> Self
+pub fn R_X86_64::to_int(Self) -> Int
 
 pub struct Rel32 {
   off : UInt
   info : UInt
-}
-impl Show for Rel32
-impl ToJson for Rel32
+} derive(Show, ToJson)
 
 pub struct Rel64 {
   off : UInt64
   info : UInt64
-}
-impl Show for Rel64
-impl ToJson for Rel64
+} derive(Show, ToJson)
 
 pub struct Rela32 {
   off : UInt
   info : UInt
   addend : Int
-}
-impl Show for Rela32
-impl ToJson for Rela32
+} derive(Show, ToJson)
 
 pub struct Rela64 {
   off : UInt64
   info : UInt64
   addend : Int64
-}
-impl Show for Rela64
-impl ToJson for Rela64
+} derive(Show, ToJson)
 
 pub struct Section {
   mut section_header : SectionHeader
   mut reader_at : &@io.ReaderAt?
   // private fields
-}
-fn Section::data(Self) -> @slice.Slice[Byte] raise
-fn Section::open(Self) -> &@io.ReadSeeker raise
-impl Default for Section
+} derive(Default)
+pub fn Section::data(Self) -> @slice.Slice[Byte] raise
+pub fn Section::open(Self) -> &@io.ReadSeeker raise
 
 pub struct Section32 {
   name : UInt
@@ -1388,9 +1298,7 @@ pub struct Section32 {
   info : UInt
   addralign : UInt
   entsize : UInt
-}
-impl Show for Section32
-impl ToJson for Section32
+} derive(Show, ToJson)
 
 pub struct Section64 {
   name : UInt
@@ -1403,20 +1311,16 @@ pub struct Section64 {
   info : UInt
   addralign : UInt64
   entsize : UInt64
-}
-impl Show for Section64
-impl ToJson for Section64
+} derive(Show, ToJson)
 
 pub(all) struct SectionFlag(UInt)
-#deprecated
-fn SectionFlag::inner(Self) -> UInt
-impl Add for SectionFlag
-impl BitAnd for SectionFlag
-impl BitOr for SectionFlag
-impl Default for SectionFlag
-impl Eq for SectionFlag
-impl Show for SectionFlag
-impl ToJson for SectionFlag
+pub impl Add for SectionFlag
+pub impl BitAnd for SectionFlag
+pub impl BitOr for SectionFlag
+pub impl Default for SectionFlag
+pub impl Eq for SectionFlag
+pub impl Show for SectionFlag
+pub impl ToJson for SectionFlag
 
 pub struct SectionHeader {
   mut name : String
@@ -1430,10 +1334,7 @@ pub struct SectionHeader {
   mut addralign : UInt64
   entsize : UInt64
   file_size : UInt64
-}
-impl Default for SectionHeader
-impl Show for SectionHeader
-impl ToJson for SectionHeader
+} derive(Default, Show, ToJson)
 
 pub(all) enum SectionIndex {
   SHN_UNDEF
@@ -1446,12 +1347,9 @@ pub(all) enum SectionIndex {
   SHN_COMMON
   SHN_XINDEX
   SHN_HIRESERVE
-}
-fn SectionIndex::from_int(Int) -> Self
-fn SectionIndex::to_int(Self) -> Int
-impl Eq for SectionIndex
-impl Show for SectionIndex
-impl ToJson for SectionIndex
+} derive(Eq, Show, ToJson)
+pub fn SectionIndex::from_int(Int) -> Self
+pub fn SectionIndex::to_int(Self) -> Int
 
 pub(all) enum SectionType {
   SectionType(UInt)
@@ -1486,13 +1384,10 @@ pub(all) enum SectionType {
   HiProc
   LoUser
   HiUser
-}
-fn SectionType::from_uint(UInt) -> Self
-fn SectionType::to_uint(Self) -> UInt
-impl Default for SectionType
-impl Eq for SectionType
-impl Show for SectionType
-impl ToJson for SectionType
+} derive(Eq, Show, ToJson)
+pub fn SectionType::from_uint(UInt) -> Self
+pub fn SectionType::to_uint(Self) -> UInt
+pub impl Default for SectionType
 
 pub struct Sym32 {
   name : UInt
@@ -1501,9 +1396,7 @@ pub struct Sym32 {
   info : Byte
   other : Byte
   shndx : UInt
-}
-impl Show for Sym32
-impl ToJson for Sym32
+} derive(Show, ToJson)
 
 pub struct Sym64 {
   name : UInt
@@ -1512,9 +1405,7 @@ pub struct Sym64 {
   shndx : UInt
   value : UInt64
   size : UInt64
-}
-impl Show for Sym64
-impl ToJson for Sym64
+} derive(Show, ToJson)
 
 pub(all) enum SymBind {
   STB_LOCAL
@@ -1524,12 +1415,9 @@ pub(all) enum SymBind {
   STB_HIOS
   STB_LOPROC
   STB_HIPROC
-}
-fn SymBind::from_int(Int) -> Self
-fn SymBind::to_int(Self) -> Int
-impl Eq for SymBind
-impl Show for SymBind
-impl ToJson for SymBind
+} derive(Eq, Show, ToJson)
+pub fn SymBind::from_int(Int) -> Self
+pub fn SymBind::to_int(Self) -> Int
 
 pub(all) enum SymType {
   STT_NOTYPE
@@ -1546,24 +1434,18 @@ pub(all) enum SymType {
   STT_RELC
   STT_SRELC
   STT_GNU_IFUNC
-}
-fn SymType::from_int(Int) -> Self
-fn SymType::to_int(Self) -> Int
-impl Eq for SymType
-impl Show for SymType
-impl ToJson for SymType
+} derive(Eq, Show, ToJson)
+pub fn SymType::from_int(Int) -> Self
+pub fn SymType::to_int(Self) -> Int
 
 pub(all) enum SymVis {
   STV_DEFAULT
   STV_INTERNAL
   STV_HIDDEN
   STV_PROTECTED
-}
-fn SymVis::from_int(Int) -> Self
-fn SymVis::to_int(Self) -> Int
-impl Eq for SymVis
-impl Show for SymVis
-impl ToJson for SymVis
+} derive(Eq, Show, ToJson)
+pub fn SymVis::from_int(Int) -> Self
+pub fn SymVis::to_int(Self) -> Int
 
 pub struct Symbol {
   name : String
@@ -1576,9 +1458,7 @@ pub struct Symbol {
   size : UInt64
   mut version : String
   mut library : String
-}
-impl Show for Symbol
-impl ToJson for Symbol
+} derive(Show, ToJson)
 
 pub(all) enum Type {
   None
@@ -1590,32 +1470,21 @@ pub(all) enum Type {
   HiOs
   LoProc
   HiProc
-}
-fn Type::from_uint16(UInt16) -> Self
-fn Type::to_uint16(Self) -> UInt16
-impl Eq for Type
-impl Show for Type
-impl ToJson for Type
+} derive(Eq, Show, ToJson)
+pub fn Type::from_uint16(UInt16) -> Self
+pub fn Type::to_uint16(Self) -> UInt16
 
 pub(all) enum Version {
   EV_NONE
   EV_CURRENT
-}
-fn Version::from_byte(Byte) -> Self
-fn Version::to_byte(Self) -> Byte
-impl Eq for Version
-impl Show for Version
-impl ToJson for Version
+} derive(Eq, Show, ToJson)
+pub fn Version::from_byte(Byte) -> Self
+pub fn Version::to_byte(Self) -> Byte
 
-pub struct VersionIndex(UInt16)
-fn VersionIndex::index(Self) -> UInt16
-#deprecated
-fn VersionIndex::inner(Self) -> UInt16
-fn VersionIndex::is_hidden(Self) -> Bool
-fn VersionIndex::new(UInt16) -> Self
-impl Eq for VersionIndex
-impl Show for VersionIndex
-impl ToJson for VersionIndex
+pub struct VersionIndex(UInt16) derive(Eq, Show, ToJson)
+pub fn VersionIndex::index(Self) -> UInt16
+pub fn VersionIndex::is_hidden(Self) -> Bool
+pub fn VersionIndex::new(UInt16) -> Self
 
 // Type aliases
 

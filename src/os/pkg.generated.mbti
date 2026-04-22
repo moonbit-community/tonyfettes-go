@@ -1,43 +1,44 @@
 // Generated using `moon info`, DON'T EDIT IT
 package "tonyfettes/go/os"
 
-import(
-  "tonyfettes/go/io/fs"
-  "tonyfettes/go/slice"
-)
+import {
+  "tonyfettes/go/io",
+  "tonyfettes/go/io/fs",
+  "tonyfettes/go/slice",
+}
 
 // Values
-const O_APPEND : Int = 0x4
+pub const O_APPEND : Int = 0x4
 
-const O_CREATE : Int = 0x8
+pub const O_CREATE : Int = 0x8
 
-const O_EXCL : Int = 0x10
+pub const O_EXCL : Int = 0x10
 
-const O_RDONLY : Int = 0x0
+pub const O_RDONLY : Int = 0x0
 
-const O_RDWR : Int = 0x2
+pub const O_RDWR : Int = 0x2
 
-const O_SYNC : Int = 0x20
+pub const O_SYNC : Int = 0x20
 
-const O_TRUNC : Int = 0x40
+pub const O_TRUNC : Int = 0x40
 
-const O_WRONLY : Int = 0x1
+pub const O_WRONLY : Int = 0x1
 
-fn create_temp(String, String) -> File raise
+pub fn create_temp(String, String) -> File raise
 
-fn getenv(String) -> String
+pub fn getenv(String) -> String
 
-fn is_exist(Error) -> Bool
+pub fn is_exist(Error) -> Bool
 
-fn is_path_separator(Char) -> Bool
+pub fn is_path_separator(Char) -> Bool
 
-fn join_path(String, StringView) -> String
+pub fn join_path(String, StringView) -> String
 
-fn open(String) -> File raise
+pub fn open(String) -> File raise
 
-fn open_file(String, Int, @fs.FileMode) -> File raise
+pub fn open_file(String, Int, @fs.FileMode) -> File raise
 
-fn temp_dir() -> String
+pub fn temp_dir() -> String
 
 // Errors
 pub(all) suberror Closed
@@ -56,12 +57,12 @@ pub(all) suberror Permission
 
 // Types and methods
 type File
-impl @tonyfettes/go/io.Closer for File
-impl @tonyfettes/go/io.Reader for File
-impl @tonyfettes/go/io.ReaderAt for File
+pub impl @io.Closer for File
+pub impl @io.Reader for File
+pub impl @io.ReaderAt for File
 
 // Type aliases
-pub typealias @fs.FileMode as FileMode
+pub using @fs {type FileMode}
 
 // Traits
 

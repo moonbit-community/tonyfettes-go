@@ -1,56 +1,52 @@
 // Generated using `moon info`, DON'T EDIT IT
 package "tonyfettes/go/bufio"
 
-import(
-  "tonyfettes/go/io"
-  "tonyfettes/go/slice"
-)
+import {
+  "tonyfettes/go/io",
+  "tonyfettes/go/slice",
+}
 
 // Values
-fn new_read_writer(Reader, Writer) -> ReadWriter
+pub fn new_read_writer(Reader, Writer) -> ReadWriter
 
-fn new_reader(&@io.Reader) -> Reader
+pub fn new_reader(&@io.Reader) -> Reader
 
-fn new_reader_size(&@io.Reader, Int) -> Reader
+pub fn new_reader_size(&@io.Reader, Int) -> Reader
 
-fn new_scanner(&@io.Reader) -> Scanner
+pub fn new_scanner(&@io.Reader) -> Scanner
 
-fn new_writer(&@io.Writer) -> Writer
+pub fn new_writer(&@io.Writer) -> Writer
 
-fn new_writer_size(&@io.Writer, Int) -> Writer
+pub fn new_writer_size(&@io.Writer, Int) -> Writer
 
-fn scan_bytes(Array[Byte], Bool) -> (Int, Array[Byte]?, Unit)
+pub fn scan_bytes(Array[Byte], Bool) -> (Int, Array[Byte]?, Unit)
 
-fn scan_lines(@slice.Slice[Byte], Bool) -> (Int, @slice.Slice[Byte]?)
+pub fn scan_lines(@slice.Slice[Byte], Bool) -> (Int, @slice.Slice[Byte]?)
 
-fn scan_runes(Array[Byte], Bool) -> (Int, Array[Byte]?, Unit)
+pub fn scan_runes(Array[Byte], Bool) -> (Int, Array[Byte]?, Unit)
 
-fn scan_words(@slice.Slice[Byte], Bool) -> (Int, @slice.Slice[Byte]?)
+pub fn scan_words(@slice.Slice[Byte], Bool) -> (Int, @slice.Slice[Byte]?)
 
 // Errors
 pub(all) suberror AdvanceTooFar
 
 pub(all) suberror BadReadCount
 
-pub(all) suberror BufferFull
-impl Show for BufferFull
-impl ToJson for BufferFull
+pub(all) suberror BufferFull derive(ToJson)
+pub impl Show for BufferFull
 
 pub(all) suberror FinalToken
 
-pub(all) suberror InvalidUnreadByte
-impl Show for InvalidUnreadByte
-impl ToJson for InvalidUnreadByte
+pub(all) suberror InvalidUnreadByte derive(ToJson)
+pub impl Show for InvalidUnreadByte
 
-pub(all) suberror InvalidUnreadRune
-impl Show for InvalidUnreadRune
-impl ToJson for InvalidUnreadRune
+pub(all) suberror InvalidUnreadRune derive(ToJson)
+pub impl Show for InvalidUnreadRune
 
 pub(all) suberror NegativeAdvance
 
-pub(all) suberror NegativeCount
-impl Show for NegativeCount
-impl ToJson for NegativeCount
+pub(all) suberror NegativeCount derive(ToJson)
+pub impl Show for NegativeCount
 
 pub(all) suberror TooLong
 
@@ -59,44 +55,44 @@ pub struct ReadWriter {
   reader : Reader
   writer : Writer
 }
-impl @io.ReadWriter for ReadWriter
-impl @io.Reader for ReadWriter
-impl @io.Writer for ReadWriter
+pub impl @io.ReadWriter for ReadWriter
+pub impl @io.Reader for ReadWriter
+pub impl @io.Writer for ReadWriter
 
 type Reader
-fn Reader::buffered(Self) -> Int
-fn Reader::discard(Self, Int) -> Int raise
-fn Reader::peek(Self, Int) -> @slice.Slice[Byte] raise
-fn Reader::read_bytes(Self, Byte) -> @slice.Slice[Byte] raise
-fn Reader::read_line(Self) -> @slice.Slice[Byte] raise
-fn Reader::read_rune(Self) -> (Char, Int) raise
-fn Reader::read_slice(Self, Byte) -> @slice.Slice[Byte] raise
-fn Reader::read_string(Self, Byte) -> String raise
-fn Reader::reset(Self, &@io.Reader) -> Unit
-fn Reader::size(Self) -> Int
-fn Reader::unread_byte(Self) -> Unit raise InvalidUnreadByte
-fn Reader::unread_rune(Self) -> Unit raise InvalidUnreadRune
-impl @io.ByteReader for Reader
-impl @io.Reader for Reader
-impl @io.WriterTo for Reader
+pub fn Reader::buffered(Self) -> Int
+pub fn Reader::discard(Self, Int) -> Int raise
+pub fn Reader::peek(Self, Int) -> @slice.Slice[Byte] raise
+pub fn Reader::read_bytes(Self, Byte) -> @slice.Slice[Byte] raise
+pub fn Reader::read_line(Self) -> @slice.Slice[Byte] raise
+pub fn Reader::read_rune(Self) -> (Char, Int) raise
+pub fn Reader::read_slice(Self, Byte) -> @slice.Slice[Byte] raise
+pub fn Reader::read_string(Self, Byte) -> String raise
+pub fn Reader::reset(Self, &@io.Reader) -> Unit
+pub fn Reader::size(Self) -> Int
+pub fn Reader::unread_byte(Self) -> Unit raise InvalidUnreadByte
+pub fn Reader::unread_rune(Self) -> Unit raise InvalidUnreadRune
+pub impl @io.ByteReader for Reader
+pub impl @io.Reader for Reader
+pub impl @io.WriterTo for Reader
 
 type Scanner
-fn Scanner::buffer(Self, FixedArray[Byte], Int) -> Unit
-fn Scanner::bytes(Self) -> @slice.Slice[Byte]
-fn Scanner::err(Self) -> Bool
-fn Scanner::scan(Self) -> Bool
-fn Scanner::split(Self, (@slice.Slice[Byte], Bool) -> (Int, @slice.Slice[Byte]?)) -> Unit
-fn Scanner::text(Self) -> String raise
+pub fn Scanner::buffer(Self, FixedArray[Byte], Int) -> Unit
+pub fn Scanner::bytes(Self) -> @slice.Slice[Byte]
+pub fn Scanner::err(Self) -> Bool
+pub fn Scanner::scan(Self) -> Bool
+pub fn Scanner::split(Self, (@slice.Slice[Byte], Bool) -> (Int, @slice.Slice[Byte]?)) -> Unit
+pub fn Scanner::text(Self) -> String raise
 
 type Writer
-fn Writer::available(Self) -> Int
-fn Writer::buffered(Self) -> Int
-fn Writer::flush(Self) -> Unit raise
-fn Writer::reset(Self, &@io.Writer) -> Unit
-fn Writer::size(Self) -> Int
-impl @io.ByteWriter for Writer
-impl @io.StringWriter for Writer
-impl @io.Writer for Writer
+pub fn Writer::available(Self) -> Int
+pub fn Writer::buffered(Self) -> Int
+pub fn Writer::flush(Self) -> Unit raise
+pub fn Writer::reset(Self, &@io.Writer) -> Unit
+pub fn Writer::size(Self) -> Int
+pub impl @io.ByteWriter for Writer
+pub impl @io.StringWriter for Writer
+pub impl @io.Writer for Writer
 
 // Type aliases
 

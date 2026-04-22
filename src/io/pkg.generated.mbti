@@ -1,29 +1,29 @@
 // Generated using `moon info`, DON'T EDIT IT
 package "tonyfettes/go/io"
 
-import(
-  "moonbitlang/core/buffer"
-  "tonyfettes/go/slice"
-)
+import {
+  "moonbitlang/core/buffer",
+  "tonyfettes/go/slice",
+}
 
 // Values
-fn[R : Reader, W : Writer] copy(W, R) -> Int64 raise
+pub fn[R : Reader, W : Writer] copy(W, R) -> Int64 raise
 
-fn[Writer : Writer, Reader : Reader] copy_buffer(Writer, Reader, @slice.Slice[Byte]?) -> Int64 raise
+pub fn[Writer : Writer, Reader : Reader] copy_buffer(Writer, Reader, @slice.Slice[Byte]?) -> Int64 raise
 
-fn[R : Reader, W : Writer] copy_n(W, R, Int64) -> Int64 raise
+pub fn[R : Reader, W : Writer] copy_n(W, R, Int64) -> Int64 raise
 
-fn limit_reader(&Reader, Int64) -> LimitedReader
+pub fn limit_reader(&Reader, Int64) -> LimitedReader
 
-fn new_section_reader(&ReaderAt, Int64, Int64) -> SectionReader
+pub fn new_section_reader(&ReaderAt, Int64, Int64) -> SectionReader
 
-fn[Reader : Reader] read_all(Reader) -> @slice.Slice[Byte] raise
+pub fn[Reader : Reader] read_all(Reader) -> @slice.Slice[Byte] raise
 
-fn[R : Reader] read_at_least(R, @slice.Slice[Byte], Int) -> Int raise
+pub fn[R : Reader] read_at_least(R, @slice.Slice[Byte], Int) -> Int raise
 
-fn[R : Reader] read_full(R, @slice.Slice[Byte]) -> Int raise
+pub fn[R : Reader] read_full(R, @slice.Slice[Byte]) -> Int raise
 
-fn[StringWriter : StringWriter] write_string(StringWriter, String) -> Int raise
+pub fn[StringWriter : StringWriter] write_string(StringWriter, String) -> Int raise
 
 // Errors
 pub(all) suberror EOF
@@ -42,14 +42,14 @@ pub(all) suberror UnexpectedEof
 
 // Types and methods
 type LimitedReader
-impl Reader for LimitedReader
+pub impl Reader for LimitedReader
 
 type SectionReader
-fn SectionReader::new(&ReaderAt, Int64, Int64) -> Self
-fn SectionReader::size(Self) -> Int64
-impl Reader for SectionReader
-impl ReaderAt for SectionReader
-impl Seeker for SectionReader
+pub fn SectionReader::new(&ReaderAt, Int64, Int64) -> Self
+pub fn SectionReader::size(Self) -> Int64
+pub impl Reader for SectionReader
+pub impl ReaderAt for SectionReader
+pub impl Seeker for SectionReader
 
 pub(all) enum SeekWhence {
   SeekStart
@@ -135,7 +135,7 @@ pub(open) trait WriteSeeker : Writer + Seeker {
 pub(open) trait Writer {
   write(Self, @slice.Slice[Byte]) -> Int raise
 }
-impl Writer for @buffer.Buffer
+pub impl Writer for @buffer.Buffer
 
 pub(open) trait WriterAt {
   write_at(Self, @slice.Slice[Byte], Int64) -> Int raise
