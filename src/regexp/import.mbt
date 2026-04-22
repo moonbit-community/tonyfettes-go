@@ -1,5 +1,5 @@
 ///|
-fnalias @builtin.uint
+using @builtin {uint}
 
 ///|
-fnalias @builtin.len
+using @builtin {len}

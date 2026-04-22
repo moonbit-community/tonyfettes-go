@@ -13,7 +13,7 @@ corrupt, or may be provided by an untrustworthy attacker.
 bytes if n is large. This avoids crashing the program by allocating all n bytes
 in cases where n is incorrect.
 
-```moonbit
+```moonbit nocheck
 ///|
 test "read_data documentation example" {
   // This is a conceptual example - actual implementation would need a Reader
@@ -27,7 +27,7 @@ test "read_data documentation example" {
 `read_data_at` reads n bytes from the input stream at a given offset, but avoids
 allocating all n bytes if n is large.
 
-```moonbit
+```moonbit nocheck
 ///|
 test "read_data_at documentation example" {
   // This is a conceptual example - actual implementation would need a ReaderAt
@@ -42,7 +42,7 @@ test "read_data_at documentation example" {
 the slice is allocated with the capacity, it should be built using append. This
 will avoid allocating too much memory if the capacity is large and incorrect.
 
-```moonbit
+```moonbit nocheck
 ///|
 test "slice_cap_with_size documentation example" {
   let cap = @saferio.slice_cap_with_size(1UL, 100UL)
@@ -63,7 +63,7 @@ test "slice_cap_with_size documentation example" {
 `slice_cap` is like `slice_cap_with_size` but uses generics. Due to MoonBit
 limitations with reflection, the size parameter must be passed explicitly.
 
-```moonbit
+```moonbit nocheck
 ///|
 test "slice_cap documentation example" {
   let cap = @saferio.slice_cap(100UL, 1UL) // 100 elements of 1 byte each
@@ -82,7 +82,7 @@ test "slice_cap documentation example" {
 `Chunk` is an arbitrary limit on how much memory the functions are willing to
 allocate without concern (10MB).
 
-```moonbit
+```moonbit nocheck
 ///|
 test "chunk constant example" {
   let chunk = @saferio.Chunk

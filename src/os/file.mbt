@@ -63,11 +63,15 @@ pub fn open_file(name : String, flag : Int, perm : FileMode) -> File raise {
     @uv.OpenFlags::read_only()
   }
   let pfd = uv
-  .unwrap_or_error()
-  .fs_open_sync(@utf8.encode(name), flags, perm.to_uint().reinterpret_as_int()) catch {
-    ENOENT => raise NotExist
-    err => raise err
-  }
+    .unwrap_or_error()
+    .fs_open_sync(
+      @utf8.encode(name),
+      flags,
+      perm.to_uint().reinterpret_as_int(),
+    ) catch {
+      ENOENT => raise NotExist
+      err => raise err
+    }
   return File::{ pfd, name, append_mode: (flag & O_APPEND) != 0 }
 }
 
@@ -112,10 +116,10 @@ pub impl @io.ReaderAt for File with read_at(
   let mut off = off
   while b.length() > 0 {
     let m = uv
-    .unwrap_or_error()
-    .fs_read_sync(self.pfd, [b.bytesview()], offset=off) catch {
-      err => raise self.wrap_error("read", err)
-    }
+      .unwrap_or_error()
+      .fs_read_sync(self.pfd, [b.bytesview()], offset=off) catch {
+        err => raise self.wrap_error("read", err)
+      }
     n += m
     b = b[m:]
     off += m.to_int64()

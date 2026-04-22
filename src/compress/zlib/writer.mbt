@@ -235,7 +235,11 @@ pub impl @io.Closer for Writer with close(self) {
 }
 
 ///|
-priv suberror InvalidCompressionLevel Int
+priv suberror InvalidCompressionLevel {
+  InvalidCompressionLevel(Int)
+}
 
 ///|
-priv suberror InternalError String
+priv suberror InternalError {
+  InternalError(String)
+}

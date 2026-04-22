@@ -302,7 +302,9 @@ fn Compressor::new(w : &@io.Writer) -> Compressor {
 }
 
 ///|
-priv suberror InvalidCompressionLevel Int
+priv suberror InvalidCompressionLevel {
+  InvalidCompressionLevel(Int)
+}
 
 ///|
 /// Initialize compressor with writer and level

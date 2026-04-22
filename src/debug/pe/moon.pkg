@@ -1,0 +1,12 @@
+import {
+  "tonyfettes/go/io",
+  "tonyfettes/go/slice",
+  "tonyfettes/go/encoding/binary",
+  "tonyfettes/go/os",
+  "tonyfettes/go/internal/saferio",
+  "tonyfettes/go/builtin",
+  "tonyfettes/go/compress/zlib",
+  "tonyfettes/go/debug/dwarf",
+  "tonyfettes/go/bytes",
+  "tonyfettes/go/unicode/utf8",
+}

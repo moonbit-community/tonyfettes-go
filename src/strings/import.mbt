@@ -1,11 +1,11 @@
 ///|
-fnalias @builtin.int
+using @builtin {int}
 
 ///|
-fnalias @builtin.int64
+using @builtin {int64}
 
 ///|
-fnalias @builtin.len
+using @builtin {len}
 
 ///|
-typealias @builtin.Rune
+using @builtin {type Rune}

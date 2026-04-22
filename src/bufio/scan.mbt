@@ -43,7 +43,7 @@ pub(all) suberror FinalToken
 /// The function is never called with an empty data slice unless at_eof
 /// is true. If at_eof is true, however, data may be non-empty and,
 /// as always, holds unprocessed text.
-typealias (@slice.Slice[Byte], Bool) -> (Int, @slice.Slice[Byte]?) as SplitFunc
+type SplitFunc = (@slice.Slice[Byte], Bool) -> (Int, @slice.Slice[Byte]?)
 
 ///|
 let max_scan_token_size : Int = 64 * 1024
@@ -140,7 +140,7 @@ pub fn Scanner::scan(self : Scanner) -> Bool {
   }
   self.scan_called = true
   // Loop until we have a token.
-  for {
+  for ;; {
     // See if we can get a token with what we already have.
     // If we've run out of data but have an error, give the split function
     // a chance to recover any remaining, possibly empty token.

@@ -1,0 +1,9 @@
+import {
+  "tonyfettes/go/io/fs",
+  "tonyfettes/go/internal/oserror",
+  "tonyfettes/go/io",
+  "tonyfettes/go/slice",
+  "tonyfettes/uv",
+  "tonyfettes/go/unicode/utf8",
+  "tonyfettes/go/runtime",
+}

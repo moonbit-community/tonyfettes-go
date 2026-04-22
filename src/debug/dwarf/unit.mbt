@@ -103,7 +103,9 @@ fn Unit::loc_lists_base(self : Unit) -> UInt64 {
 }
 
 ///|
-priv suberror UnsupportedDwarfVersion UInt
+priv suberror UnsupportedDwarfVersion {
+  UnsupportedDwarfVersion(UInt)
+}
 
 ///|
 /// Parse compilation units from the .debug_info section

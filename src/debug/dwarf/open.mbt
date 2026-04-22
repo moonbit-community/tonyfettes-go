@@ -44,7 +44,9 @@ struct Data {
 }
 
 ///|
-priv suberror SegmentSelectorError String
+priv suberror SegmentSelectorError {
+  SegmentSelectorError(String)
+}
 
 ///|
 pub impl Default for Data with default() -> Data {

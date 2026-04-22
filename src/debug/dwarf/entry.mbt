@@ -36,7 +36,7 @@ impl Default for AField with default() -> AField {
 
 ///|
 /// Abbreviation table - maps abbreviation codes to abbreviation entries
-typealias Map[UInt, Abbrev] as AbbrevTable
+type AbbrevTable = Map[UInt, Abbrev]
 
 ///|
 /// parse_abbrev returns the abbreviation table that starts at byte off
@@ -74,7 +74,6 @@ fn Data::parse_abbrev(d : Data, off : UInt64, vers : Int) -> AbbrevTable raise {
       }
       if fmt == FormImplicitConst.to_uint().to_uint64() {
         let _ = b1.int()
-
       }
       n += 1
     }

@@ -1,14 +1,14 @@
 ///|
-fnalias @builtin.int64
+using @builtin {int64}
 
 ///|
-fnalias @builtin.uint64
+using @builtin {uint64}
 
 ///|
-fnalias @builtin.uint as uint32
+using @builtin {uint as uint32}
 
 ///|
-fnalias @builtin.int
+using @builtin {int}
 
 ///|
-fnalias @builtin.len
+using @builtin {len}

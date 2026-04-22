@@ -28,7 +28,7 @@ pub fn create_temp(dir : String, pattern : String) -> File raise {
   }
   let prefix = join_path(dir, prefix)
   let mut try_ = 0
-  for {
+  for ;; {
     let name : String = [..prefix, ..next_random(), ..suffix]
     let f = open_file(name, O_RDWR | O_CREATE | O_EXCL, 0o600) catch {
       err => {

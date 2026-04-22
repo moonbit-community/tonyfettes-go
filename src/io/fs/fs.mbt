@@ -1,17 +1,17 @@
 ///|
-pub typealias @oserror.Invalid
+pub using @oserror {type Invalid}
 
 ///|
-pub typealias @oserror.Permission
+pub using @oserror {type Permission}
 
 ///|
-pub typealias @oserror.Exist
+pub using @oserror {type Exist}
 
 ///|
-pub typealias @oserror.NotExist
+pub using @oserror {type NotExist}
 
 ///|
-pub typealias @oserror.Closed
+pub using @oserror {type Closed}
 
 ///|
 /// A FileMode represents a file's mode and permission bits.

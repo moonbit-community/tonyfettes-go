@@ -118,7 +118,9 @@ pub fn Encoding::decode(
 //
 
 ///|
-suberror CorruptInputError Int64
+suberror CorruptInputError {
+  CorruptInputError(Int64)
+}
 
 ///|
 pub impl Show for CorruptInputError with output(
@@ -349,7 +351,7 @@ impl @io.Reader for NewlineFilteringReader with read(
     if offset > 0 {
       return offset
     }
-  } else {
+  } nobreak {
     return n
   }
 }

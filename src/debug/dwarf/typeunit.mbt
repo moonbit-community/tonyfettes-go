@@ -101,7 +101,9 @@ fn Data::parse_types(
 }
 
 ///|
-priv suberror NoTypeUnitWithSignature UInt64
+priv suberror NoTypeUnitWithSignature {
+  NoTypeUnitWithSignature(UInt64)
+}
 
 ///|
 fn Data::sig_to_type(d : Data, sig : UInt64) -> Type raise {

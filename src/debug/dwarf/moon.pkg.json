@@ -1,9 +1,0 @@
-{
-  "import": [
-    "tonyfettes/go/slice",
-    "tonyfettes/go/bytes",
-    "tonyfettes/go/unit",
-    "tonyfettes/go/io",
-    "moonbitlang/x/encoding"
-  ]
-}

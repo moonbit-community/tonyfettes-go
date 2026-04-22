@@ -112,7 +112,7 @@ pub impl @io.Writer for Builder with write(
     [0xF4, 0x80..=0x8F, 0x80..=0xBF] as view =>
       self.last_rune = view.start_offset()
     [0xF4, 0x80..=0x8F, 0x80..=0xBF, 0x80..=0xBF, .. rest] => continue rest
-    [..bytes] => raise @utf8.Malformed(bytes)
+    [.. bytes] => raise @utf8.Malformed(bytes)
   }
   self.len += n
   self.last_rune = -1

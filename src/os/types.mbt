@@ -4,4 +4,4 @@
 /// information about files can be moved from one system
 /// to another portably. Not all bits apply to all systems.
 /// The only required bit is [ModeDir] for directories.
-pub typealias @fs.FileMode
+pub using @fs {type FileMode}

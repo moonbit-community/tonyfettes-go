@@ -328,7 +328,7 @@ fn LineReader::read_header(r : LineReader, comp_dir : String) -> @unit.T raise {
   if r.version < 5U {
     /// Read include directories table.
     r.directories = [comp_dir]
-    for {
+    for ;; {
       let directory = buf.string()
       if buf.err is Some(err) {
         raise err
@@ -348,7 +348,7 @@ fn LineReader::read_header(r : LineReader, comp_dir : String) -> @unit.T raise {
     /// Read file name list. File numbering starts with 1,
     /// so leave the first entry nil.
     r.file_entries = [None]
-    for {
+    for ;; {
       let done = r.read_file_entry()
       if done {
         break
@@ -544,7 +544,7 @@ pub fn LineReader::next(r : LineReader, entry : LineEntry) -> @unit.T raise {
 
   /// Execute opcodes until we reach an opcode that emits a line
   /// table entry.
-  for {
+  for ;; {
     if r.buf.data.length() == 0 {
       raise @io.EOF
     }
@@ -835,7 +835,7 @@ pub fn LineReader::seek_pc(
   }
 
   /// Scan until we pass pc, then back up one.
-  for {
+  for ;; {
     let next_entry = LineEntry::{
       address: 0UL,
       op_index: 0,

@@ -274,7 +274,7 @@ fn HuffmanEncoder::bit_counts(
   // We need a total of 2*n - 2 items at top level and have already generated 2.
   levels[max_bits].needed = 2 * n - 4
   let mut level = max_bits
-  for {
+  for ;; {
     let l = levels[level]
     if l.next_pair_freq == 0x7FFFFFFF && l.next_char_freq == 0x7FFFFFFF {
       // We've run out of both leaves and pairs.
