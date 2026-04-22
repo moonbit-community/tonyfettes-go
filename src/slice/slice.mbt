@@ -176,25 +176,29 @@ pub fn[T : Default] Slice::append(s : Slice[T], val : T) -> Slice[T] {
 
 ///|
 pub fn[T] Slice::iter(s : Slice[T]) -> Iter[T] {
-  Iter::new(each => for i in s.1..<(s.1 + s.2) {
-    match each(s.0.unsafe_get(i)) {
-      IterEnd => break IterEnd
-      IterContinue => continue
+  let mut i = s.1
+  Iter::new(fn() {
+    if i < s.1 + s.2 {
+      let value = s.0.unsafe_get(i)
+      i += 1
+      Some(value)
+    } else {
+      None
     }
-  } else {
-    IterContinue
   })
 }
 
 ///|
 pub fn[T] Slice::iter2(s : Slice[T]) -> Iter2[Int, T] {
-  Iter2::new(each => for i in 0..<s.2 {
-    match each(i, s.0.unsafe_get(i + s.1)) {
-      IterEnd => break IterEnd
-      IterContinue => continue
+  let mut i = 0
+  Iter2::new(fn() {
+    if i < s.2 {
+      let value = (i, s.0.unsafe_get(i + s.1))
+      i += 1
+      Some(value)
+    } else {
+      None
     }
-  } else {
-    IterContinue
   })
 }
 

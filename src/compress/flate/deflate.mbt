@@ -158,7 +158,7 @@ impl Show for WriterClosed with output(_ : WriterClosed, logger : &Logger) {
 priv struct Compressor {
   mut compression_level : CompressionLevel
   mut w : HuffmanBitWriter
-  mut bulk_hasher : (@slice.Slice[Byte], ArrayView[UInt]) -> Unit
+  mut bulk_hasher : (@slice.Slice[Byte], MutArrayView[UInt]) -> Unit
 
   // compression algorithm
   mut fill : (Compressor, @slice.Slice[Byte]) -> Int // copy data to window
@@ -215,7 +215,7 @@ fn hash4(b : @slice.Slice[Byte]) -> UInt {
 
 ///|
 /// bulk_hash4 will compute hashes using the same algorithm as hash4.
-fn bulk_hash4(b : @slice.Slice[Byte], dst : ArrayView[UInt]) -> Unit {
+fn bulk_hash4(b : @slice.Slice[Byte], dst : MutArrayView[UInt]) -> Unit {
   if b.length() < MinMatchLength {
     return
   }
@@ -964,7 +964,7 @@ fn Compressor::fill_window(d : Compressor, b : @slice.Slice[Byte]) -> Unit {
     if dst_size <= 0 {
       continue
     }
-    let dst = d.hash_match[:dst_size]
+    let dst = d.hash_match.mut_view(end=dst_size)
     (d.bulk_hasher)(to_check, dst)
     for i = 0; i < dst.length(); i = i + 1 {
       let val = dst[i]

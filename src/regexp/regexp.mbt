@@ -52,9 +52,11 @@ impl Input for InputString with step(self : InputString, pos : Int) -> (
       } else {
         let d = self.str[pos + 1]
         if d.is_trailing_surrogate() {
+          let high = c.to_int()
+          let low = d.to_int()
           return (
             Some(
-              (0x10000 + (c - 0xD800) * 0x400 + (d - 0xDC00)).unsafe_to_char(),
+              (0x10000 + (high - 0xD800) * 0x400 + (low - 0xDC00)).unsafe_to_char(),
             ),
             2,
           )

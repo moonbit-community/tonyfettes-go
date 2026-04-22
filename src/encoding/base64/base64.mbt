@@ -140,7 +140,8 @@ fn Encoding::decode_quantum(
   let dbuf : FixedArray[Byte] = FixedArray::make(4, 0)
   let mut dlen = 4
   let mut err = None
-  for j in 0..<dbuf.length() {
+  let mut j = 0
+  while j < dbuf.length() {
     if src.length() == si {
       if j == 0 {
         return (si, 0)
@@ -155,10 +156,11 @@ fn Encoding::decode_quantum(
     let out = self.decode_map[in_.to_int()]
     if out != 0xff {
       dbuf[j] = out
+      j += 1
       continue
     }
     if in_ is ('\n' | '\r') {
-      continue j
+      continue
     }
     if self.pad_char is Some(c) && in_.to_char() == c {
       raise CorruptInputError(int64(si - 1))
