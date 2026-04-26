@@ -1,0 +1,23 @@
+import {
+  "moonbitlang/x/fs",
+  "tonyfettes/go/io",
+  "tonyfettes/go/compress/zlib",
+  "tonyfettes/go/bytes",
+  "tonyfettes/go/slice",
+  "tonyfettes/go/encoding/binary",
+  "tonyfettes/go/internal/saferio",
+  "tonyfettes/go/builtin",
+  "tonyfettes/go/unicode/utf8",
+  "tonyfettes/go/strings",
+  "tonyfettes/go/os",
+  "tonyfettes/go/debug/dwarf",
+}
+
+import {
+  "moonbitlang/x/encoding",
+} for "test"
+
+import {
+  "tonyfettes/go/internal/obscuretestdata",
+  "tonyfettes/uv",
+} for "wbtest"

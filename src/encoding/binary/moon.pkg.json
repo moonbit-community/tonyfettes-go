@@ -1,6 +1,0 @@
-{
-  "import": [
-    "tonyfettes/go/slice",
-    "tonyfettes/go/io"
-  ]
-}

@@ -17,7 +17,7 @@ fn equal(a : @slice.Slice[Byte], b : @slice.Slice[Byte]) -> Bool {
     if a[i] != b[i] {
       break false
     }
-  } else {
+  } nobreak {
     true
   }
 }
@@ -31,7 +31,7 @@ pub fn has_prefix(s : @slice.Slice[Byte], prefix : @slice.Slice[Byte]) -> Bool {
       if s[i] != prefix[i] {
         break false
       }
-    } else {
+    } nobreak {
       true
     }
   } else {

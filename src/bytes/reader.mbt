@@ -1,8 +1,8 @@
 ///|
-fnalias @slice.copy
+using @slice {copy}
 
 ///|
-fnalias @builtin.len
+using @builtin {len}
 
 ///|
 struct Reader {

@@ -2,7 +2,7 @@
 package "tonyfettes/go/runtime"
 
 // Values
-const GOOS : String = "darwin"
+pub const GOOS : String = "darwin"
 
 // Errors
 

@@ -361,7 +361,7 @@ fn[TypeReader : TypeReader] Data::read_type(
     if !e.children {
       return None
     }
-    for {
+    for ;; {
       let kid = r.next()
       guard kid is Some(kid) else {
         raise DecodeError::new(name, off, "no child entry")

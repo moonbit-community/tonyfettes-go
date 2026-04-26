@@ -1,5 +1,5 @@
 ///|
-fnalias @builtin.int64
+using @builtin {int64}
 
 ///|
-fnalias @builtin.int
+using @builtin {int}

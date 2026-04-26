@@ -1,8 +1,0 @@
-{
-  "import": [
-    "tonyfettes/go/io",
-    "tonyfettes/go/compress/flate",
-    "tonyfettes/go/bufio",
-    "tonyfettes/go/slice"
-  ]
-}

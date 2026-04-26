@@ -1,2 +1,2 @@
 ///|
-fnalias @builtin.len
+using @builtin {len}

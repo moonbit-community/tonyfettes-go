@@ -2,19 +2,19 @@
 package "tonyfettes/go/path"
 
 // Values
-fn base(StringView) -> StringView raise
+pub fn base(StringView) -> StringView raise
 
-fn clean(StringView) -> StringView
+pub fn clean(StringView) -> StringView
 
-fn dir(StringView) -> StringView raise
+pub fn dir(StringView) -> StringView raise
 
-fn ext(StringView) -> StringView raise
+pub fn ext(StringView) -> StringView raise
 
-fn is_abs(StringView) -> Bool
+pub fn is_abs(StringView) -> Bool
 
-fn join(Array[StringView]) -> StringView
+pub fn join(Array[StringView]) -> StringView
 
-fn split(StringView) -> (StringView, StringView) raise
+pub fn split(StringView) -> (StringView, StringView) raise
 
 // Errors
 

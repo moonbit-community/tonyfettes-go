@@ -1,4 +1,5 @@
 ///|
-fnalias @builtin.int64
+using @builtin {int64}
 
-fnalias @builtin.uint
+///|
+using @builtin {uint}

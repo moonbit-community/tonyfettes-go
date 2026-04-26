@@ -36,7 +36,7 @@ impl Default for AField with default() -> AField {
 
 ///|
 /// Abbreviation table - maps abbreviation codes to abbreviation entries
-typealias Map[UInt, Abbrev] as AbbrevTable
+type AbbrevTable = Map[UInt, Abbrev]
 
 ///|
 /// parse_abbrev returns the abbreviation table that starts at byte off
@@ -74,7 +74,6 @@ fn Data::parse_abbrev(d : Data, off : UInt64, vers : Int) -> AbbrevTable raise {
       }
       if fmt == FormImplicitConst.to_uint().to_uint64() {
         let _ = b1.int()
-
       }
       n += 1
     }
@@ -257,7 +256,7 @@ pub typealias UInt as Offset
 
 ///|
 /// Parse a single DWARF entry from a buffer
-fn Buf::entry(b : Buf, cu : Entry?, u : Unit) -> Entry? raise {
+fn Buf::entry(b : Buf, cu : Entry?, u : DwarfUnit) -> Entry? raise {
   let atab = u.atable
   let ubase = u.base
   let vers = u.vers
@@ -394,7 +393,7 @@ fn Buf::entry(b : Buf, cu : Entry?, u : Unit) -> Entry? raise {
 
 ///|
 /// Parse address index (DWARF 5)
-fn parse_addrx(b : Buf, off : UInt64, u : Unit) -> UInt64 raise {
+fn parse_addrx(b : Buf, off : UInt64, u : DwarfUnit) -> UInt64 raise {
   if b.dwarf.addr.length() == 0 {
     raise b.error("DW_FORM_addrx with no .debug_addr section")
   }
@@ -459,7 +458,7 @@ fn parse_line_strp(b : Buf) -> String raise {
 
 ///|
 /// Parse string index (DWARF 5)
-fn parse_strx(b : Buf, index : UInt64, u : Unit) -> String raise {
+fn parse_strx(b : Buf, index : UInt64, u : DwarfUnit) -> String raise {
   if b.dwarf.str_offsets.length() == 0 {
     raise b.error("DW_FORM_strx with no .debug_str_offsets section")
   }
@@ -791,7 +790,10 @@ fn Reader::next_unit(self : Reader) -> @unit.T {
 }
 
 ///|
-fn Reader::collect_dwarf5_base_offsets(r : Reader, u : Unit) -> @unit.T raise {
+fn Reader::collect_dwarf5_base_offsets(
+  r : Reader,
+  u : DwarfUnit,
+) -> @unit.T raise {
   if u.vers < 5 || u.unit5 is Some(_) {
     return
   }
@@ -996,7 +998,7 @@ pub fn Data::ranges(d : Data, e : Entry) -> Array[(UInt64, UInt64)] raise {
     (Some(low), Some(high)) => ret.push((low, high))
     _ => ()
   }
-  let mut u : Unit? = None
+  let mut u : DwarfUnit? = None
   let uidx = d.offset_to_unit(e.offset)
   if uidx >= 0 && uidx < d.unit.length() {
     u = Some(d.unit[uidx])
@@ -1103,7 +1105,7 @@ fn Data::base_address_for_entry(d : Data, e : Entry) -> (Entry?, UInt64) raise {
 /// DWARF 2-4 ranges parsing
 fn Data::dwarf2_ranges(
   d : Data,
-  u : Unit,
+  u : DwarfUnit,
   base : UInt64,
   ranges : Int64,
 ) -> Array[(UInt64, UInt64)] raise {
@@ -1145,7 +1147,7 @@ fn Data::dwarf2_ranges(
 /// DWARF 5 ranges parsing
 fn Data::dwarf5_ranges(
   d : Data,
-  u : Unit,
+  u : DwarfUnit,
   cu : Entry?,
   base : UInt64,
   ranges : Int64,

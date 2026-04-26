@@ -1,11 +1,11 @@
 ///|
-fnalias @builtin.len
+using @builtin {len}
 
 ///|
-fnalias @builtin.int
+using @builtin {int}
 
 ///|
-fnalias @builtin.int64
+using @builtin {int64}
 
 ///|
 /// Reads from a reader and rot13s the result.
@@ -39,7 +39,7 @@ impl @io.Reader for Rot13Reader with read(
 fn read_bytes(buf : Reader) -> String {
   let b : FixedArray[Byte] = FixedArray::make(1000, 0)
   let mut nb = 0
-  for {
+  for ;; {
     try {
       let c = buf.read_byte()
       b[nb] = c
@@ -84,7 +84,7 @@ let read_makers : FixedArray[ReadMaker] = [
 /// to accumulate the text of a file.
 fn read_lines(b : Reader) -> String {
   let s = StringBuilder::new()
-  for {
+  for ;; {
     try {
       let s1 = b.read_string(b'\n')
       s.write_string(s1)
@@ -102,7 +102,7 @@ fn read_lines(b : Reader) -> String {
 fn reads(buf : Reader, m : Int) -> String {
   let b : FixedArray[Byte] = FixedArray::make(1000, 0)
   let mut nb = 0
-  for {
+  for ;; {
     let slice = @slice.fixedarray(b)
     let view = slice[nb:nb + m]
     try {
@@ -244,7 +244,7 @@ fn read_rune_segments(segments : Array[String]) -> String raise {
     want += seg
   }
   let r = new_reader(StringReader::new(segments))
-  for {
+  for ;; {
     let (rune, _) = r.read_rune() catch {
       @io.EOF => break
       e => raise e
@@ -286,7 +286,7 @@ test "unread_rune" {
   }
 
   // Normal execution.
-  for {
+  for ;; {
     let (r1, _) = r.read_rune() catch {
       @io.EOF => break
       e => abort("unexpected error on ReadRune: \{e}")
@@ -405,7 +405,7 @@ fn test_read_line(input : @slice.Slice[Byte]) -> Unit raise {
     let mut done = 0
     let reader = TestReader::{ data: input, stride }
     let l = new_reader_size(reader, len(input) + 1)
-    for {
+    for ;; {
       let line = l.read_line() catch {
         @io.EOF => break
         err => fail("Got unknown error: \{err}")

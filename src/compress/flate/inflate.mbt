@@ -29,7 +29,9 @@ const HuffmanValueShift = 4
 
 ///|
 /// Error types for DEFLATE decompression
-pub suberror CorruptInputError Int64
+pub suberror CorruptInputError {
+  CorruptInputError(Int64)
+}
 
 ///|
 impl Show for CorruptInputError with output(self, logger) {
@@ -189,7 +191,9 @@ let code_order = [
 ]
 
 ///|
-pub suberror InternalError String
+pub suberror InternalError {
+  InternalError(String)
+}
 
 ///|
 pub(open) trait Reader: @io.Reader + @io.ByteReader {}
@@ -401,7 +405,7 @@ pub impl @io.Reader for Decompressor with read(
   self : Decompressor,
   b : @slice.Slice[Byte],
 ) -> Int raise {
-  for {
+  for ;; {
     if self.to_read.length() > 0 {
       let n = if b.length() < self.to_read.length() {
         b.length()

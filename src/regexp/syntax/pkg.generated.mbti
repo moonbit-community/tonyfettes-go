@@ -2,51 +2,51 @@
 package "tonyfettes/go/regexp/syntax"
 
 // Values
-let class_nl : Int
+pub let class_nl : Int
 
-fn compile(Regexp) -> Prog
+pub fn compile(Regexp) -> Prog
 
-let dot_nl : Int
+pub let dot_nl : Int
 
-let empty_begin_line : Int
+pub let empty_begin_line : Int
 
-let empty_begin_text : Int
+pub let empty_begin_text : Int
 
-let empty_end_line : Int
+pub let empty_end_line : Int
 
-let empty_end_text : Int
+pub let empty_end_text : Int
 
-let empty_no_word_boundary : Int
+pub let empty_no_word_boundary : Int
 
-let empty_word_boundary : Int
+pub let empty_word_boundary : Int
 
-fn equal(Regexp?, Regexp?) -> Bool
+pub fn equal(Regexp?, Regexp?) -> Bool
 
-let fold_case : Int
+pub let fold_case : Int
 
-fn is_word_char(Char) -> Bool
+pub fn is_word_char(Char) -> Bool
 
-let literal : Int
+pub let literal : Int
 
-let match_nl : Int
+pub let match_nl : Int
 
-let non_greedy : Int
+pub let non_greedy : Int
 
-let one_line : Int
+pub let one_line : Int
 
-fn parse(String, Int) -> Regexp
+pub fn parse(String, Int) -> Regexp
 
-let perl : Int
+pub let perl : Int
 
-let perl_x : Int
+pub let perl_x : Int
 
-let posix : Int
+pub let posix : Int
 
-let simple : Int
+pub let simple : Int
 
-let unicode_groups : Int
+pub let unicode_groups : Int
 
-let was_dollar : Int
+pub let was_dollar : Int
 
 // Errors
 
@@ -68,22 +68,17 @@ pub enum ErrorCode {
   ErrUnexpectedParen
   ErrNestingDepth
   ErrLarge
-}
-fn ErrorCode::to_string(Self) -> String
-impl Eq for ErrorCode
-impl Show for ErrorCode
-impl ToJson for ErrorCode
+} derive(Eq, Show, ToJson)
+pub fn ErrorCode::to_string(Self) -> String
 
 pub struct Inst {
   op : InstOp
   mut out : Int
   arg : Int
   mut rune : Array[Int]
-}
-fn Inst::match_rune(Self, Int) -> Bool
-fn Inst::new(InstOp) -> Self
-impl Show for Inst
-impl ToJson for Inst
+} derive(Show, ToJson)
+pub fn Inst::match_rune(Self, Int) -> Bool
+pub fn Inst::new(InstOp) -> Self
 
 pub enum InstOp {
   InstAlt
@@ -97,10 +92,7 @@ pub enum InstOp {
   InstRune1
   InstRuneAny
   InstRuneAnyNotNL
-}
-impl Eq for InstOp
-impl Show for InstOp
-impl ToJson for InstOp
+} derive(Eq, Show, ToJson)
 
 pub enum Op {
   OpNoMatch
@@ -122,10 +114,7 @@ pub enum Op {
   OpRepeat
   OpConcat
   OpAlternate
-}
-impl Eq for Op
-impl Show for Op
-impl ToJson for Op
+} derive(Eq, Show, ToJson)
 
 type Parser
 
@@ -133,11 +122,9 @@ pub struct Prog {
   inst : Array[Inst]
   start : Int
   num_cap : Int
-}
-fn Prog::prefix(Self) -> (String, Bool)
-fn Prog::start_cond(Self) -> Int
-impl Show for Prog
-impl ToJson for Prog
+} derive(Show, ToJson)
+pub fn Prog::prefix(Self) -> (String, Bool)
+pub fn Prog::start_cond(Self) -> Int
 
 pub struct Regexp {
   op : Op
@@ -148,18 +135,16 @@ pub struct Regexp {
   max : Int
   cap : Int
   name : String
-}
-fn Regexp::cap_names(Self) -> Array[String]
-fn Regexp::max_cap(Self) -> Int
-fn Regexp::new(Op) -> Self
-fn Regexp::simplify(Self) -> Self
-impl Show for Regexp
-impl ToJson for Regexp
+} derive(Show, ToJson)
+pub fn Regexp::cap_names(Self) -> Array[String]
+pub fn Regexp::max_cap(Self) -> Int
+pub fn Regexp::new(Op) -> Self
+pub fn Regexp::simplify(Self) -> Self
 
 // Type aliases
-pub typealias Int as EmptyOp
+pub type EmptyOp = Int
 
-pub typealias Int as Flags
+pub type Flags = Int
 
 // Traits
 

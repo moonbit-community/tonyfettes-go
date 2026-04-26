@@ -10,7 +10,7 @@
 /// The typeUnit format is a single type with a signature. It holds
 /// the same data as a compilation unit.
 priv struct TypeUnit {
-  unit : Unit
+  unit : DwarfUnit
   toff : Offset
   name : String
   mut cache : Type?
@@ -18,7 +18,7 @@ priv struct TypeUnit {
 
 ///|
 impl Default for TypeUnit with default() -> TypeUnit {
-  TypeUnit::{ unit: Unit::default(), toff: 0, name: "", cache: None }
+  TypeUnit::{ unit: DwarfUnit::default(), toff: 0, name: "", cache: None }
 }
 
 ///|
@@ -80,7 +80,7 @@ fn Data::parse_types(
     }
     let boff = b.off
     d.type_sigs[sig] = TypeUnit::{
-      unit: Unit::new(
+      unit: DwarfUnit::new(
         base,
         boff,
         b.bytes((n - (b.off - hdroff)).reinterpret_as_int()),
@@ -101,7 +101,9 @@ fn Data::parse_types(
 }
 
 ///|
-priv suberror NoTypeUnitWithSignature UInt64
+priv suberror NoTypeUnitWithSignature {
+  NoTypeUnitWithSignature(UInt64)
+}
 
 ///|
 fn Data::sig_to_type(d : Data, sig : UInt64) -> Type raise {

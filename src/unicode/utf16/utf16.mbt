@@ -19,8 +19,10 @@ pub fn decode_last_rune_in_string(s : StringView) -> (Char, Int) {
     if start - 1 < 0 {
       return (RuneError, 0)
     }
+    let high = s[start - 1].to_int()
+    let low = r.to_int()
     return (
-      (0x10000 + (s[start - 1] - 0xD800) * 0x400 + (r - 0xDC00)).unsafe_to_char(),
+      (0x10000 + (high - 0xD800) * 0x400 + (low - 0xDC00)).unsafe_to_char(),
       2,
     )
   } else if !r.is_leading_surrogate() {
@@ -43,8 +45,10 @@ pub fn decode_rune_in_string(s : StringView) -> (Char, Int) {
     }
     let s1 = s[1]
     if s1.is_trailing_surrogate() {
+      let high = s0.to_int()
+      let low = s1.to_int()
       return (
-        (0x10000 + (s0 - 0xD800) * 0x400 + (s1 - 0xDC00)).unsafe_to_char(),
+        (0x10000 + (high - 0xD800) * 0x400 + (low - 0xDC00)).unsafe_to_char(),
         2,
       )
     } else {

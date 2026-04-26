@@ -2,9 +2,9 @@
 package "tonyfettes/go/internal/goos"
 
 // Values
-const GOOS : String = "darwin"
+pub const GOOS : String = "darwin"
 
-const IsDarwin : Bool = true
+pub const IsDarwin : Bool = true
 
 // Errors
 

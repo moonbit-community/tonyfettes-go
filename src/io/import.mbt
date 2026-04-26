@@ -1,8 +1,8 @@
 ///|
-typealias @builtin.Rune
+using @builtin {type Rune}
 
 ///|
-fnalias @builtin.len
+using @builtin {len}
 
 ///|
-fnalias @builtin.int64
+using @builtin {int64}

@@ -1,19 +1,19 @@
 // Generated using `moon info`, DON'T EDIT IT
 package "tonyfettes/go/debug/dwarf"
 
-import(
-  "tonyfettes/go/slice"
-)
+import {
+  "tonyfettes/go/slice",
+}
 
 // Values
-fn new(abbrev~ : @slice.Slice[Byte], aranges? : @slice.Slice[Byte], frame? : @slice.Slice[Byte], info~ : @slice.Slice[Byte], line~ : @slice.Slice[Byte], pubnames? : @slice.Slice[Byte], ranges~ : @slice.Slice[Byte], str~ : @slice.Slice[Byte]) -> Data raise
+pub fn new(abbrev~ : @slice.Slice[Byte], aranges? : @slice.Slice[Byte], frame? : @slice.Slice[Byte], info~ : @slice.Slice[Byte], line~ : @slice.Slice[Byte], pubnames? : @slice.Slice[Byte], ranges~ : @slice.Slice[Byte], str~ : @slice.Slice[Byte]) -> Data raise
 
 // Errors
 pub suberror DecodeError {
   DecodeError(name~ : String, offset~ : UInt, String)
 }
-fn DecodeError::new(String, UInt, String) -> Self
-impl Show for DecodeError
+pub fn DecodeError::new(String, UInt, String) -> Self
+pub impl Show for DecodeError
 
 pub suberror UnknownPCError
 
@@ -141,11 +141,9 @@ pub enum Attr {
   AttrDeleted
   AttrDefaulted
   AttrLoclistsBase
-}
-fn Attr::from_uint(UInt) -> Self
-fn Attr::to_uint(Self) -> UInt
-impl Eq for Attr
-impl Show for Attr
+} derive(Eq, Show)
+pub fn Attr::from_uint(UInt) -> Self
+pub fn Attr::to_uint(Self) -> UInt
 
 pub(all) enum BasicType {
   CharType
@@ -164,9 +162,7 @@ type Buf
 pub enum ByteOrder {
   LittleEndian
   BigEndian
-}
-impl Eq for ByteOrder
-impl Show for ByteOrder
+} derive(Eq, Show)
 
 pub enum Class {
   ClassUnknown
@@ -189,9 +185,7 @@ pub enum Class {
   ClassRngList
   ClassRngListsPtr
   ClassStrOffsetsPtr
-}
-impl Eq for Class
-impl Show for Class
+} derive(Eq, Show)
 
 pub(all) enum CommonType {
   BasicType(mut bit_size~ : Int64, mut bit_offset~ : Int64, mut data_bit_offset~ : Int64, BasicType)
@@ -208,24 +202,23 @@ pub(all) enum CommonType {
 }
 
 type Data
-fn Data::add_section(Self, String, @slice.Slice[Byte]) -> Unit
-fn Data::add_types(Self, String, @slice.Slice[Byte]) -> Unit raise
-fn Data::line_reader(Self, Entry) -> LineReader? raise
-fn Data::ranges(Self, Entry) -> Array[(UInt64, UInt64)] raise
-fn Data::reader(Self) -> Reader raise
-fn Data::type_(Self, UInt) -> Type raise
-impl Default for Data
+pub fn Data::add_section(Self, String, @slice.Slice[Byte]) -> Unit
+pub fn Data::add_types(Self, String, @slice.Slice[Byte]) -> Unit raise
+pub fn Data::line_reader(Self, Entry) -> LineReader? raise
+pub fn Data::ranges(Self, Entry) -> Array[(UInt64, UInt64)] raise
+pub fn Data::reader(Self) -> Reader raise
+pub fn Data::type_(Self, UInt) -> Type raise
+pub impl Default for Data
 
 pub struct Entry {
   offset : UInt
   tag : Tag
   children : Bool
   field : Array[Field]
-}
-fn Entry::attr_field(Self, Attr) -> Field?
-fn Entry::new(UInt, Tag, Bool) -> Self
-fn Entry::val(Self, Attr) -> FieldValue?
-impl Show for Entry
+} derive(Show)
+pub fn Entry::attr_field(Self, Attr) -> Field?
+pub fn Entry::new(UInt, Tag, Bool) -> Self
+pub fn Entry::val(Self, Attr) -> FieldValue?
 
 pub(all) struct EnumType {
   common : CommonType
@@ -242,9 +235,8 @@ pub struct Field {
   attr : Attr
   val : FieldValue
   class : Class
-}
-fn Field::new(Attr, FieldValue, Class) -> Self
-impl Show for Field
+} derive(Show)
+pub fn Field::new(Attr, FieldValue, Class) -> Self
 
 pub enum FieldValue {
   UInt64(UInt64)
@@ -253,8 +245,7 @@ pub enum FieldValue {
   Int64(Int64)
   String(String)
   Offset(UInt)
-}
-impl Show for FieldValue
+} derive(Show)
 
 pub enum Format {
   FormAddr
@@ -303,9 +294,7 @@ pub enum Format {
   FormGnuRefAlt
   FormGnuStrpAlt
   Format(UInt)
-}
-impl Eq for Format
-impl Show for Format
+} derive(Eq, Show)
 
 pub struct LineEntry {
   mut address : UInt64
@@ -320,15 +309,13 @@ pub struct LineEntry {
   mut isa : Int
   mut discriminator : Int
   mut end_sequence : Bool
-}
-impl Show for LineEntry
+} derive(Show)
 
 pub struct LineFile {
   name : StringView
   mtime : UInt64
   length : Int
-}
-impl Show for LineFile
+} derive(Show)
 
 pub struct LineReader {
   buf : Buf
@@ -353,22 +340,22 @@ pub struct LineReader {
   mut state : LineEntry
   mut file_index : Int
 }
-fn LineReader::files(Self) -> Array[LineFile?]
-fn LineReader::next(Self, LineEntry) -> Unit raise
-fn LineReader::reset(Self) -> Unit
-fn LineReader::seek(Self, LineReaderPos) -> Unit
-fn LineReader::seek_pc(Self, UInt64, LineEntry) -> Unit raise
-fn LineReader::tell(Self) -> LineReaderPos
+pub fn LineReader::files(Self) -> Array[LineFile?]
+pub fn LineReader::next(Self, LineEntry) -> Unit raise
+pub fn LineReader::reset(Self) -> Unit
+pub fn LineReader::seek(Self, LineReaderPos) -> Unit
+pub fn LineReader::seek_pc(Self, UInt64, LineEntry) -> Unit raise
+pub fn LineReader::tell(Self) -> LineReaderPos
 
 type LineReaderPos
 
 type Reader
-fn Reader::address_size(Self) -> Int
-fn Reader::byte_order(Self) -> ByteOrder
-fn Reader::next(Self) -> Entry? raise
-fn Reader::seek(Self, UInt) -> Unit raise
-fn Reader::seek_pc(Self, UInt64) -> Entry? raise
-fn Reader::skip_children(Self) -> Unit raise
+pub fn Reader::address_size(Self) -> Int
+pub fn Reader::byte_order(Self) -> ByteOrder
+pub fn Reader::next(Self) -> Entry? raise
+pub fn Reader::seek(Self, UInt) -> Unit raise
+pub fn Reader::seek_pc(Self, UInt64) -> Entry? raise
+pub fn Reader::skip_children(Self) -> Unit raise
 
 pub(all) struct StructField {
   mut name : String
@@ -451,21 +438,19 @@ pub enum Tag {
   TagSkeletonUnit
   TagImmutableType
   Tag(UInt)
-}
-fn Tag::from_uint(UInt) -> Self?
-fn Tag::to_uint(Self) -> UInt
-impl Eq for Tag
-impl Show for Tag
+} derive(Eq, Show)
+pub fn Tag::from_uint(UInt) -> Self?
+pub fn Tag::to_uint(Self) -> UInt
 
 pub(all) enum Type {
   CommonType(mut byte_size~ : Int64, mut name~ : String, CommonType)
 }
-fn Type::common_type(CommonType) -> Self
-fn Type::size(Self) -> Int64
-impl Show for Type
+pub fn Type::common_type(CommonType) -> Self
+pub fn Type::size(Self) -> Int64
+pub impl Show for Type
 
 // Type aliases
-pub typealias UInt as Offset
+pub type Offset = UInt
 
 // Traits
 

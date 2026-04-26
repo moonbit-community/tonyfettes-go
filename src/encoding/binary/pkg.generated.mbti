@@ -1,50 +1,50 @@
 // Generated using `moon info`, DON'T EDIT IT
 package "tonyfettes/go/encoding/binary"
 
-import(
-  "tonyfettes/go/io"
-  "tonyfettes/go/slice"
-)
+import {
+  "tonyfettes/go/io",
+  "tonyfettes/go/slice",
+}
 
 // Values
-let native_endian : ByteOrder
+pub let native_endian : ByteOrder
 
-fn[T : Readable] read(&@io.Reader, ByteOrder) -> T raise
+pub fn[T : Readable] read(&@io.Reader, ByteOrder) -> T raise
 
-fn[T : ReadableN] read_n(&@io.Reader, ByteOrder, Int) -> T raise
+pub fn[T : ReadableN] read_n(&@io.Reader, ByteOrder, Int) -> T raise
 
-fn[T : Sized] size(T) -> Int
+pub fn[T : Sized] size(T) -> Int
 
 // Errors
 
 // Types and methods
 type BigEndian
-impl Show for BigEndian
-impl ToJson for BigEndian
-impl AppendByteOrder for BigEndian
-impl IByteOrder for BigEndian
+pub impl Show for BigEndian
+pub impl ToJson for BigEndian
+pub impl AppendByteOrder for BigEndian
+pub impl IByteOrder for BigEndian
 
 pub(all) enum ByteOrder {
   LittleEndian
   BigEndian
 }
-fn ByteOrder::append_uint16(Self, @slice.Slice[Byte], UInt16) -> @slice.Slice[Byte]
-fn ByteOrder::append_uint32(Self, @slice.Slice[Byte], UInt) -> @slice.Slice[Byte]
-fn ByteOrder::append_uint64(Self, @slice.Slice[Byte], UInt64) -> @slice.Slice[Byte]
-fn ByteOrder::put_uint16(Self, @slice.Slice[Byte], UInt16) -> Unit
-fn ByteOrder::put_uint32(Self, @slice.Slice[Byte], UInt) -> Unit
-fn ByteOrder::put_uint64(Self, @slice.Slice[Byte], UInt64) -> Unit
-fn ByteOrder::uint16(Self, @slice.Slice[Byte]) -> UInt16
-fn ByteOrder::uint32(Self, @slice.Slice[Byte]) -> UInt
-fn ByteOrder::uint64(Self, @slice.Slice[Byte]) -> UInt64
-impl Show for ByteOrder
-impl ToJson for ByteOrder
+pub fn ByteOrder::append_uint16(Self, @slice.Slice[Byte], UInt16) -> @slice.Slice[Byte]
+pub fn ByteOrder::append_uint32(Self, @slice.Slice[Byte], UInt) -> @slice.Slice[Byte]
+pub fn ByteOrder::append_uint64(Self, @slice.Slice[Byte], UInt64) -> @slice.Slice[Byte]
+pub fn ByteOrder::put_uint16(Self, @slice.Slice[Byte], UInt16) -> Unit
+pub fn ByteOrder::put_uint32(Self, @slice.Slice[Byte], UInt) -> Unit
+pub fn ByteOrder::put_uint64(Self, @slice.Slice[Byte], UInt64) -> Unit
+pub fn ByteOrder::uint16(Self, @slice.Slice[Byte]) -> UInt16
+pub fn ByteOrder::uint32(Self, @slice.Slice[Byte]) -> UInt
+pub fn ByteOrder::uint64(Self, @slice.Slice[Byte]) -> UInt64
+pub impl Show for ByteOrder
+pub impl ToJson for ByteOrder
 
 type LittleEndian
-impl Show for LittleEndian
-impl ToJson for LittleEndian
-impl AppendByteOrder for LittleEndian
-impl IByteOrder for LittleEndian
+pub impl Show for LittleEndian
+pub impl ToJson for LittleEndian
+pub impl AppendByteOrder for LittleEndian
+pub impl IByteOrder for LittleEndian
 
 // Type aliases
 
@@ -67,23 +67,23 @@ pub trait IByteOrder : Show + ToJson {
 pub(open) trait Readable {
   read(&@io.Reader, ByteOrder) -> Self raise
 }
-impl Readable for Byte
-impl Readable for Int
-impl Readable for Int16
-impl Readable for Int64
-impl Readable for UInt
-impl Readable for UInt16
-impl Readable for UInt64
+pub impl Readable for Byte
+pub impl Readable for Int
+pub impl Readable for Int16
+pub impl Readable for Int64
+pub impl Readable for UInt
+pub impl Readable for UInt16
+pub impl Readable for UInt64
 
 pub(open) trait ReadableN {
   read(&@io.Reader, ByteOrder, Int) -> Self raise
 }
-impl[T : Readable + Default] ReadableN for FixedArray[T]
-impl[T : Readable + Default] ReadableN for Array[T]
-impl[T : Readable + Default] ReadableN for @slice.Slice[T]
+pub impl[T : Readable + Default] ReadableN for FixedArray[T]
+pub impl[T : Readable + Default] ReadableN for Array[T]
+pub impl[T : Readable + Default] ReadableN for @slice.Slice[T]
 
 pub(open) trait Sized {
   size() -> Int
 }
-impl Sized for UInt16
+pub impl Sized for UInt16
 

@@ -1,0 +1,19 @@
+import {
+  "tonyfettes/go/io/fs",
+  "tonyfettes/go/internal/oserror",
+  "tonyfettes/go/io",
+  "tonyfettes/go/slice",
+  "tonyfettes/uv",
+  "tonyfettes/go/unicode/utf8",
+  "tonyfettes/go/runtime",
+}
+
+options(
+  targets: {
+    "env.mbt": [ "native" ],
+    "file.mbt": [ "native" ],
+    "non_native.mbt": [ "not", "native" ],
+    "path.mbt": [ "native" ],
+    "tempfile.mbt": [ "native" ],
+  },
+)

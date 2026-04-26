@@ -1,25 +1,25 @@
 // Generated using `moon info`, DON'T EDIT IT
 package "tonyfettes/go/encoding/base64"
 
-import(
-  "tonyfettes/go/io"
-  "tonyfettes/go/slice"
-)
+import {
+  "tonyfettes/go/io",
+  "tonyfettes/go/slice",
+}
 
 // Values
-const StdPadding : Char = '='
+pub const StdPadding : Char = '='
 
-fn new_decoder(Encoding, &@io.Reader) -> &@io.Reader
+pub fn new_decoder(Encoding, &@io.Reader) -> &@io.Reader
 
-fn new_encoding(Bytes) -> Encoding
+pub fn new_encoding(Bytes) -> Encoding
 
-let std_encoding : Encoding
+pub let std_encoding : Encoding
 
-let url_encoding : Encoding
+pub let url_encoding : Encoding
 
 // Errors
 type CorruptInputError
-impl Show for CorruptInputError
+pub impl Show for CorruptInputError
 
 // Types and methods
 pub struct Encoding {
@@ -28,7 +28,7 @@ pub struct Encoding {
   pad_char : Char?
   strict : Bool
 }
-fn Encoding::decode(Self, @slice.Slice[Byte], @slice.Slice[Byte]) -> Int raise
+pub fn Encoding::decode(Self, @slice.Slice[Byte], @slice.Slice[Byte]) -> Int raise
 
 // Type aliases
 

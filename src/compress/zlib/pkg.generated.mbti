@@ -1,77 +1,76 @@
 // Generated using `moon info`, DON'T EDIT IT
 package "tonyfettes/go/compress/zlib"
 
-import(
-  "tonyfettes/go/compress/flate"
-  "tonyfettes/go/io"
-  "tonyfettes/go/slice"
-)
+import {
+  "tonyfettes/go/compress/flate",
+  "tonyfettes/go/io",
+  "tonyfettes/go/slice",
+}
 
 // Values
-const BestCompression : Int = 9
+pub const BestCompression : Int = 9
 
-const BestSpeed : Int = 1
+pub const BestSpeed : Int = 1
 
-const DefaultCompression : Int = -1
+pub const DefaultCompression : Int = -1
 
-const HuffmanOnly : Int = -2
+pub const HuffmanOnly : Int = -2
 
-const NoCompression : Int = 0
+pub const NoCompression : Int = 0
 
-fn checksum(@slice.Slice[Byte]) -> UInt
+pub fn checksum(@slice.Slice[Byte]) -> UInt
 
-fn checksum_array(FixedArray[Byte]) -> UInt
+pub fn checksum_array(FixedArray[Byte]) -> UInt
 
-fn checksum_bytes(@slice.Slice[Byte]) -> UInt
+pub fn checksum_bytes(@slice.Slice[Byte]) -> UInt
 
-fn checksum_bytesview(@slice.Slice[Byte]) -> UInt
+pub fn checksum_bytesview(@slice.Slice[Byte]) -> UInt
 
-fn get_uint16_be(BytesView, Int) -> UInt
+pub fn get_uint16_be(BytesView, Int) -> UInt
 
-fn get_uint16_be_array(FixedArray[Byte], Int) -> UInt
+pub fn get_uint16_be_array(FixedArray[Byte], Int) -> UInt
 
-fn get_uint32_be(BytesView, Int) -> UInt
+pub fn get_uint32_be(BytesView, Int) -> UInt
 
-fn get_uint32_be_array(FixedArray[Byte], Int) -> UInt
+pub fn get_uint32_be_array(FixedArray[Byte], Int) -> UInt
 
-fn[R : @io.Reader + @io.ByteReader] new_reader(R) -> &@io.ReadCloser raise
+pub fn[R : @io.Reader + @io.ByteReader] new_reader(R) -> &@io.ReadCloser raise
 
-fn[R : @io.Reader + @io.ByteReader] new_reader_dict(R, @slice.Slice[Byte]) -> &@io.ReadCloser raise
+pub fn[R : @io.Reader + @io.ByteReader] new_reader_dict(R, @slice.Slice[Byte]) -> &@io.ReadCloser raise
 
-fn new_writer(&@io.Writer) -> Writer
+pub fn new_writer(&@io.Writer) -> Writer
 
-fn new_writer_level(&@io.Writer, Int) -> (Writer, Error?)
+pub fn new_writer_level(&@io.Writer, Int) -> (Writer, Error?)
 
-fn new_writer_level_dict(&@io.Writer, Int, @slice.Slice[Byte]) -> (Writer, Error?)
+pub fn new_writer_level_dict(&@io.Writer, Int, @slice.Slice[Byte]) -> (Writer, Error?)
 
-fn put_uint16_be(FixedArray[Byte], Int, UInt) -> Unit
+pub fn put_uint16_be(FixedArray[Byte], Int, UInt) -> Unit
 
-fn put_uint32_be(FixedArray[Byte], Int, UInt) -> Unit
+pub fn put_uint32_be(FixedArray[Byte], Int, UInt) -> Unit
 
 // Errors
 pub suberror ChecksumError
-impl Show for ChecksumError
+pub impl Show for ChecksumError
 
 pub suberror DictionaryError
-impl Show for DictionaryError
+pub impl Show for DictionaryError
 
 pub suberror HeaderError
-impl Show for HeaderError
+pub impl Show for HeaderError
 
 // Types and methods
 pub struct Adler32 {
   mut a : UInt
   mut b : UInt
-}
-fn Adler32::new() -> Self
-fn Adler32::reset(Self) -> Unit
-fn Adler32::sum32(Self) -> UInt
-fn Adler32::write(Self, @slice.Slice[Byte]) -> Unit
-fn Adler32::write_array(Self, Array[Byte]) -> Unit
-fn Adler32::write_arrayview(Self, @slice.Slice[Byte]) -> Unit
-fn Adler32::write_bytes(Self, @slice.Slice[Byte]) -> Unit
-fn Adler32::write_fixedarray(Self, FixedArray[Byte]) -> Unit
-impl Show for Adler32
+} derive(Show)
+pub fn Adler32::new() -> Self
+pub fn Adler32::reset(Self) -> Unit
+pub fn Adler32::sum32(Self) -> UInt
+pub fn Adler32::write(Self, @slice.Slice[Byte]) -> Unit
+pub fn Adler32::write_array(Self, Array[Byte]) -> Unit
+pub fn Adler32::write_arrayview(Self, @slice.Slice[Byte]) -> Unit
+pub fn Adler32::write_bytes(Self, @slice.Slice[Byte]) -> Unit
+pub fn Adler32::write_fixedarray(Self, FixedArray[Byte]) -> Unit
 
 pub struct Reader {
   mut r : &@flate.Reader
@@ -80,9 +79,9 @@ pub struct Reader {
   mut err : Error?
   scratch : FixedArray[Byte]
 }
-impl Resetter for Reader
-impl @io.Closer for Reader
-impl @io.Reader for Reader
+pub impl Resetter for Reader
+pub impl @io.Closer for Reader
+pub impl @io.Reader for Reader
 
 pub struct Writer {
   mut w : &@io.Writer
@@ -94,10 +93,10 @@ pub struct Writer {
   scratch : FixedArray[Byte]
   mut wrote_header : Bool
 }
-fn Writer::flush(Self) -> Unit raise
-fn Writer::reset(Self, &@io.Writer) -> Unit
-impl @io.Closer for Writer
-impl @io.Writer for Writer
+pub fn Writer::flush(Self) -> Unit raise
+pub fn Writer::reset(Self, &@io.Writer) -> Unit
+pub impl @io.Closer for Writer
+pub impl @io.Writer for Writer
 
 // Type aliases
 

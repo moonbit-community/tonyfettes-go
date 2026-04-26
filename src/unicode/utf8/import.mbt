@@ -1,2 +1,2 @@
 ///|
-fnalias @builtin.int
+using @builtin {int}

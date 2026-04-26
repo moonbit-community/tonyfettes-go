@@ -2,7 +2,9 @@
 struct Utf8(Bytes)
 
 ///|
-pub(all) suberror Malformed @bytes.View
+pub(all) suberror Malformed {
+  Malformed(@bytes.View)
+}
 
 ///|
 pub impl ToJson for Malformed with to_json(self : Malformed) -> Json {

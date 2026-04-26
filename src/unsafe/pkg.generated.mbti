@@ -2,9 +2,9 @@
 package "tonyfettes/go/unsafe"
 
 // Values
-fn[T : Offsetof] offsetof(T) -> Int
+pub fn[T : Offsetof] offsetof(T) -> Int
 
-fn[T : SizeOf] sizeof(T) -> Int
+pub fn[T : SizeOf] sizeof(T) -> Int
 
 // Errors
 

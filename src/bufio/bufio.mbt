@@ -233,7 +233,7 @@ pub fn Reader::discard(self : Reader, n : Int) -> Int raise {
   self.last_byte = -1
   self.last_rune_size = -1
   let mut remain = n
-  for {
+  for ;; {
     let mut skip = self.buffered()
     if skip == 0 {
       self.fill()
@@ -433,7 +433,7 @@ pub fn Reader::read_slice(
 ) -> @slice.Slice[Byte] raise {
   let mut s = 0 // search start index
   let mut line = @slice.new()
-  for {
+  for ;; {
     // Search buffer.
     let mut i = @bytes.index_byte(self.buf[self.r + s:self.w], delim)
     if i >= 0 {
@@ -535,7 +535,7 @@ fn Reader::collect_fragments(
 ) -> (Array[@slice.Slice[Byte]], @slice.Slice[Byte], Int) raise {
   let full_buffers = []
   let mut total_len = 0
-  for {
+  for ;; {
     try {
       let frag = self.read_slice(delim)
       if !(frag.bytesview() is [.., '\n']) {

@@ -1,211 +1,211 @@
 // Generated using `moon info`, DON'T EDIT IT
 package "tonyfettes/go/debug/pe"
 
-import(
-  "tonyfettes/go/debug/dwarf"
-  "tonyfettes/go/encoding/binary"
-  "tonyfettes/go/io"
-  "tonyfettes/go/slice"
-)
+import {
+  "tonyfettes/go/debug/dwarf",
+  "tonyfettes/go/encoding/binary",
+  "tonyfettes/go/io",
+  "tonyfettes/go/slice",
+}
 
 // Values
-const COFF_SYMBOL_SIZE : UInt = 18
+pub const COFF_SYMBOL_SIZE : UInt = 18
 
-const IMAGE_COMDAT_SELECT_ANY : Int = 2
+pub const IMAGE_COMDAT_SELECT_ANY : Int = 2
 
-const IMAGE_COMDAT_SELECT_ASSOCIATIVE : Int = 5
+pub const IMAGE_COMDAT_SELECT_ASSOCIATIVE : Int = 5
 
-const IMAGE_COMDAT_SELECT_EXACT_MATCH : Int = 4
+pub const IMAGE_COMDAT_SELECT_EXACT_MATCH : Int = 4
 
-const IMAGE_COMDAT_SELECT_LARGEST : Int = 6
+pub const IMAGE_COMDAT_SELECT_LARGEST : Int = 6
 
-const IMAGE_COMDAT_SELECT_NODUPLICATES : Int = 1
+pub const IMAGE_COMDAT_SELECT_NODUPLICATES : Int = 1
 
-const IMAGE_COMDAT_SELECT_SAME_SIZE : Int = 3
+pub const IMAGE_COMDAT_SELECT_SAME_SIZE : Int = 3
 
-const IMAGE_DIRECTORY_ENTRY_ARCHITECTURE : Int = 7
+pub const IMAGE_DIRECTORY_ENTRY_ARCHITECTURE : Int = 7
 
-const IMAGE_DIRECTORY_ENTRY_BASERELOC : Int = 5
+pub const IMAGE_DIRECTORY_ENTRY_BASERELOC : Int = 5
 
-const IMAGE_DIRECTORY_ENTRY_BOUND_IMPORT : Int = 11
+pub const IMAGE_DIRECTORY_ENTRY_BOUND_IMPORT : Int = 11
 
-const IMAGE_DIRECTORY_ENTRY_COM_DESCRIPTOR : Int = 14
+pub const IMAGE_DIRECTORY_ENTRY_COM_DESCRIPTOR : Int = 14
 
-const IMAGE_DIRECTORY_ENTRY_DEBUG : Int = 6
+pub const IMAGE_DIRECTORY_ENTRY_DEBUG : Int = 6
 
-const IMAGE_DIRECTORY_ENTRY_DELAY_IMPORT : Int = 13
+pub const IMAGE_DIRECTORY_ENTRY_DELAY_IMPORT : Int = 13
 
-const IMAGE_DIRECTORY_ENTRY_EXCEPTION : Int = 3
+pub const IMAGE_DIRECTORY_ENTRY_EXCEPTION : Int = 3
 
-const IMAGE_DIRECTORY_ENTRY_EXPORT : Int = 0
+pub const IMAGE_DIRECTORY_ENTRY_EXPORT : Int = 0
 
-const IMAGE_DIRECTORY_ENTRY_GLOBALPTR : Int = 8
+pub const IMAGE_DIRECTORY_ENTRY_GLOBALPTR : Int = 8
 
-const IMAGE_DIRECTORY_ENTRY_IAT : Int = 12
+pub const IMAGE_DIRECTORY_ENTRY_IAT : Int = 12
 
-const IMAGE_DIRECTORY_ENTRY_IMPORT : Int = 1
+pub const IMAGE_DIRECTORY_ENTRY_IMPORT : Int = 1
 
-const IMAGE_DIRECTORY_ENTRY_LOAD_CONFIG : Int = 10
+pub const IMAGE_DIRECTORY_ENTRY_LOAD_CONFIG : Int = 10
 
-const IMAGE_DIRECTORY_ENTRY_RESOURCE : Int = 2
+pub const IMAGE_DIRECTORY_ENTRY_RESOURCE : Int = 2
 
-const IMAGE_DIRECTORY_ENTRY_SECURITY : Int = 4
+pub const IMAGE_DIRECTORY_ENTRY_SECURITY : Int = 4
 
-const IMAGE_DIRECTORY_ENTRY_TLS : Int = 9
+pub const IMAGE_DIRECTORY_ENTRY_TLS : Int = 9
 
-const IMAGE_DLLCHARACTERISTICS_APPCONTAINER : Int = 0x1000
+pub const IMAGE_DLLCHARACTERISTICS_APPCONTAINER : Int = 0x1000
 
-const IMAGE_DLLCHARACTERISTICS_DYNAMIC_BASE : Int = 0x0040
+pub const IMAGE_DLLCHARACTERISTICS_DYNAMIC_BASE : Int = 0x0040
 
-const IMAGE_DLLCHARACTERISTICS_FORCE_INTEGRITY : Int = 0x0080
+pub const IMAGE_DLLCHARACTERISTICS_FORCE_INTEGRITY : Int = 0x0080
 
-const IMAGE_DLLCHARACTERISTICS_GUARD_CF : Int = 0x4000
+pub const IMAGE_DLLCHARACTERISTICS_GUARD_CF : Int = 0x4000
 
-const IMAGE_DLLCHARACTERISTICS_HIGH_ENTROPY_VA : Int = 0x0020
+pub const IMAGE_DLLCHARACTERISTICS_HIGH_ENTROPY_VA : Int = 0x0020
 
-const IMAGE_DLLCHARACTERISTICS_NO_BIND : Int = 0x0800
+pub const IMAGE_DLLCHARACTERISTICS_NO_BIND : Int = 0x0800
 
-const IMAGE_DLLCHARACTERISTICS_NO_ISOLATION : Int = 0x0200
+pub const IMAGE_DLLCHARACTERISTICS_NO_ISOLATION : Int = 0x0200
 
-const IMAGE_DLLCHARACTERISTICS_NO_SEH : Int = 0x0400
+pub const IMAGE_DLLCHARACTERISTICS_NO_SEH : Int = 0x0400
 
-const IMAGE_DLLCHARACTERISTICS_NX_COMPAT : Int = 0x0100
+pub const IMAGE_DLLCHARACTERISTICS_NX_COMPAT : Int = 0x0100
 
-const IMAGE_DLLCHARACTERISTICS_TERMINAL_SERVER_AWARE : Int = 0x8000
+pub const IMAGE_DLLCHARACTERISTICS_TERMINAL_SERVER_AWARE : Int = 0x8000
 
-const IMAGE_DLLCHARACTERISTICS_WDM_DRIVER : Int = 0x2000
+pub const IMAGE_DLLCHARACTERISTICS_WDM_DRIVER : Int = 0x2000
 
-const IMAGE_FILE_32BIT_MACHINE : Int = 0x0100
+pub const IMAGE_FILE_32BIT_MACHINE : Int = 0x0100
 
-const IMAGE_FILE_AGGRESIVE_WS_TRIM : Int = 0x0010
+pub const IMAGE_FILE_AGGRESIVE_WS_TRIM : Int = 0x0010
 
-const IMAGE_FILE_BYTES_REVERSED_HI : Int = 0x8000
+pub const IMAGE_FILE_BYTES_REVERSED_HI : Int = 0x8000
 
-const IMAGE_FILE_BYTES_REVERSED_LO : Int = 0x0080
+pub const IMAGE_FILE_BYTES_REVERSED_LO : Int = 0x0080
 
-const IMAGE_FILE_DEBUG_STRIPPED : Int = 0x0200
+pub const IMAGE_FILE_DEBUG_STRIPPED : Int = 0x0200
 
-const IMAGE_FILE_DLL : Int = 0x2000
+pub const IMAGE_FILE_DLL : Int = 0x2000
 
-const IMAGE_FILE_EXECUTABLE_IMAGE : Int = 0x0002
+pub const IMAGE_FILE_EXECUTABLE_IMAGE : Int = 0x0002
 
-const IMAGE_FILE_LARGE_ADDRESS_AWARE : Int = 0x0020
+pub const IMAGE_FILE_LARGE_ADDRESS_AWARE : Int = 0x0020
 
-const IMAGE_FILE_LINE_NUMS_STRIPPED : Int = 0x0004
+pub const IMAGE_FILE_LINE_NUMS_STRIPPED : Int = 0x0004
 
-const IMAGE_FILE_LOCAL_SYMS_STRIPPED : Int = 0x0008
+pub const IMAGE_FILE_LOCAL_SYMS_STRIPPED : Int = 0x0008
 
-const IMAGE_FILE_MACHINE_AM33 : UInt16 = 0x1d3
+pub const IMAGE_FILE_MACHINE_AM33 : UInt16 = 0x1d3
 
-const IMAGE_FILE_MACHINE_AMD64 : UInt16 = 0x8664
+pub const IMAGE_FILE_MACHINE_AMD64 : UInt16 = 0x8664
 
-const IMAGE_FILE_MACHINE_ARM : UInt16 = 0x1c0
+pub const IMAGE_FILE_MACHINE_ARM : UInt16 = 0x1c0
 
-const IMAGE_FILE_MACHINE_ARM64 : UInt16 = 0xaa64
+pub const IMAGE_FILE_MACHINE_ARM64 : UInt16 = 0xaa64
 
-const IMAGE_FILE_MACHINE_ARMNT : UInt16 = 0x1c4
+pub const IMAGE_FILE_MACHINE_ARMNT : UInt16 = 0x1c4
 
-const IMAGE_FILE_MACHINE_EBC : Int = 0xebc
+pub const IMAGE_FILE_MACHINE_EBC : Int = 0xebc
 
-const IMAGE_FILE_MACHINE_I386 : UInt16 = 0x14c
+pub const IMAGE_FILE_MACHINE_I386 : UInt16 = 0x14c
 
-const IMAGE_FILE_MACHINE_IA64 : UInt16 = 0x200
+pub const IMAGE_FILE_MACHINE_IA64 : UInt16 = 0x200
 
-const IMAGE_FILE_MACHINE_LOONGARCH32 : Int = 0x6232
+pub const IMAGE_FILE_MACHINE_LOONGARCH32 : Int = 0x6232
 
-const IMAGE_FILE_MACHINE_LOONGARCH64 : Int = 0x6264
+pub const IMAGE_FILE_MACHINE_LOONGARCH64 : Int = 0x6264
 
-const IMAGE_FILE_MACHINE_M32R : Int = 0x9041
+pub const IMAGE_FILE_MACHINE_M32R : Int = 0x9041
 
-const IMAGE_FILE_MACHINE_MIPS16 : Int = 0x266
+pub const IMAGE_FILE_MACHINE_MIPS16 : Int = 0x266
 
-const IMAGE_FILE_MACHINE_MIPSFPU : Int = 0x366
+pub const IMAGE_FILE_MACHINE_MIPSFPU : Int = 0x366
 
-const IMAGE_FILE_MACHINE_MIPSFPU16 : Int = 0x466
+pub const IMAGE_FILE_MACHINE_MIPSFPU16 : Int = 0x466
 
-const IMAGE_FILE_MACHINE_POWERPC : Int = 0x1f0
+pub const IMAGE_FILE_MACHINE_POWERPC : Int = 0x1f0
 
-const IMAGE_FILE_MACHINE_POWERPCFP : Int = 0x1f1
+pub const IMAGE_FILE_MACHINE_POWERPCFP : Int = 0x1f1
 
-const IMAGE_FILE_MACHINE_R4000 : Int = 0x166
+pub const IMAGE_FILE_MACHINE_R4000 : Int = 0x166
 
-const IMAGE_FILE_MACHINE_RISCV128 : UInt16 = 0x5128
+pub const IMAGE_FILE_MACHINE_RISCV128 : UInt16 = 0x5128
 
-const IMAGE_FILE_MACHINE_RISCV32 : UInt16 = 0x5032
+pub const IMAGE_FILE_MACHINE_RISCV32 : UInt16 = 0x5032
 
-const IMAGE_FILE_MACHINE_RISCV64 : UInt16 = 0x5064
+pub const IMAGE_FILE_MACHINE_RISCV64 : UInt16 = 0x5064
 
-const IMAGE_FILE_MACHINE_SH3 : Int = 0x1a2
+pub const IMAGE_FILE_MACHINE_SH3 : Int = 0x1a2
 
-const IMAGE_FILE_MACHINE_SH3DSP : Int = 0x1a3
+pub const IMAGE_FILE_MACHINE_SH3DSP : Int = 0x1a3
 
-const IMAGE_FILE_MACHINE_SH4 : Int = 0x1a6
+pub const IMAGE_FILE_MACHINE_SH4 : Int = 0x1a6
 
-const IMAGE_FILE_MACHINE_SH5 : Int = 0x1a8
+pub const IMAGE_FILE_MACHINE_SH5 : Int = 0x1a8
 
-const IMAGE_FILE_MACHINE_THUMB : Int = 0x1c2
+pub const IMAGE_FILE_MACHINE_THUMB : Int = 0x1c2
 
-const IMAGE_FILE_MACHINE_UNKNOWN : UInt16 = 0x0
+pub const IMAGE_FILE_MACHINE_UNKNOWN : UInt16 = 0x0
 
-const IMAGE_FILE_MACHINE_WCEMIPSV2 : Int = 0x169
+pub const IMAGE_FILE_MACHINE_WCEMIPSV2 : Int = 0x169
 
-const IMAGE_FILE_NET_RUN_FROM_SWAP : Int = 0x0800
+pub const IMAGE_FILE_NET_RUN_FROM_SWAP : Int = 0x0800
 
-const IMAGE_FILE_RELOCS_STRIPPED : Int = 0x0001
+pub const IMAGE_FILE_RELOCS_STRIPPED : Int = 0x0001
 
-const IMAGE_FILE_REMOVABLE_RUN_FROM_SWAP : Int = 0x0400
+pub const IMAGE_FILE_REMOVABLE_RUN_FROM_SWAP : Int = 0x0400
 
-const IMAGE_FILE_SYSTEM : Int = 0x1000
+pub const IMAGE_FILE_SYSTEM : Int = 0x1000
 
-const IMAGE_FILE_UP_SYSTEM_ONLY : Int = 0x4000
+pub const IMAGE_FILE_UP_SYSTEM_ONLY : Int = 0x4000
 
-const IMAGE_SCN_CNT_CODE : Int64 = 0x00000020
+pub const IMAGE_SCN_CNT_CODE : Int64 = 0x00000020
 
-const IMAGE_SCN_CNT_INITIALIZED_DATA : Int64 = 0x00000040
+pub const IMAGE_SCN_CNT_INITIALIZED_DATA : Int64 = 0x00000040
 
-const IMAGE_SCN_CNT_UNINITIALIZED_DATA : Int64 = 0x00000080
+pub const IMAGE_SCN_CNT_UNINITIALIZED_DATA : Int64 = 0x00000080
 
-const IMAGE_SCN_LNK_COMDAT : Int64 = 0x00001000
+pub const IMAGE_SCN_LNK_COMDAT : Int64 = 0x00001000
 
-const IMAGE_SCN_MEM_DISCARDABLE : Int64 = 0x02000000
+pub const IMAGE_SCN_MEM_DISCARDABLE : Int64 = 0x02000000
 
-const IMAGE_SCN_MEM_EXECUTE : Int64 = 0x20000000
+pub const IMAGE_SCN_MEM_EXECUTE : Int64 = 0x20000000
 
-const IMAGE_SCN_MEM_READ : Int64 = 0x40000000
+pub const IMAGE_SCN_MEM_READ : Int64 = 0x40000000
 
-const IMAGE_SCN_MEM_WRITE : Int64 = 0x80000000
+pub const IMAGE_SCN_MEM_WRITE : Int64 = 0x80000000
 
-const IMAGE_SUBSYSTEM_EFI_APPLICATION : Int = 10
+pub const IMAGE_SUBSYSTEM_EFI_APPLICATION : Int = 10
 
-const IMAGE_SUBSYSTEM_EFI_BOOT_SERVICE_DRIVER : Int = 11
+pub const IMAGE_SUBSYSTEM_EFI_BOOT_SERVICE_DRIVER : Int = 11
 
-const IMAGE_SUBSYSTEM_EFI_ROM : Int = 13
+pub const IMAGE_SUBSYSTEM_EFI_ROM : Int = 13
 
-const IMAGE_SUBSYSTEM_EFI_RUNTIME_DRIVER : Int = 12
+pub const IMAGE_SUBSYSTEM_EFI_RUNTIME_DRIVER : Int = 12
 
-const IMAGE_SUBSYSTEM_NATIVE : Int = 1
+pub const IMAGE_SUBSYSTEM_NATIVE : Int = 1
 
-const IMAGE_SUBSYSTEM_NATIVE_WINDOWS : Int = 8
+pub const IMAGE_SUBSYSTEM_NATIVE_WINDOWS : Int = 8
 
-const IMAGE_SUBSYSTEM_OS2_CUI : Int = 5
+pub const IMAGE_SUBSYSTEM_OS2_CUI : Int = 5
 
-const IMAGE_SUBSYSTEM_POSIX_CUI : Int = 7
+pub const IMAGE_SUBSYSTEM_POSIX_CUI : Int = 7
 
-const IMAGE_SUBSYSTEM_UNKNOWN : Int = 0
+pub const IMAGE_SUBSYSTEM_UNKNOWN : Int = 0
 
-const IMAGE_SUBSYSTEM_WINDOWS_BOOT_APPLICATION : Int = 16
+pub const IMAGE_SUBSYSTEM_WINDOWS_BOOT_APPLICATION : Int = 16
 
-const IMAGE_SUBSYSTEM_WINDOWS_CE_GUI : Int = 9
+pub const IMAGE_SUBSYSTEM_WINDOWS_CE_GUI : Int = 9
 
-const IMAGE_SUBSYSTEM_WINDOWS_CUI : Int = 3
+pub const IMAGE_SUBSYSTEM_WINDOWS_CUI : Int = 3
 
-const IMAGE_SUBSYSTEM_WINDOWS_GUI : Int = 2
+pub const IMAGE_SUBSYSTEM_WINDOWS_GUI : Int = 2
 
-const IMAGE_SUBSYSTEM_XBOX : Int = 14
+pub const IMAGE_SUBSYSTEM_XBOX : Int = 14
 
-fn new_file(&@io.ReaderAt) -> File raise
+pub fn new_file(&@io.ReaderAt) -> File raise
 
-fn open(String) -> File raise
+pub fn open(String) -> File raise
 
 // Errors
 
@@ -218,13 +218,9 @@ pub(all) struct COFFSymbol {
   storage_class : Byte
   number_of_aux_symbols : Byte
   aux_symbols : Array[COFFSymbolAuxFormat5]
-}
-fn COFFSymbol::full_name(Self, StringTable) -> String raise
-impl Default for COFFSymbol
-impl Eq for COFFSymbol
-impl Show for COFFSymbol
-impl ToJson for COFFSymbol
-impl @binary.Readable for COFFSymbol
+} derive(Default, Eq, Show, ToJson)
+pub fn COFFSymbol::full_name(Self, StringTable) -> String raise
+pub impl @binary.Readable for COFFSymbol
 
 pub struct COFFSymbolAuxFormat5 {
   size : UInt
@@ -233,21 +229,13 @@ pub struct COFFSymbolAuxFormat5 {
   checksum : UInt
   sec_num : UInt16
   selection : Byte
-}
-impl Default for COFFSymbolAuxFormat5
-impl Eq for COFFSymbolAuxFormat5
-impl Show for COFFSymbolAuxFormat5
-impl ToJson for COFFSymbolAuxFormat5
-impl @binary.Readable for COFFSymbolAuxFormat5
+} derive(Default, Eq, Show, ToJson)
+pub impl @binary.Readable for COFFSymbolAuxFormat5
 
 pub(all) struct DataDirectory {
   virtual_address : UInt
   size : UInt
-}
-impl Default for DataDirectory
-impl Eq for DataDirectory
-impl Show for DataDirectory
-impl ToJson for DataDirectory
+} derive(Default, Eq, Show, ToJson)
 
 pub struct File {
   mut file_header : FileHeader
@@ -258,12 +246,12 @@ pub struct File {
   mut string_table : StringTable
   // private fields
 }
-fn File::close(Self) -> Unit raise
-fn File::coff_symbol_read_section_def_aux(Self, Int) -> COFFSymbolAuxFormat5 raise
-fn File::dwarf(Self) -> @dwarf.Data raise
-fn File::imported_libraries(Self) -> Array[String]
-fn File::imported_symbols(Self) -> Array[String] raise
-fn File::section(Self, String) -> Section?
+pub fn File::close(Self) -> Unit raise
+pub fn File::coff_symbol_read_section_def_aux(Self, Int) -> COFFSymbolAuxFormat5 raise
+pub fn File::dwarf(Self) -> @dwarf.Data raise
+pub fn File::imported_libraries(Self) -> Array[String]
+pub fn File::imported_symbols(Self) -> Array[String] raise
+pub fn File::section(Self, String) -> Section?
 
 pub(all) struct FileHeader {
   machine : UInt16
@@ -273,19 +261,13 @@ pub(all) struct FileHeader {
   number_of_symbols : UInt
   size_of_optional_header : UInt16
   characteristics : UInt16
-}
-impl Eq for FileHeader
-impl Show for FileHeader
-impl ToJson for FileHeader
-impl @binary.Readable for FileHeader
-impl @binary.Sized for FileHeader
+} derive(Eq, Show, ToJson)
+pub impl @binary.Readable for FileHeader
+pub impl @binary.Sized for FileHeader
 
 pub(all) struct FormatError {
-}
-fn FormatError::error(Self) -> String
-impl Eq for FormatError
-impl Show for FormatError
-impl ToJson for FormatError
+} derive(Eq, Show, ToJson)
+pub fn FormatError::error(Self) -> String
 
 pub struct ImportDirectory {
   original_first_thunk : UInt
@@ -294,22 +276,15 @@ pub struct ImportDirectory {
   name : UInt
   first_thunk : UInt
   // private fields
-}
-impl Default for ImportDirectory
-impl Eq for ImportDirectory
-impl Show for ImportDirectory
-impl ToJson for ImportDirectory
+} derive(Default, Eq, Show, ToJson)
 
 type NobitsSectionReader
-impl @io.ReaderAt for NobitsSectionReader
+pub impl @io.ReaderAt for NobitsSectionReader
 
 pub(all) enum OptionalHeader {
   Header32(OptionalHeader32)
   Header64(OptionalHeader64)
-}
-impl Eq for OptionalHeader
-impl Show for OptionalHeader
-impl ToJson for OptionalHeader
+} derive(Eq, Show, ToJson)
 
 pub(all) struct OptionalHeader32 {
   magic : UInt16
@@ -343,11 +318,7 @@ pub(all) struct OptionalHeader32 {
   loader_flags : UInt
   number_of_rva_and_sizes : UInt
   data_directory : FixedArray[DataDirectory]
-}
-impl Default for OptionalHeader32
-impl Eq for OptionalHeader32
-impl Show for OptionalHeader32
-impl ToJson for OptionalHeader32
+} derive(Default, Eq, Show, ToJson)
 
 pub(all) struct OptionalHeader64 {
   magic : UInt16
@@ -380,21 +351,14 @@ pub(all) struct OptionalHeader64 {
   loader_flags : UInt
   number_of_rva_and_sizes : UInt
   data_directory : FixedArray[DataDirectory]
-}
-impl Eq for OptionalHeader64
-impl Show for OptionalHeader64
-impl ToJson for OptionalHeader64
+} derive(Eq, Show, ToJson)
 
 pub struct Reloc {
   virtual_address : UInt
   symbol_table_index : UInt
   type_ : UInt16
-}
-impl Default for Reloc
-impl Eq for Reloc
-impl Show for Reloc
-impl ToJson for Reloc
-impl @binary.Readable for Reloc
+} derive(Default, Eq, Show, ToJson)
+pub impl @binary.Readable for Reloc
 
 pub struct Section {
   section_header : SectionHeader
@@ -402,8 +366,8 @@ pub struct Section {
   reader_at : &@io.ReaderAt
   sr : @io.SectionReader
 }
-fn Section::data(Self) -> @slice.Slice[Byte] raise
-fn Section::open(Self) -> &@io.ReadSeeker
+pub fn Section::data(Self) -> @slice.Slice[Byte] raise
+pub fn Section::open(Self) -> &@io.ReadSeeker
 
 pub(all) struct SectionHeader {
   name : String
@@ -416,26 +380,14 @@ pub(all) struct SectionHeader {
   number_of_relocations : UInt16
   number_of_line_numbers : UInt16
   characteristics : UInt
-}
-impl Eq for SectionHeader
-impl Show for SectionHeader
-impl ToJson for SectionHeader
+} derive(Eq, Show, ToJson)
 
-type SectionHeader32
-impl Default for SectionHeader32
-impl Eq for SectionHeader32
-impl Show for SectionHeader32
-impl ToJson for SectionHeader32
-impl @binary.Readable for SectionHeader32
+type SectionHeader32 derive(Default, Eq, Show, ToJson)
+pub impl @binary.Readable for SectionHeader32
 
-pub struct StringTable(@slice.Slice[Byte])
-#deprecated
-fn StringTable::inner(Self) -> @slice.Slice[Byte]
-fn StringTable::string(Self, UInt) -> String raise
-impl Eq for StringTable
-impl Show for StringTable
-impl ToJson for StringTable
-impl @tonyfettes/go/builtin.Len for StringTable
+pub struct StringTable(@slice.Slice[Byte]) derive(Eq, Show, ToJson)
+pub fn StringTable::string(Self, UInt) -> String raise
+pub impl @tonyfettes/go/builtin.Len for StringTable
 
 pub(all) struct Symbol {
   name : String
@@ -443,10 +395,7 @@ pub(all) struct Symbol {
   section_number : Int16
   type_ : Int16
   storage_class : Byte
-}
-impl Eq for Symbol
-impl Show for Symbol
-impl ToJson for Symbol
+} derive(Eq, Show, ToJson)
 
 // Type aliases
 

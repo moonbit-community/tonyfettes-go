@@ -1,58 +1,60 @@
 // Generated using `moon info`, DON'T EDIT IT
 package "tonyfettes/go/io/fs"
 
+import {
+  "tonyfettes/go/internal/oserror",
+}
+
 // Values
 
 // Errors
 pub suberror PathError {
   PathError(op~ : String, path~ : String, Error)
 }
-fn PathError::new(op~ : String, path~ : String, Error) -> Self
-fn PathError::unwrap(Self) -> Error
-impl Show for PathError
+pub fn PathError::new(op~ : String, path~ : String, Error) -> Self
+pub fn PathError::unwrap(Self) -> Error
+pub impl Show for PathError
 
 // Types and methods
 pub(all) struct FileMode(UInt)
-fn FileMode::append() -> Self
-fn FileMode::char_device() -> Self
-fn FileMode::device() -> Self
-fn FileMode::dir() -> Self
-fn FileMode::exclusive() -> Self
-#deprecated
-fn FileMode::inner(Self) -> UInt
-fn FileMode::irregular() -> Self
-fn FileMode::is_dir(Self) -> Bool
-fn FileMode::is_setgid(Self) -> Bool
-fn FileMode::is_setuid(Self) -> Bool
-fn FileMode::is_sticky(Self) -> Bool
-fn FileMode::is_symlink(Self) -> Bool
-fn FileMode::lnot(Self) -> Self
-fn FileMode::named_pipe() -> Self
-fn FileMode::perm(Self) -> Self
-fn FileMode::setgid() -> Self
-fn FileMode::setuid() -> Self
-fn FileMode::socket() -> Self
-fn FileMode::sticky() -> Self
-fn FileMode::symlink() -> Self
-fn FileMode::temporary() -> Self
-fn FileMode::to_uint(Self) -> UInt
-fn FileMode::type_(Self) -> Self
-impl BitAnd for FileMode
-impl BitOr for FileMode
-impl BitXOr for FileMode
-impl Default for FileMode
-impl Show for FileMode
+pub fn FileMode::append() -> Self
+pub fn FileMode::char_device() -> Self
+pub fn FileMode::device() -> Self
+pub fn FileMode::dir() -> Self
+pub fn FileMode::exclusive() -> Self
+pub fn FileMode::irregular() -> Self
+pub fn FileMode::is_dir(Self) -> Bool
+pub fn FileMode::is_setgid(Self) -> Bool
+pub fn FileMode::is_setuid(Self) -> Bool
+pub fn FileMode::is_sticky(Self) -> Bool
+pub fn FileMode::is_symlink(Self) -> Bool
+pub fn FileMode::lnot(Self) -> Self
+pub fn FileMode::named_pipe() -> Self
+pub fn FileMode::perm(Self) -> Self
+pub fn FileMode::setgid() -> Self
+pub fn FileMode::setuid() -> Self
+pub fn FileMode::socket() -> Self
+pub fn FileMode::sticky() -> Self
+pub fn FileMode::symlink() -> Self
+pub fn FileMode::temporary() -> Self
+pub fn FileMode::to_uint(Self) -> UInt
+pub fn FileMode::type_(Self) -> Self
+pub impl BitAnd for FileMode
+pub impl BitOr for FileMode
+pub impl BitXOr for FileMode
+pub impl Default for FileMode
+pub impl Show for FileMode
 
 // Type aliases
-pub typealias @tonyfettes/go/internal/oserror.Closed as Closed
+pub using @oserror {type Closed}
 
-pub typealias @tonyfettes/go/internal/oserror.Exist as Exist
+pub using @oserror {type Exist}
 
-pub typealias @tonyfettes/go/internal/oserror.Invalid as Invalid
+pub using @oserror {type Invalid}
 
-pub typealias @tonyfettes/go/internal/oserror.NotExist as NotExist
+pub using @oserror {type NotExist}
 
-pub typealias @tonyfettes/go/internal/oserror.Permission as Permission
+pub using @oserror {type Permission}
 
 // Traits
 

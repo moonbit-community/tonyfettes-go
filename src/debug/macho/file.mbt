@@ -683,7 +683,7 @@ pub fn File::dwarf(self : File) -> @dwarf.Data raise {
       if sectname[:] == (try! longname[:16]) {
         break sectname
       }
-    } else {
+    } nobreak {
       sectname
     }
     try! sectname[pfx:].to_string()

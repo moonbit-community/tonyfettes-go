@@ -1,85 +1,85 @@
 // Generated using `moon info`, DON'T EDIT IT
 package "tonyfettes/go/debug/macho"
 
-import(
-  "tonyfettes/go/debug/dwarf"
-  "tonyfettes/go/encoding/binary"
-  "tonyfettes/go/io"
-  "tonyfettes/go/slice"
-)
+import {
+  "tonyfettes/go/debug/dwarf",
+  "tonyfettes/go/encoding/binary",
+  "tonyfettes/go/io",
+  "tonyfettes/go/slice",
+}
 
 // Values
-const FlagAllModsBound : UInt = 0x1000
+pub const FlagAllModsBound : UInt = 0x1000
 
-const FlagAllowStackExecution : UInt = 0x20000
+pub const FlagAllowStackExecution : UInt = 0x20000
 
-const FlagAppExtensionSafe : UInt = 0x2000000
+pub const FlagAppExtensionSafe : UInt = 0x2000000
 
-const FlagBindAtLoad : UInt = 0x8
+pub const FlagBindAtLoad : UInt = 0x8
 
-const FlagBindsToWeak : UInt = 0x10000
+pub const FlagBindsToWeak : UInt = 0x10000
 
-const FlagCanonical : UInt = 0x4000
+pub const FlagCanonical : UInt = 0x4000
 
-const FlagDeadStrippableDylib : UInt = 0x400000
+pub const FlagDeadStrippableDylib : UInt = 0x400000
 
-const FlagDyldLink : UInt = 0x4
+pub const FlagDyldLink : UInt = 0x4
 
-const FlagForceFlat : UInt = 0x100
+pub const FlagForceFlat : UInt = 0x100
 
-const FlagHasTLVDescriptors : UInt = 0x800000
+pub const FlagHasTLVDescriptors : UInt = 0x800000
 
-const FlagIncrLink : UInt = 0x2
+pub const FlagIncrLink : UInt = 0x2
 
-const FlagLazyInit : UInt = 0x40
+pub const FlagLazyInit : UInt = 0x40
 
-const FlagNoFixPrebinding : UInt = 0x400
+pub const FlagNoFixPrebinding : UInt = 0x400
 
-const FlagNoHeapExecution : UInt = 0x1000000
+pub const FlagNoHeapExecution : UInt = 0x1000000
 
-const FlagNoMultiDefs : UInt = 0x200
+pub const FlagNoMultiDefs : UInt = 0x200
 
-const FlagNoReexportedDylibs : UInt = 0x100000
+pub const FlagNoReexportedDylibs : UInt = 0x100000
 
-const FlagNoUndefs : UInt = 0x1
+pub const FlagNoUndefs : UInt = 0x1
 
-const FlagPIE : UInt = 0x200000
+pub const FlagPIE : UInt = 0x200000
 
-const FlagPrebindable : UInt = 0x800
+pub const FlagPrebindable : UInt = 0x800
 
-const FlagPrebound : UInt = 0x10
+pub const FlagPrebound : UInt = 0x10
 
-const FlagRootSafe : UInt = 0x40000
+pub const FlagRootSafe : UInt = 0x40000
 
-const FlagSetuidSafe : UInt = 0x80000
+pub const FlagSetuidSafe : UInt = 0x80000
 
-const FlagSplitSegs : UInt = 0x20
+pub const FlagSplitSegs : UInt = 0x20
 
-const FlagSubsectionsViaSymbols : UInt = 0x2000
+pub const FlagSubsectionsViaSymbols : UInt = 0x2000
 
-const FlagTwoLevel : UInt = 0x80
+pub const FlagTwoLevel : UInt = 0x80
 
-const FlagWeakDefines : UInt = 0x8000
+pub const FlagWeakDefines : UInt = 0x8000
 
-const Magic32 : UInt = 0xfeedface
+pub const Magic32 : UInt = 0xfeedface
 
-const Magic64 : UInt = 0xfeedfacf
+pub const Magic64 : UInt = 0xfeedfacf
 
-const MagicFat : UInt = 0xcafebabe
+pub const MagicFat : UInt = 0xcafebabe
 
-fn new_fat_file(&@io.ReaderAt) -> FatFile raise
+pub fn new_fat_file(&@io.ReaderAt) -> FatFile raise
 
-fn new_file(&@io.ReaderAt) -> File raise
+pub fn new_file(&@io.ReaderAt) -> File raise
 
-let not_fat : FormatError
+pub let not_fat : FormatError
 
-fn open(String) -> File raise
+pub fn open(String) -> File raise
 
-fn open_fat(String) -> FatFile raise
+pub fn open_fat(String) -> FatFile raise
 
 // Errors
 type FormatError
-impl Show for FormatError
+pub impl Show for FormatError
 
 // Types and methods
 pub enum Cpu {
@@ -90,14 +90,12 @@ pub enum Cpu {
   Ppc
   Ppc64
   Cpu(UInt)
-}
-fn Cpu::from_uint(UInt) -> Self
-fn Cpu::to_string(Self) -> String
-fn Cpu::to_uint(Self) -> UInt
-impl Default for Cpu
-impl Eq for Cpu
-impl Show for Cpu
-impl @tonyfettes/go/builtin.ToUInt64 for Cpu
+} derive(Eq, Show)
+pub fn Cpu::from_uint(UInt) -> Self
+pub fn Cpu::to_string(Self) -> String
+pub fn Cpu::to_uint(Self) -> UInt
+pub impl Default for Cpu
+pub impl @tonyfettes/go/builtin.ToUInt64 for Cpu
 
 pub struct Dylib {
   load_bytes : LoadBytes
@@ -114,10 +112,8 @@ pub struct DylibCmd {
   time : UInt
   current_version : UInt
   compat_version : UInt
-}
-impl Eq for DylibCmd
-impl Show for DylibCmd
-impl @binary.Readable for DylibCmd
+} derive(Eq, Show)
+pub impl @binary.Readable for DylibCmd
 
 pub struct Dysymtab {
   load_bytes : LoadBytes
@@ -146,10 +142,8 @@ pub struct DysymtabCmd {
   nextrel : UInt
   locreloff : UInt
   nlocrel : UInt
-}
-impl Eq for DysymtabCmd
-impl Show for DysymtabCmd
-impl @binary.Readable for DysymtabCmd
+} derive(Eq, Show)
+pub impl @binary.Readable for DysymtabCmd
 
 pub struct FatArch {
   header : FatArchHeader
@@ -163,14 +157,14 @@ pub struct FatArchHeader {
   size : UInt
   align : UInt
 }
-impl @binary.Readable for FatArchHeader
+pub impl @binary.Readable for FatArchHeader
 
 pub struct FatFile {
   magic : UInt
   arches : Array[FatArch]
   mut closer : &@io.Closer?
 }
-impl @io.Closer for FatFile
+pub impl @io.Closer for FatFile
 
 pub struct File {
   header : FileHeader
@@ -181,14 +175,14 @@ pub struct File {
   dysymtab : Dysymtab?
   mut closer : &@io.Closer?
 }
-fn File::dwarf(Self) -> @dwarf.Data raise
-fn File::imported_libraries(Self) -> Array[String]
-fn File::imported_symbols(Self) -> Array[String] raise
-fn File::magic(Self) -> UInt
-fn File::section(Self, String) -> Section?
-fn File::segment(Self, String) -> Segment?
-fn File::type_(Self) -> Type
-impl @io.Closer for File
+pub fn File::dwarf(Self) -> @dwarf.Data raise
+pub fn File::imported_libraries(Self) -> Array[String]
+pub fn File::imported_symbols(Self) -> Array[String] raise
+pub fn File::magic(Self) -> UInt
+pub fn File::section(Self, String) -> Section?
+pub fn File::segment(Self, String) -> Segment?
+pub fn File::type_(Self) -> Type
+pub impl @io.Closer for File
 
 pub struct FileHeader {
   magic : UInt
@@ -198,11 +192,8 @@ pub struct FileHeader {
   ncmd : UInt
   cmdsz : UInt
   flags : UInt
-}
-impl Default for FileHeader
-impl Eq for FileHeader
-impl Show for FileHeader
-impl @binary.Readable for FileHeader
+} derive(Default, Eq, Show)
+pub impl @binary.Readable for FileHeader
 
 pub enum Load {
   LoadBytes(LoadBytes)
@@ -214,8 +205,6 @@ pub enum Load {
 }
 
 pub struct LoadBytes(@slice.Slice[Byte])
-#deprecated
-fn LoadBytes::inner(Self) -> @slice.Slice[Byte]
 
 pub enum LoadCmd {
   Segment
@@ -228,18 +217,14 @@ pub enum LoadCmd {
   Segment64
   Rpath
   LoadCmd(UInt)
-}
-fn LoadCmd::from_uint(UInt) -> Self
-fn LoadCmd::to_string(Self) -> String
-fn LoadCmd::to_uint(Self) -> UInt
-impl Eq for LoadCmd
-impl Show for LoadCmd
-impl @binary.Readable for LoadCmd
+} derive(Eq, Show)
+pub fn LoadCmd::from_uint(UInt) -> Self
+pub fn LoadCmd::to_string(Self) -> String
+pub fn LoadCmd::to_uint(Self) -> UInt
+pub impl @binary.Readable for LoadCmd
 
-type Nlist32
-impl Eq for Nlist32
-impl Show for Nlist32
-impl @binary.Readable for Nlist32
+type Nlist32 derive(Eq, Show)
+pub impl @binary.Readable for Nlist32
 
 pub struct Nlist64 {
   name : UInt
@@ -247,10 +232,8 @@ pub struct Nlist64 {
   sect : Byte
   desc : UInt16
   value : UInt64
-}
-impl Eq for Nlist64
-impl Show for Nlist64
-impl @binary.Readable for Nlist64
+} derive(Eq, Show)
+pub impl @binary.Readable for Nlist64
 
 pub struct Regs386 {
   ax : UInt
@@ -269,9 +252,7 @@ pub struct Regs386 {
   es : UInt
   fs : UInt
   gs : UInt
-}
-impl Eq for Regs386
-impl Show for Regs386
+} derive(Eq, Show)
 
 pub struct RegsAMD64 {
   ax : UInt64
@@ -295,9 +276,7 @@ pub struct RegsAMD64 {
   cs : UInt64
   fs : UInt64
   gs : UInt64
-}
-impl Eq for RegsAMD64
-impl Show for RegsAMD64
+} derive(Eq, Show)
 
 pub struct Reloc {
   addr : UInt
@@ -307,9 +286,7 @@ pub struct Reloc {
   pcrel : Bool
   is_extern : Bool
   scattered : Bool
-}
-impl Eq for Reloc
-impl Show for Reloc
+} derive(Eq, Show)
 
 pub enum RelocTypeARM {
   Vanilla
@@ -323,9 +300,9 @@ pub enum RelocTypeARM {
   Half
   HalfSectdiff
 }
-fn RelocTypeARM::from_int(Int) -> Self?
-fn RelocTypeARM::to_int(Self) -> Int
-fn RelocTypeARM::to_string(Self) -> String
+pub fn RelocTypeARM::from_int(Int) -> Self?
+pub fn RelocTypeARM::to_int(Self) -> Int
+pub fn RelocTypeARM::to_string(Self) -> String
 
 pub enum RelocTypeARM64 {
   Unsigned
@@ -340,9 +317,9 @@ pub enum RelocTypeARM64 {
   TlvpLoadPageoff12
   Addend
 }
-fn RelocTypeARM64::from_int(Int) -> Self?
-fn RelocTypeARM64::to_int(Self) -> Int
-fn RelocTypeARM64::to_string(Self) -> String
+pub fn RelocTypeARM64::from_int(Int) -> Self?
+pub fn RelocTypeARM64::to_int(Self) -> Int
+pub fn RelocTypeARM64::to_string(Self) -> String
 
 pub enum RelocTypeGeneric {
   Vanilla
@@ -352,9 +329,9 @@ pub enum RelocTypeGeneric {
   LocalSectdiff
   Tlv
 }
-fn RelocTypeGeneric::from_int(Int) -> Self?
-fn RelocTypeGeneric::to_int(Self) -> Int
-fn RelocTypeGeneric::to_string(Self) -> String
+pub fn RelocTypeGeneric::from_int(Int) -> Self?
+pub fn RelocTypeGeneric::to_int(Self) -> Int
+pub fn RelocTypeGeneric::to_string(Self) -> String
 
 pub enum RelocTypeX86_64 {
   Unsigned
@@ -368,19 +345,17 @@ pub enum RelocTypeX86_64 {
   Signed4
   Tlv
 }
-fn RelocTypeX86_64::from_int(Int) -> Self?
-fn RelocTypeX86_64::to_int(Self) -> Int
-fn RelocTypeX86_64::to_string(Self) -> String
+pub fn RelocTypeX86_64::from_int(Int) -> Self?
+pub fn RelocTypeX86_64::to_int(Self) -> Int
+pub fn RelocTypeX86_64::to_string(Self) -> String
 
 pub struct Rpath {
   load_bytes : LoadBytes
   path : String
 }
 
-type RpathCmd
-impl Eq for RpathCmd
-impl Show for RpathCmd
-impl @binary.Readable for RpathCmd
+type RpathCmd derive(Eq, Show)
+pub impl @binary.Readable for RpathCmd
 
 pub struct Section {
   header : SectionHeader
@@ -388,8 +363,8 @@ pub struct Section {
   reader_at : &@io.ReaderAt
   sr : @io.SectionReader
 }
-fn Section::data(Self) -> @slice.Slice[Byte] raise
-fn Section::open(Self) -> &@io.ReadSeeker
+pub fn Section::data(Self) -> @slice.Slice[Byte] raise
+pub fn Section::open(Self) -> &@io.ReadSeeker
 
 pub struct Section32 {
   name : FixedArray[Byte]
@@ -403,10 +378,8 @@ pub struct Section32 {
   flags : UInt
   reserve1 : UInt
   reserve2 : UInt
-}
-impl Eq for Section32
-impl Show for Section32
-impl @binary.Readable for Section32
+} derive(Eq, Show)
+pub impl @binary.Readable for Section32
 
 pub struct Section64 {
   name : FixedArray[Byte]
@@ -421,10 +394,8 @@ pub struct Section64 {
   reserve1 : UInt
   reserve2 : UInt
   reserve3 : UInt
-}
-impl Eq for Section64
-impl Show for Section64
-impl @binary.Readable for Section64
+} derive(Eq, Show)
+pub impl @binary.Readable for Section64
 
 pub struct SectionHeader {
   name : String
@@ -436,9 +407,7 @@ pub struct SectionHeader {
   reloff : UInt
   nreloc : UInt
   flags : UInt
-}
-impl Eq for SectionHeader
-impl Show for SectionHeader
+} derive(Eq, Show)
 
 pub struct Segment {
   load_bytes : LoadBytes
@@ -446,8 +415,8 @@ pub struct Segment {
   reader_at : &@io.ReaderAt
   sr : @io.SectionReader
 }
-fn Segment::data(Self) -> @slice.Slice[Byte] raise
-fn Segment::open(Self) -> &@io.ReadSeeker
+pub fn Segment::data(Self) -> @slice.Slice[Byte] raise
+pub fn Segment::open(Self) -> &@io.ReadSeeker
 
 pub struct Segment32 {
   cmd : LoadCmd
@@ -461,10 +430,8 @@ pub struct Segment32 {
   prot : UInt
   nsect : UInt
   flag : UInt
-}
-impl Eq for Segment32
-impl Show for Segment32
-impl @binary.Readable for Segment32
+} derive(Eq, Show)
+pub impl @binary.Readable for Segment32
 
 pub struct Segment64 {
   cmd : LoadCmd
@@ -478,10 +445,8 @@ pub struct Segment64 {
   prot : UInt
   nsect : UInt
   flag : UInt
-}
-impl Eq for Segment64
-impl Show for Segment64
-impl @binary.Readable for Segment64
+} derive(Eq, Show)
+pub impl @binary.Readable for Segment64
 
 pub struct SegmentHeader {
   cmd : LoadCmd
@@ -495,9 +460,7 @@ pub struct SegmentHeader {
   prot : UInt
   nsect : UInt
   flag : UInt
-}
-impl Eq for SegmentHeader
-impl Show for SegmentHeader
+} derive(Eq, Show)
 
 pub struct Symbol {
   name : String
@@ -505,9 +468,7 @@ pub struct Symbol {
   sect : Byte
   desc : UInt16
   value : UInt64
-}
-impl Eq for Symbol
-impl Show for Symbol
+} derive(Eq, Show)
 
 pub struct Symtab {
   load_bytes : LoadBytes
@@ -522,10 +483,8 @@ pub struct SymtabCmd {
   nsyms : UInt
   stroff : UInt
   strsize : UInt
-}
-impl Eq for SymtabCmd
-impl Show for SymtabCmd
-impl @binary.Readable for SymtabCmd
+} derive(Eq, Show)
+pub impl @binary.Readable for SymtabCmd
 
 pub struct Thread {
   cmd : LoadCmd
@@ -533,7 +492,7 @@ pub struct Thread {
   type_ : UInt
   data : Array[UInt]
 }
-impl @binary.Readable for Thread
+pub impl @binary.Readable for Thread
 
 pub enum Type {
   Obj
@@ -541,13 +500,11 @@ pub enum Type {
   Dylib
   Bundle
   Type(UInt)
-}
-fn Type::from_uint(UInt) -> Self
-fn Type::to_string(Self) -> String
-fn Type::to_uint(Self) -> UInt
-impl Default for Type
-impl Eq for Type
-impl Show for Type
+} derive(Eq, Show)
+pub fn Type::from_uint(UInt) -> Self
+pub fn Type::to_string(Self) -> String
+pub fn Type::to_uint(Self) -> UInt
+pub impl Default for Type
 
 // Type aliases
 

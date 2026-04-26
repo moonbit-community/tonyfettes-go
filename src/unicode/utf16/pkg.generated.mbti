@@ -2,13 +2,13 @@
 package "tonyfettes/go/unicode/utf16"
 
 // Values
-const RuneError : Char = '�'
+pub const RuneError : Char = '�'
 
-fn decode_last_rune_in_string(StringView) -> (Char, Int)
+pub fn decode_last_rune_in_string(StringView) -> (Char, Int)
 
-fn decode_rune_in_string(StringView) -> (Char, Int)
+pub fn decode_rune_in_string(StringView) -> (Char, Int)
 
-fn rune_self(UInt16) -> Bool
+pub fn rune_self(UInt16) -> Bool
 
 // Errors
 
