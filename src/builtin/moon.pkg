@@ -1,3 +1,7 @@
 options(
   "native-stub": [ "builtin.c" ],
+  targets: {
+    "uintptr.mbt": [ "native" ],
+    "uintptr_non_native.mbt": [ "not", "native" ],
+  },
 )

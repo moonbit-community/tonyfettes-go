@@ -40,7 +40,7 @@ struct Data {
   mut order : ByteOrder
   type_cache : Map[Offset, Type]
   type_sigs : Map[UInt64, TypeUnit]
-  mut unit : FixedArray[Unit]
+  mut unit : FixedArray[DwarfUnit]
 }
 
 ///|

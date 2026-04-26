@@ -6,7 +6,7 @@
 /// Each unit has its own abbreviation table and address size.
 
 ///|
-priv struct Unit {
+priv struct DwarfUnit {
   mut base : Offset // byte offset of header within the aggregate info
   mut off : Offset // byte offset of data within the aggregate info
   mut data : @slice.Slice[Byte]
@@ -19,8 +19,8 @@ priv struct Unit {
 }
 
 ///|
-impl Default for Unit with default() -> Unit {
-  Unit::new(0, 0, @slice.new(), AbbrevTable::new(), 0, 0, false, 0U)
+impl Default for DwarfUnit with default() -> DwarfUnit {
+  DwarfUnit::new(0, 0, @slice.new(), AbbrevTable::new(), 0, 0, false, 0U)
 }
 
 ///|
@@ -42,7 +42,7 @@ impl Default for Unit5 with default() -> Unit5 {
 }
 
 ///|
-fn Unit::new(
+fn DwarfUnit::new(
   base : Offset,
   off : Offset,
   data : @slice.Slice[Byte],
@@ -51,27 +51,27 @@ fn Unit::new(
   vers : Int,
   is64 : Bool,
   utype : UInt,
-) -> Unit {
+) -> DwarfUnit {
   { base, off, data, atable, unit5: None, asize, vers, is64, utype }
 }
 
 ///|
-impl DataFormat for Unit with version(self) {
+impl DataFormat for DwarfUnit with version(self) {
   self.vers
 }
 
 ///|
-impl DataFormat for Unit with dwarf64(self) {
+impl DataFormat for DwarfUnit with dwarf64(self) {
   (self.is64, true)
 }
 
 ///|
-impl DataFormat for Unit with addrsize(self) {
+impl DataFormat for DwarfUnit with addrsize(self) {
   self.asize
 }
 
 ///|
-fn Unit::addr_base(u : Unit) -> UInt64 {
+fn DwarfUnit::addr_base(u : DwarfUnit) -> UInt64 {
   match u.unit5 {
     Some(u5) => u5.addr_base
     None => 0
@@ -79,7 +79,7 @@ fn Unit::addr_base(u : Unit) -> UInt64 {
 }
 
 ///|
-fn Unit::str_offsets_base(self : Unit) -> UInt64 {
+fn DwarfUnit::str_offsets_base(self : DwarfUnit) -> UInt64 {
   match self.unit5 {
     Some(u5) => u5.str_offsets_base
     None => 0
@@ -87,7 +87,7 @@ fn Unit::str_offsets_base(self : Unit) -> UInt64 {
 }
 
 ///|
-fn Unit::rng_lists_base(self : Unit) -> UInt64 {
+fn DwarfUnit::rng_lists_base(self : DwarfUnit) -> UInt64 {
   match self.unit5 {
     Some(u5) => u5.rng_lists_base
     None => 0
@@ -95,7 +95,7 @@ fn Unit::rng_lists_base(self : Unit) -> UInt64 {
 }
 
 ///|
-fn Unit::loc_lists_base(self : Unit) -> UInt64 {
+fn DwarfUnit::loc_lists_base(self : DwarfUnit) -> UInt64 {
   match self.unit5 {
     Some(u5) => u5.loc_lists_base
     None => 0
@@ -109,7 +109,7 @@ priv suberror UnsupportedDwarfVersion {
 
 ///|
 /// Parse compilation units from the .debug_info section
-fn Data::parse_units(d : Data) -> FixedArray[Unit] raise {
+fn Data::parse_units(d : Data) -> FixedArray[DwarfUnit] raise {
   // Count units first
   let mut nunit = 0
   let mut b = make_buf(d, UnknownFormat::new(), "info", 0, d.info)
@@ -129,7 +129,7 @@ fn Data::parse_units(d : Data) -> FixedArray[Unit] raise {
 
   // Again, this time writing them down.
   b = make_buf(d, UnknownFormat::new(), "info", 0, d.info)
-  let units = FixedArray::makei(nunit, _ => Unit::default())
+  let units = FixedArray::makei(nunit, _ => DwarfUnit::default())
   for i in 0..<nunit {
     let u = units[i]
     u.base = b.off
@@ -207,7 +207,7 @@ fn Data::offset_to_unit(self : Data, off : Offset) -> Int {
 
 ///|
 /// Collect DWARF 5 base offsets from compilation unit
-fn Data::collect_dwarf5_base_offsets(d : Data, u : Unit) -> @unit.T raise {
+fn Data::collect_dwarf5_base_offsets(d : Data, u : DwarfUnit) -> @unit.T raise {
   guard u.unit5 is Some(u5) else {
     abort("expected unit5 to be set up already")
   }
